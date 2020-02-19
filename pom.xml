@@ -1,0 +1,174 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- parent>
+    <groupId>org.pentaho</groupId>
+    <artifactId>pentaho-ce-bundle-parent-pom</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent -->
+
+  <groupId>com.evolvedbinary.pdi</groupId>
+  <artifactId>jena-model-step-plugin</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>Jena Model Step</name>
+  <description>Constructs an Apache Jena Model</description>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
+    </license>
+  </licenses>
+
+  <repositories>
+    <repository>
+      <id>pentaho-nexus</id>
+      <name>PentahoNexus</name>
+      <url>http://nexus.pentaho.org/content/groups/omni</url>
+    </repository>
+  </repositories>
+
+  <properties>
+    <pentaho-kettle.version>8.3.0.9-719</pentaho-kettle.version>
+    <source.encoding>UTF-8</source.encoding>
+    <java.source.version>1.8</java.source.version>
+    <java.target.version>1.8</java.target.version>
+    <jena.version>3.14.0</jena.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pentaho-kettle</groupId>
+      <artifactId>kettle-core</artifactId>
+      <version>${pentaho-kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pentaho-kettle</groupId>
+      <artifactId>kettle-engine</artifactId>
+      <version>${pentaho-kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pentaho-kettle</groupId>
+      <artifactId>kettle-ui-swt</artifactId>
+      <version>${pentaho-kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-metaverse-api</artifactId>
+      <version>${pentaho-kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>metastore</artifactId>
+      <version>${pentaho-kettle.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.eclipse.swt</groupId>
+      <artifactId>org.eclipse.swt.gtk.linux.x86_64</artifactId>
+      <version>4.6</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>xml-apis</groupId>
+      <artifactId>xml-apis</artifactId>
+      <version>1.4.01</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.jena</groupId>
+      <artifactId>jena-core</artifactId>
+      <version>${jena.version}</version>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <encoding>${source.encoding}</encoding>
+          <source>${java.source.version}</source>
+          <target>${java.target.version}</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.1.1</version>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze-only</goal>
+            </goals>
+            <configuration>
+              <failOnWarning>true</failOnWarning>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.code54.mojo</groupId>
+        <artifactId>buildversion-plugin</artifactId>
+        <version>1.0.3</version>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>set-properties</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.2.0</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+            <manifestEntries>
+              <Build-Tag>${build-tag}</Build-Tag>
+              <Git-Commit>${build-commit}</Git-Commit>
+              <Git-Commit-Abbrev>${build-commit-abbrev}</Git-Commit-Abbrev>
+              <Build-Version>${build-version}</Build-Version>
+              <Build-Timestamp>${build-tstamp}</Build-Timestamp>
+              <Source-Repository>${project.scm.connection}</Source-Repository>
+              <Description>${project.description}</Description>
+              <Implementation-URL>${project.url}</Implementation-URL>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.2.0</version>
+        <configuration>
+          <descriptors>
+            <descriptor>src/assembly/plugin-dir.xml</descriptor>
+          </descriptors>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
