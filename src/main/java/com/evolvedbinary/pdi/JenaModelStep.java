@@ -20,6 +20,7 @@ package com.evolvedbinary.pdi;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.vocabulary.DC;
 import org.apache.jena.vocabulary.RDF;
@@ -35,8 +36,8 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
+import javax.xml.namespace.QName;
 import java.util.Arrays;
-import java.util.function.Function;
 
 /**
  * Describe your step plugin.
@@ -85,7 +86,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
         //TODO(AR) seems we have to duplicate behaviour of JenaModelStepMeta getFields here but on `r` ???
         if (meta.getTargetFieldName() != null && !meta.getTargetFieldName().isEmpty()) {
             // create Jena model
-            final Model model = createModel(meta);
+            final Model model = createModel(meta, r, inputRowMeta);
 
             // first, add the new column (for the Jena Model)
             r = RowDataUtil.resizeArray(r, inputRowMeta.size() + 1);
@@ -115,7 +116,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
         return true;
     }
 
-    private Model createModel(final JenaModelStepMeta meta, final Function<String, String> fnGetDbValue) {
+    private Model createModel(final JenaModelStepMeta meta, final Object[] r, final RowMetaInterface inputRowMeta) {
         final String resourceUri = "http://catalogue/thing1"; // TODO(AR) adjust this from the db
 
         final Model model = ModelFactory.createDefaultModel();
@@ -124,11 +125,26 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
         if (meta.getDbToJenaMappings() != null) {
             for (final JenaModelStepMeta.DbToJenaMapping mapping : meta.getDbToJenaMappings()) {
-                final String qn = mapping.rdfPropertyName;
-                final String ns = getNamespace(meta.getPrefixes(), qn);
-                final String localPart
-                property = model.getProperty(ns, localPart);
-                resource.addLiteral(mapping.rdfPropertyName, fnGetDbValue.apply(mapping.fieldName))
+                final QName qname = mapping.rdfPropertyName;
+                Property property;
+                if (qname.getNamespaceURI() == null || qname.getNamespaceURI().isEmpty()) {
+                    property = model.getProperty(qname.getLocalPart());
+                    if (property == null) {
+                        property = model.createProperty(qname.getLocalPart());
+                    }
+                } else {
+                    property = model.getProperty(qname.getNamespaceURI(), qname.getLocalPart());
+                    if (property == null) {
+                        property = model.createProperty(qname.getNamespaceURI(), qname.getLocalPart());
+                    }
+                }
+
+                final int index = inputRowMeta.indexOfValue(mapping.fieldName);
+                final Object value =  r[index];
+                //TODO(AR) need to do better data conversion
+                final String strValue = value.toString();
+
+                resource.addLiteral(property, strValue);
             }
         }
 
