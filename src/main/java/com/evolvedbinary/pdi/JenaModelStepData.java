@@ -18,59 +18,13 @@
  */
 package com.evolvedbinary.pdi;
 
-//import org.apache.jena.rdf.model.Model;
-//import org.apache.jena.rdf.model.ModelFactory;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
 
 public class JenaModelStepData extends BaseStepData implements StepDataInterface {
-    private String targetFieldName;
-    private String resourceType;
-    private DbToJenaMapping[] dbToJenaMappings;
 
-    private static class DbToJenaMapping {
-        String fieldName;
-        String rdfPropertyName;
-        String rdfType;
-    }
-
-//    private final Model model;
-    // Add any execution-specific data here
-
-    /**
-     *
-     */
     public JenaModelStepData() {
         super();
-//        this.model = ModelFactory.createDefaultModel();
     }
-
-    public void setTargetFieldName(final String targetFieldName) {
-        this.targetFieldName = targetFieldName;
-    }
-
-    public void setResourceType(final String resourceType) {
-        this.resourceType = resourceType;
-    }
-
-    public String getTargetFieldName() {
-        return targetFieldName;
-    }
-
-    public String getResourceType() {
-        return resourceType;
-    }
-
-    public DbToJenaMapping[] getDbToJenaMappings() {
-        return dbToJenaMappings;
-    }
-
-    public void setDbToJenaMappings(final DbToJenaMapping[] dbToJenaMappings) {
-        this.dbToJenaMappings = dbToJenaMappings;
-    }
-
-    //    public Model getModel() {
-//        return model;
-//    }
 }

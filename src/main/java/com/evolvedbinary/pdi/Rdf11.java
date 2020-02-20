@@ -1,0 +1,48 @@
+package com.evolvedbinary.pdi;
+
+public interface Rdf11 {
+
+    final String[] DATA_TYPES = new String[] {
+                "xsd:string",
+                "xsd:boolean",
+                "xsd:decimal",
+                "xsd:integer",
+                "xsd:double",
+                "xsd:float",
+                "xsd:date",
+                "xsd:time",
+                "xsd:dateTime",
+                "xsd:dateTimeStamp",
+                "xsd:gYear",
+                "xsd:gMonth",
+                "xsd:gDay",
+                "xsd:gYearMonth",
+                "xsd:gMonthDay",
+                "xsd:duration",
+                "xsd:yearMonthDuration",
+                "xsd:dayTimeDuration",
+                "xsd:byte",
+                "xsd:short",
+                "xsd:int",
+                "xsd:long",
+                "xsd:unsignedByte",
+                "xsd:unsignedShort",
+                "xsd:unsignedInt",
+                "xsd:unsignedLong",
+                "xsd:unsignedInteger",
+                "xsd:nonNegativeInteger",
+                "xsd:negativeInteger",
+                "xsd:nonPositiveInteger",
+                "xsd:hexBinary",
+                "xsd:base64Binary",
+                "xsd:anyURI",
+                "xsd:language",
+                "xsd:normalizeString",
+                "xsd:token",
+                "xsd:NMTOKEN",
+                "xsd:Name",
+                "xsd:NCName",
+                "rdf:HTML",
+                "rdf:XMLLiteral"
+    };
+}

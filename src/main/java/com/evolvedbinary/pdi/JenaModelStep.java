@@ -23,8 +23,8 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.vocabulary.DC;
 import org.apache.jena.vocabulary.RDF;
-import org.apache.jena.vocabulary.VCARD;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
@@ -34,6 +34,9 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+
+import java.util.Arrays;
+import java.util.function.Function;
 
 /**
  * Describe your step plugin.
@@ -59,26 +62,48 @@ public class JenaModelStep extends BaseStep implements StepInterface {
     }
 
     @Override
+    public void dispose(final StepMetaInterface smi, final StepDataInterface sdi) {
+        super.dispose(smi, sdi);
+    }
+
+    @Override
     public boolean processRow(final StepMetaInterface smi, final StepDataInterface sdi) throws KettleException {
-        final Object[] r = getRow(); // get row, set busy!
+
+        final JenaModelStepMeta meta = (JenaModelStepMeta)smi;
+
+        Object[] r = getRow(); // get row, set busy!
         if (r == null) {
             // no more input to be expected...
             setOutputDone();
             return false;
         }
 
-        //TODO(AR)temp
-        final String resourceUri = "http://catalogue/thing1";
-
-        final Model model = ModelFactory.createDefaultModel();
-        final Resource resource = model.createResource(resourceUri);
-        resource.addProperty(RDF.type, "premis:IntellectualEntity");
-        resource.addLiteral(DC.identifier, "AN1234");
-
-
         final RowMetaInterface inputRowMeta = getInputRowMeta();
         final RowMetaInterface outputRowMeta = inputRowMeta.clone();
         smi.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
+
+        //TODO(AR) seems we have to duplicate behaviour of JenaModelStepMeta getFields here but on `r` ???
+        if (meta.getTargetFieldName() != null && !meta.getTargetFieldName().isEmpty()) {
+            // create Jena model
+            final Model model = createModel(meta);
+
+            // first, add the new column (for the Jena Model)
+            r = RowDataUtil.resizeArray(r, inputRowMeta.size() + 1);
+            r[inputRowMeta.size()] = model;
+
+            // second, remove any unneeded columns
+            if (meta.isRemoveSelectedFields() && meta.getDbToJenaMappings() != null) {
+                final JenaModelStepMeta.DbToJenaMapping[] mappings = meta.getDbToJenaMappings();
+                final int indexes[] = new int[mappings.length];
+                int i = 0;
+                for (final JenaModelStepMeta.DbToJenaMapping mapping : mappings) {
+                    final int index = inputRowMeta.indexOfValue(mapping.fieldName);
+                    indexes[i++] = index;
+                }
+                Arrays.sort(indexes);
+                r = RowDataUtil.removeItems(r, indexes);
+            }
+        }
 
         putRow(outputRowMeta, r); // copy row to possible alternate rowset(s).
 
@@ -88,5 +113,27 @@ public class JenaModelStep extends BaseStep implements StepInterface {
         }
 
         return true;
+    }
+
+    private Model createModel(final JenaModelStepMeta meta, final Function<String, String> fnGetDbValue) {
+        final String resourceUri = "http://catalogue/thing1"; // TODO(AR) adjust this from the db
+
+        final Model model = ModelFactory.createDefaultModel();
+        final Resource resource = model.createResource(resourceUri);
+        resource.addProperty(RDF.type, meta.getResourceType());
+
+        if (meta.getDbToJenaMappings() != null) {
+            for (final JenaModelStepMeta.DbToJenaMapping mapping : meta.getDbToJenaMappings()) {
+                final String qn = mapping.rdfPropertyName;
+                final String ns = getNamespace(meta.getPrefixes(), qn);
+                final String localPart
+                property = model.getProperty(ns, localPart);
+                resource.addLiteral(mapping.rdfPropertyName, fnGetDbValue.apply(mapping.fieldName))
+            }
+        }
+
+        resource.addLiteral(DC.identifier, "AN1234");
+
+        return model;
     }
 }

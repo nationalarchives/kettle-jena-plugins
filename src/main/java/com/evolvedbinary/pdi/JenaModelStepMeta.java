@@ -22,10 +22,9 @@ import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.database.DatabaseMeta;
-import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleStepException;
-import org.pentaho.di.core.exception.KettleXMLException;
+import org.pentaho.di.core.exception.*;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaFactory;
 import org.pentaho.di.core.variables.VariableSpace;
@@ -33,6 +32,7 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
@@ -43,8 +43,10 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.xml.namespace.QName;
+import java.util.*;
+
+import static com.evolvedbinary.pdi.Util.emptyIfNull;
 
 
 /**
@@ -56,42 +58,252 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
 
     private static Class<?> PKG = JenaModelStep.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
 
+    // <editor-fold desc="settings XML element names">
+    private static final String ELEM_NAME_TARGET_FIELD_NAME = "targetFieldName";
+    private static final String ELEM_NAME_REMOVE_SELECTED_FIELDS = "removeSelectedFields";
+    private static final String ELEM_NAME_RESOURCE_TYPE = "resourceType";
+    private static final String ELEM_NAME_NAMESPACES = "namespaces";
+    private static final String ELEM_NAME_NAMESPACE = "namespace";
+    private static final String ELEM_NAME_PREFIX = "prefix";
+    private static final String ELEM_NAME_URI = "uri";
+    private static final String ELEM_NAME_LOCAL_PART = "localPart";
+    private static final String ELEM_NAME_DB_TO_JENA_MAPPINGS = "dbToJenaMappings";
+    private static final String ELEM_NAME_DB_TO_JENA_MAPPING = "dbToJenaMapping";
+    private static final String ELEM_NAME_FIELD_NAME = "fieldName";
+    private static final String ELEM_NAME_PROPERTY_NAME = "rdfPropertyName";
+    private static final String ELEM_NAME_RDF_TYPE = "rdfType";
+    // </editor-fold>
+
+    // <editor-fold desc="settings">
+    private String targetFieldName;
+    private boolean removeSelectedFields;
+    private String resourceType;
+    /**
+     * Namespace mapping from prefix->uri
+     */
+    private Map<String, String> namespaces;
+    private DbToJenaMapping[] dbToJenaMappings;
+    // </editor-fold>
+
+
     public JenaModelStepMeta() {
         super(); // allocate BaseStepMeta
     }
 
     @Override
-    public void loadXML(final Node stepnode, final List<DatabaseMeta> databases, final IMetaStore metaStore) throws KettleXMLException {
-        readData(stepnode);
+    public void setDefault() {
+        targetFieldName = "";
+        removeSelectedFields = false;
+        resourceType = "rdfs:Class";
+        namespaces = Collections.emptyMap();
+        dbToJenaMappings = new DbToJenaMapping[0];
     }
 
     @Override
     public Object clone() {
-        Object retval = super.clone();
+        final JenaModelStepMeta retval = (JenaModelStepMeta) super.clone();
+        if (namespaces != null && !namespaces.isEmpty()) {
+            retval.namespaces = new HashMap<>(namespaces);
+        } else {
+            retval.namespaces = Collections.emptyMap();
+        }
+        if (dbToJenaMappings != null) {
+            retval.dbToJenaMappings = Arrays.copyOf(dbToJenaMappings, dbToJenaMappings.length);
+        } else {
+            retval.dbToJenaMappings = new DbToJenaMapping[0];
+        }
         return retval;
     }
 
-    private void readData(final Node stepnode) {
-        // Parse the XML (starting with the given stepnode) to extract the step metadata (into member variables, for example)
+    @Override
+    public String getXML() throws KettleException {
+        final StringBuilder builder = new StringBuilder();
+        builder
+            .append(XMLHandler.addTagValue(ELEM_NAME_TARGET_FIELD_NAME, targetFieldName))
+            .append(XMLHandler.addTagValue(ELEM_NAME_REMOVE_SELECTED_FIELDS, Boolean.toString(removeSelectedFields)))
+            .append(XMLHandler.addTagValue(ELEM_NAME_RESOURCE_TYPE, resourceType));
+
+        builder.append(XMLHandler.openTag(ELEM_NAME_NAMESPACES));
+        for (final Map.Entry<String, String> pn : namespaces.entrySet()) {
+            builder
+                    .append(XMLHandler.openTag(ELEM_NAME_NAMESPACE))
+                    .append(XMLHandler.addTagValue(ELEM_NAME_PREFIX, pn.getKey()))
+                    .append(XMLHandler.addTagValue(ELEM_NAME_URI, pn.getValue()))
+                    .append(XMLHandler.closeTag(ELEM_NAME_NAMESPACE));
+        }
+        builder.append(XMLHandler.closeTag(ELEM_NAME_NAMESPACES));
+
+        builder.append(XMLHandler.openTag(ELEM_NAME_DB_TO_JENA_MAPPINGS));
+        for (final DbToJenaMapping mapping : dbToJenaMappings) {
+            if (mapping.fieldName != null && !mapping.fieldName.isEmpty()) {
+                builder
+                    .append(XMLHandler.openTag(ELEM_NAME_DB_TO_JENA_MAPPING))
+
+                    .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, mapping.fieldName))
+
+                    .append(XMLHandler.openTag(ELEM_NAME_PROPERTY_NAME))
+                        .append(addQNameValue(mapping.rdfPropertyName))
+                    .append(XMLHandler.closeTag(ELEM_NAME_PROPERTY_NAME))
+
+                    .append(XMLHandler.openTag(ELEM_NAME_RDF_TYPE))
+                        .append(addQNameValue(mapping.rdfType))
+                    .append(XMLHandler.closeTag(ELEM_NAME_RDF_TYPE))
+
+                    .append(XMLHandler.closeTag(ELEM_NAME_DB_TO_JENA_MAPPING));
+            }
+        }
+        builder.append(XMLHandler.closeTag(ELEM_NAME_DB_TO_JENA_MAPPINGS));
+
+        return builder.toString();
+    }
+
+    private String addQNameValue(final QName qname) {
+        final StringBuilder builder = new StringBuilder();
+        if (qname.getPrefix() != null) {
+            builder.append(XMLHandler.addTagValue(ELEM_NAME_PREFIX, qname.getPrefix()));
+        }
+        if (qname.getNamespaceURI() != null) {
+            builder.append(XMLHandler.addTagValue(ELEM_NAME_URI, qname.getNamespaceURI()));
+        }
+        builder.append(XMLHandler.addTagValue(ELEM_NAME_LOCAL_PART, qname.getLocalPart()));
+
+        return builder.toString();
     }
 
     @Override
-    public void setDefault() {
+    public void loadXML(final Node stepnode, final List<DatabaseMeta> databases, final IMetaStore metaStore) throws KettleXMLException {
+        final String xTargetFieldName = XMLHandler.getTagValue(stepnode, ELEM_NAME_TARGET_FIELD_NAME);
+        if (xTargetFieldName != null) {
+            this.targetFieldName = xTargetFieldName;
+
+            final String xRemoveSelectedFields = XMLHandler.getTagValue(stepnode, ELEM_NAME_REMOVE_SELECTED_FIELDS);
+            this.removeSelectedFields = xRemoveSelectedFields != null && !xRemoveSelectedFields.isEmpty() ? Boolean.parseBoolean(xRemoveSelectedFields) : false;
+
+            final String xResourceType = XMLHandler.getTagValue(stepnode, ELEM_NAME_RESOURCE_TYPE);
+            this.resourceType = emptyIfNull(xResourceType);
+
+            final Node namespacesNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_NAMESPACES);
+            if (namespacesNode == null) {
+                this.namespaces = Collections.emptyMap();
+            } else {
+                final List<Node> namespaceNodes = XMLHandler.getNodes(namespacesNode, ELEM_NAME_NAMESPACE);
+                if (namespaceNodes == null || namespaceNodes.isEmpty()) {
+                    this.namespaces = Collections.emptyMap();
+                } else {
+                    this.namespaces = new HashMap<>();
+
+                    final int len = namespaceNodes.size();
+                    for (int i = 0; i < len; i++) {
+                        final Node namespaceNode = namespaceNodes.get(i);
+
+                        final String prefix = XMLHandler.getTagValue(namespaceNode, ELEM_NAME_PREFIX);
+                        final String uri = XMLHandler.getTagValue(namespaceNode, ELEM_NAME_URI);
+                        if (prefix == null || uri == null) {
+                            continue;
+                        }
+
+                        this.namespaces.put(prefix, uri);
+                    }
+                }
+            }
+
+            final Node mappingsNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_DB_TO_JENA_MAPPINGS);
+            if (mappingsNode == null) {
+                this.dbToJenaMappings = new DbToJenaMapping[0];
+            } else {
+                final List<Node> mappingNodes = XMLHandler.getNodes(mappingsNode, ELEM_NAME_DB_TO_JENA_MAPPING);
+                if (mappingNodes == null || mappingNodes.isEmpty()) {
+                    this.dbToJenaMappings = new DbToJenaMapping[0];
+                } else {
+                    final int len = mappingNodes.size();
+                    this.dbToJenaMappings = new DbToJenaMapping[len];
+                    int mappingsCount = 0;
+                    for (int i = 0; i < len; i++) {
+                        final Node mappingNode = mappingNodes.get(i);
+
+                        final String fieldName = XMLHandler.getTagValue(mappingNode, ELEM_NAME_FIELD_NAME);
+                        if (fieldName == null || fieldName.isEmpty()) {
+                            continue;
+                        }
+
+                        final DbToJenaMapping mapping = new DbToJenaMapping();
+                        mapping.fieldName = fieldName;
+
+                        final Node propertyNameNode = XMLHandler.getSubNode(mappingNode, ELEM_NAME_PROPERTY_NAME);
+                        mapping.rdfPropertyName = getQNameValue(propertyNameNode);
+
+                        final Node rdfTypeNode = XMLHandler.getSubNode(mappingNode, ELEM_NAME_RDF_TYPE);
+                        mapping.rdfType = getQNameValue(rdfTypeNode);
+                        this.dbToJenaMappings[mappingsCount++] = mapping;
+                    }
+
+                    if (mappingsCount < len) {
+                        this.dbToJenaMappings = Arrays.copyOf(this.dbToJenaMappings, mappingsCount);
+                    }
+                }
+            }
+        }
+    }
+
+    private QName getQNameValue(final Node node) {
+        final String prefix = XMLHandler.getTagValue(node, ELEM_NAME_PREFIX);
+        final String uri = XMLHandler.getTagValue(node, ELEM_NAME_URI);
+        final String localPart = XMLHandler.getTagValue(node, ELEM_NAME_LOCAL_PART);
+
+        if (prefix != null) {
+            return new QName(uri, localPart, prefix);
+        } else if (uri != null) {
+            return new QName(uri, localPart);
+        } else {
+            return new QName(localPart);
+        }
     }
 
     @Override
-    public void readRep(final Repository rep, final IMetaStore metaStore, final ObjectId id_step, final List<DatabaseMeta> databases) throws KettleException {
-    }
-
-    @Override
-    public void saveRep(final Repository rep, final IMetaStore metaStore, final ObjectId id_transformation, final ObjectId id_step)
+    public void saveRep(final Repository repo, final IMetaStore metaStore, final ObjectId id_transformation, final ObjectId id_step)
             throws KettleException {
+
+        final String rep = getXML();
+        repo.saveStepAttribute(id_transformation, id_step, "step-xml", rep);
+    }
+
+    @Override
+    public void readRep(final Repository repo, final IMetaStore metaStore, final ObjectId id_step, final List<DatabaseMeta> databases) throws KettleException {
+        final String rep = repo.getStepAttributeString(id_step, "step-xml");
+        if (rep == null || rep.isEmpty()) {
+            setDefault();
+        }
+
+        final Node stepnode = XMLHandler.loadXMLString(rep);
+        loadXML(stepnode, (List<DatabaseMeta>)null, (IMetaStore)null);
     }
 
     @Override
     public void getFields(final RowMetaInterface rowMeta, final String origin, final RowMetaInterface[] info, final StepMeta nextStep,
                           final VariableSpace space, final Repository repository, final IMetaStore metaStore) throws KettleStepException {
-        // Default: nothing changes to rowMeta
+        try {
+            // add the target field to the output rows
+            if (targetFieldName != null && !targetFieldName.isEmpty()) {
+                final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(targetFieldName, ValueMeta.TYPE_SERIALIZABLE);
+                targetFieldValueMeta.setOrigin(origin);
+                rowMeta.addValueMeta(targetFieldValueMeta);
+            }
+
+        } catch (final KettlePluginException e) {
+            throw new KettleStepException(e);
+        }
+
+        if (removeSelectedFields && dbToJenaMappings != null) {
+            for (final DbToJenaMapping mapping : dbToJenaMappings) {
+                try {
+                    rowMeta.removeValueMeta(mapping.fieldName);
+                } catch (final KettleValueException e) {
+                    //TODO(AR) log error or throw?
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     @Override
@@ -129,7 +341,67 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     }
 
     @Override
+    public RepositoryDirectory getRepositoryDirectory() {
+        return super.getRepositoryDirectory();
+    }
+
+    @Override
     public String getDialogClassName() {
         return "com.evolvedbinary.pdi.JenaModelStepDialog";
+    }
+
+
+
+    // <editor-fold desc="settings getters and setters">
+    public String getTargetFieldName() {
+        return targetFieldName;
+    }
+
+    public void setTargetFieldName(final String targetFieldName) {
+        this.targetFieldName = targetFieldName;
+    }
+
+    public boolean isRemoveSelectedFields() {
+        return removeSelectedFields;
+    }
+
+    public void setRemoveSelectedFields(boolean removeSelectedFields) {
+        this.removeSelectedFields = removeSelectedFields;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(final String resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    public Map<String, String> getNamespaces() {
+        return namespaces;
+    }
+
+    /**
+     * Set the namespaces.
+     *
+     * @param namespaces (prefix->uri)
+     */
+    public void setNamespaces(final Map<String, String> namespaces) {
+        this.namespaces = namespaces;
+    }
+
+    public DbToJenaMapping[] getDbToJenaMappings() {
+        return dbToJenaMappings;
+    }
+
+    public void setDbToJenaMappings(final DbToJenaMapping[] dbToJenaMappings) {
+        this.dbToJenaMappings = dbToJenaMappings;
+    }
+    // </editor-fold>
+
+    static class DbToJenaMapping {
+        String fieldName;
+        QName rdfPropertyName;
+        QName rdfType;
     }
 }

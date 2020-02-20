@@ -44,6 +44,10 @@ import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 
+import java.util.Arrays;
+
+import static com.evolvedbinary.pdi.Util.emptyIfNull;
+
 public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInterface {
 
     private static Class<?> PKG = JenaModelStepMeta.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
@@ -73,7 +77,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
     private Button wCheckbox1;
     private Button wCheckbox2;
     //private Table wTable;
-    private TableView wTableView;
+    private TableView wMappingsTableView;
     private Button wTableButton;
     private Button wCancel;
     private Button wAction;
@@ -193,43 +197,34 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 .result();
         wTargetTextField.setLayoutData(fdTransformation);
 
-        //target field name label/field
+        wRemoveSelectedCheckbox = new Button(group, SWT.CHECK);
+        props.setLook(wRemoveSelectedCheckbox);
+        wRemoveSelectedCheckbox.setOrientation(SWT.RIGHT_TO_LEFT);
+        wRemoveSelectedCheckbox.setText(BaseMessages.getString(PKG, "JenaModelStepDialog.CheckboxRemoveSelected"));
+        wRemoveSelectedCheckbox.setBackground(display.getSystemColor(SWT.COLOR_TRANSPARENT));
+        FormData fdTransformation2 = new FormDataBuilder().left()
+                .top(wTargetTextField, LABEL_SPACING)
+                .width(LARGE_FIELD)
+                .result();
+        wRemoveSelectedCheckbox.setLayoutData(fdTransformation2);
+
+        //resource rdf:type label/field
         wResourceTypeLabel = new Label(group, SWT.LEFT);
         props.setLook(wResourceTypeLabel);
         wResourceTypeLabel.setText(BaseMessages.getString(PKG, "JenaModelStepDialog.TextFieldResourceType"));
-        FormData fd2Transformation = new FormDataBuilder().left()
-                .top()
+        FormData fdlTransformation3 = new FormDataBuilder().left()
+                //.top(wTargetTextField, ELEMENT_SPACING)
+                .top(wRemoveSelectedCheckbox, ELEMENT_SPACING)
                 .result();
-        wResourceTypeLabel.setLayoutData(fd2Transformation);
+        wResourceTypeLabel.setLayoutData(fdlTransformation3);
 
         wResourceTypeTextField = new TextVar(transMeta, group, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
         props.setLook(wResourceTypeTextField);
-        FormData fd3Transformation = new FormDataBuilder().left()
+        FormData fdTransformation3 = new FormDataBuilder().left()
                 .top(wResourceTypeLabel, LABEL_SPACING)
                 .width(LARGE_FIELD)
                 .result();
-        wResourceTypeTextField.setLayoutData(fd3Transformation);
-
-
-        //remove selected fields? checkbox
-//        wRemoveLabel = new Label(group, SWT.LEFT);
-//        props.setLook(wRemoveLabel);
-//        wRemoveLabel.setText(BaseMessages.getString(PKG, "hello123"));
-//        FormData fdRemoveLabel = new FormDataBuilder().left()
-//                .top()
-//                .result();
-//        wRemoveLabel.setLayoutData(fdRemoveLabel);
-//
-//        wRemoveSelectedCheckbox = new Button(group, SWT.CHECK);
-//        props.setLook(wRemoveSelectedCheckbox);
-//        wRemoveSelectedCheckbox.setText(BaseMessages.getString(PKG, "JenaModelStepDialog.CheckboxRemoveSelected"));
-//        wRemoveSelectedCheckbox.setBackground(display.getSystemColor(SWT.COLOR_TRANSPARENT));
-//        FormData fdTransformation2 = new FormDataBuilder().left()
-//                .top(wRemoveLabel, LABEL_SPACING)
-//                .width(LARGE_FIELD)
-//                .result();
-//        wRemoveSelectedCheckbox.setLayoutData(fdTransformation2);
-
+        wResourceTypeTextField.setLayoutData(fdTransformation3);
 
         //Tabs
         CTabFolder wTabFolder = new CTabFolder(contentComposite, SWT.BORDER);
@@ -249,7 +244,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
 //        wTab1.setControl(wTab1Contents);
 
         CTabItem wTab2 = new CTabItem(wTabFolder, SWT.NONE);
-        wTab2.setText(BaseMessages.getString(PKG, "JenaModelStepDialog.Tab2"));
+        wTab2.setText(BaseMessages.getString(PKG, "JenaModelStepDialog.TabMappings"));
         Composite wTab2Contents = new Composite(wTabFolder, SWT.NONE);
         props.setLook(wTab2Contents);
         FormLayout tab2Layout = new FormLayout();
@@ -305,7 +300,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         wTableButton.setLayoutData(fdTableButton);
 
 
-        ColumnInfo[] ciKeys = new ColumnInfo[] {
+        ColumnInfo[] mappingsColumns = new ColumnInfo[] {
                 new ColumnInfo(
                         BaseMessages.getString(PKG, "JenaModelStepDialog.Fieldname"),
                         ColumnInfo.COLUMN_TYPE_TEXT,
@@ -319,18 +314,18 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 new ColumnInfo(
                         BaseMessages.getString(PKG, "JenaModelStepDialog.RdfPropertyType"),
                         ColumnInfo.COLUMN_TYPE_CCOMBO,
-                        false
+                        Rdf11.DATA_TYPES  // combo-box options
                 ),
         };
 
-        wTableView = new TableView(
-                        transMeta, wTab2Contents, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, ciKeys,
+        wMappingsTableView = new TableView(
+                        transMeta, wTab2Contents, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, mappingsColumns,
                         10, lsMod, props );
         FormData fdTable = new FormDataBuilder().fullWidth()
                 .top()
                 .bottom(wTableButton, -ELEMENT_SPACING)
                 .result();
-        wTableView.setLayoutData(fdTable);
+        wMappingsTableView.setLayoutData(fdTable);
         //wTableView.setItemCount(5);
 
 
@@ -417,7 +412,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
           public void handleEvent(Event e) {
               //getFieldsFromPrevious(transMeta, meta, wTable, 0, new int[]{1}, new int[]{2}, 3, 4, null);
 
-              getFieldsFromPrevious(transMeta, stepMeta, wTableView,
+              getFieldsFromPrevious(transMeta, stepMeta, wMappingsTableView,
               1,
               new int[]{1},
               new int[]{},
@@ -456,6 +451,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
 
         //Show shell
         setSize();
+        getData(meta);
         meta.setChanged(changed);
         shell.open();
         while (!shell.isDisposed()) {
@@ -464,6 +460,22 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             }
         }
         return stepname;
+    }
+
+    private void getData(final JenaModelStepMeta meta) {
+        final String targetFieldName = meta.getTargetFieldName();
+        if (targetFieldName != null) {
+            wTargetTextField.setText(targetFieldName);
+        }
+
+        wRemoveSelectedCheckbox.setSelection(meta.isRemoveSelectedFields());
+
+        final String resourceType = meta.getResourceType();
+        if (resourceType != null) {
+            wResourceTypeTextField.setText(resourceType);
+        }
+
+        //TODO(AR) mappings
     }
 
     private Image getImage() {
@@ -484,11 +496,35 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
     private void ok() {
 
         // START save data
-        final JenaModelStepData stepData = (JenaModelStepData)meta.getStepData();
-        stepData.setTargetFieldName(wTargetTextField.getText());
-        stepData.setResourceType(wResourceTypeTextField.getText());
+        meta.setTargetFieldName(wTargetTextField.getText());
+        meta.setRemoveSelectedFields(wRemoveSelectedCheckbox.getSelection());
+        meta.setResourceType(wResourceTypeTextField.getText());
 
+        final int len = wMappingsTableView.getItemCount();
+        JenaModelStepMeta.DbToJenaMapping mappings[] = new JenaModelStepMeta.DbToJenaMapping[len];
+        int mappingsCount = 0;
+        for (int i = 0; i < len; i++) {
+            final String fieldName = wMappingsTableView.getItem(i, 1);
+            if (fieldName == null || fieldName.isEmpty()) {
+                continue;
+            }
+
+            final JenaModelStepMeta.DbToJenaMapping mapping = new JenaModelStepMeta.DbToJenaMapping();
+            mapping.fieldName = fieldName;
+            mapping.rdfPropertyName = wMappingsTableView.getItem(i, 2);
+            mapping.rdfType = emptyIfNull(wMappingsTableView.getItem(i, 3));
+            mappings[mappingsCount++] = mapping;
+        }
+
+        if (mappingsCount < len) {
+            mappings = Arrays.copyOf(mappings, mappingsCount);
+        }
+
+        meta.setDbToJenaMappings(mappings);
         // END save data
+
+        // NOTIFY CHANGE
+        meta.setChanged(true);
 
 
         stepname = wStepNameField.getText();
