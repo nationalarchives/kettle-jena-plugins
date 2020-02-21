@@ -144,6 +144,8 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                 //TODO(AR) need to do better data conversion
                 final String strValue = value.toString();
 
+                //TODO(AR) add literal typing for non xsd:string e.g. model.createTypedLiteral
+
                 resource.addLiteral(property, strValue);
             }
         }

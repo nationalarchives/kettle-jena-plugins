@@ -46,6 +46,7 @@ import org.w3c.dom.Node;
 import javax.xml.namespace.QName;
 import java.util.*;
 
+import static com.evolvedbinary.pdi.Rdf11.*;
 import static com.evolvedbinary.pdi.Util.emptyIfNull;
 
 
@@ -95,7 +96,10 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         targetFieldName = "";
         removeSelectedFields = false;
         resourceType = "rdfs:Class";
-        namespaces = Collections.emptyMap();
+        namespaces = new LinkedHashMap<>();
+        namespaces.put(RDF_PREFIX, RDF_NAMESPACE_IRI);
+        namespaces.put(RDF_SCHEMA_PREFIX, RDF_SCHEMA_NAMESPACE_IRI);
+        namespaces.put(XSD_PREFIX, XSD_NAMESPACE_IRI);
         dbToJenaMappings = new DbToJenaMapping[0];
     }
 
@@ -103,7 +107,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     public Object clone() {
         final JenaModelStepMeta retval = (JenaModelStepMeta) super.clone();
         if (namespaces != null && !namespaces.isEmpty()) {
-            retval.namespaces = new HashMap<>(namespaces);
+            retval.namespaces = new LinkedHashMap<>(namespaces);
         } else {
             retval.namespaces = Collections.emptyMap();
         }
@@ -145,9 +149,11 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                         .append(addQNameValue(mapping.rdfPropertyName))
                     .append(XMLHandler.closeTag(ELEM_NAME_PROPERTY_NAME))
 
-                    .append(XMLHandler.openTag(ELEM_NAME_RDF_TYPE))
-                        .append(addQNameValue(mapping.rdfType))
-                    .append(XMLHandler.closeTag(ELEM_NAME_RDF_TYPE))
+                    .append(XMLHandler.openTag(ELEM_NAME_RDF_TYPE));
+                    if (mapping.rdfType != null) {
+                        builder.append(addQNameValue(mapping.rdfType));
+                    }
+                    builder.append(XMLHandler.closeTag(ELEM_NAME_RDF_TYPE))
 
                     .append(XMLHandler.closeTag(ELEM_NAME_DB_TO_JENA_MAPPING));
             }
@@ -190,7 +196,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                 if (namespaceNodes == null || namespaceNodes.isEmpty()) {
                     this.namespaces = Collections.emptyMap();
                 } else {
-                    this.namespaces = new HashMap<>();
+                    this.namespaces = new LinkedHashMap<>();
 
                     final int len = namespaceNodes.size();
                     for (int i = 0; i < len; i++) {
@@ -249,6 +255,10 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         final String prefix = XMLHandler.getTagValue(node, ELEM_NAME_PREFIX);
         final String uri = XMLHandler.getTagValue(node, ELEM_NAME_URI);
         final String localPart = XMLHandler.getTagValue(node, ELEM_NAME_LOCAL_PART);
+
+        if (localPart == null) {
+            return null;
+        }
 
         if (prefix != null) {
             return new QName(uri, localPart, prefix);

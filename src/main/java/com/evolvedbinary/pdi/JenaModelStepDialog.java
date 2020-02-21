@@ -45,8 +45,11 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-import static com.evolvedbinary.pdi.Util.emptyIfNull;
+import static com.evolvedbinary.pdi.Util.*;
 
 public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInterface {
 
@@ -77,6 +80,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
     private Button wCheckbox1;
     private Button wCheckbox2;
     //private Table wTable;
+    private TableView wNamespacesTableView;
     private TableView wMappingsTableView;
     private Button wTableButton;
     private Button wCancel;
@@ -226,6 +230,28 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 .result();
         wResourceTypeTextField.setLayoutData(fdTransformation3);
 
+        ColumnInfo[] namespacesColumns = new ColumnInfo[] {
+                new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaModelStepDialog.Namespace.Prefix"),
+                        ColumnInfo.COLUMN_TYPE_TEXT,
+                        false
+                ),
+                new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaModelStepDialog.Namespace.URI"),
+                        ColumnInfo.COLUMN_TYPE_TEXT,
+                        false
+                )
+        };
+
+        wNamespacesTableView = new TableView(
+                transMeta, group, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, namespacesColumns,
+                5, lsMod, props );
+        props.setLook(wNamespacesTableView);
+        FormData fdTable = new FormDataBuilder().fullWidth()
+                .top(wResourceTypeTextField, ELEMENT_SPACING)
+                .result();
+        wNamespacesTableView.setLayoutData(fdTable);
+
         //Tabs
         CTabFolder wTabFolder = new CTabFolder(contentComposite, SWT.BORDER);
         props.setLook(wTabFolder, Props.WIDGET_STYLE_TAB);
@@ -321,11 +347,11 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         wMappingsTableView = new TableView(
                         transMeta, wTab2Contents, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, mappingsColumns,
                         10, lsMod, props );
-        FormData fdTable = new FormDataBuilder().fullWidth()
+        FormData fdTableMappings = new FormDataBuilder().fullWidth()
                 .top()
                 .bottom(wTableButton, -ELEMENT_SPACING)
                 .result();
-        wMappingsTableView.setLayoutData(fdTable);
+        wMappingsTableView.setLayoutData(fdTableMappings);
         //wTableView.setItemCount(5);
 
 
@@ -475,7 +501,24 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             wResourceTypeTextField.setText(resourceType);
         }
 
-        //TODO(AR) mappings
+        if (meta.getNamespaces() != null) {
+            wNamespacesTableView.getTable().removeAll();
+            for (final Map.Entry<String, String> namespace : meta.getNamespaces().entrySet()) {
+                wNamespacesTableView.add(new String[]{namespace.getKey(), namespace.getValue()});
+            }
+        }
+
+        final JenaModelStepMeta.DbToJenaMapping[] dbToJenaMappings = meta.getDbToJenaMappings();
+        if (dbToJenaMappings != null) {
+            wMappingsTableView.getTable().removeAll();
+            for (final JenaModelStepMeta.DbToJenaMapping dbToJenaMapping : dbToJenaMappings) {
+                wMappingsTableView.add(new String[] {
+                        dbToJenaMapping.fieldName,
+                        asPrefixString(dbToJenaMapping.rdfPropertyName),
+                        asPrefixString(dbToJenaMapping.rdfType)
+                });
+            }
+        }
     }
 
     private Image getImage() {
@@ -500,10 +543,21 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         meta.setRemoveSelectedFields(wRemoveSelectedCheckbox.getSelection());
         meta.setResourceType(wResourceTypeTextField.getText());
 
-        final int len = wMappingsTableView.getItemCount();
-        JenaModelStepMeta.DbToJenaMapping mappings[] = new JenaModelStepMeta.DbToJenaMapping[len];
+        final Map<String, String> namespaces = new LinkedHashMap<>();
+        final int namespacesLen = wNamespacesTableView.getItemCount();
+        for (int i = 0; i < namespacesLen; i++) {
+            final String prefix = wNamespacesTableView.getItem(i, 1);
+            final String uri = wNamespacesTableView.getItem(i, 2);
+            if (prefix != null && uri != null) {
+                namespaces.put(prefix, uri);
+            }
+        }
+        meta.setNamespaces(namespaces);
+
+        final int mappingsLen = wMappingsTableView.getItemCount();
+        JenaModelStepMeta.DbToJenaMapping mappings[] = new JenaModelStepMeta.DbToJenaMapping[mappingsLen];
         int mappingsCount = 0;
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i < mappingsLen; i++) {
             final String fieldName = wMappingsTableView.getItem(i, 1);
             if (fieldName == null || fieldName.isEmpty()) {
                 continue;
@@ -511,12 +565,14 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
 
             final JenaModelStepMeta.DbToJenaMapping mapping = new JenaModelStepMeta.DbToJenaMapping();
             mapping.fieldName = fieldName;
-            mapping.rdfPropertyName = wMappingsTableView.getItem(i, 2);
-            mapping.rdfType = emptyIfNull(wMappingsTableView.getItem(i, 3));
+            final String propertyName = wMappingsTableView.getItem(i, 2);
+            mapping.rdfPropertyName = parseQName(namespaces, propertyName);
+            final String rdfType = nullIfEmpty(wMappingsTableView.getItem(i, 3));
+            mapping.rdfType = parseQName(namespaces, rdfType);
             mappings[mappingsCount++] = mapping;
         }
 
-        if (mappingsCount < len) {
+        if (mappingsCount < mappingsLen) {
             mappings = Arrays.copyOf(mappings, mappingsCount);
         }
 
