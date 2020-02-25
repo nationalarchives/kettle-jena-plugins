@@ -117,10 +117,14 @@ public class JenaModelStep extends BaseStep implements StepInterface {
     }
 
     private Model createModel(final JenaModelStepMeta meta, final Object[] r, final RowMetaInterface inputRowMeta) {
-        final String resourceUri = "http://catalogue/thing1"; // TODO(AR) adjust this from the db
+        final String resourceUriFieldName = meta.getResourceUriField();
+        final int idxResourceUriField = inputRowMeta.indexOfValue(resourceUriFieldName);
+        final Object resourceUriFieldValue =  r[idxResourceUriField];
+        //TODO(AR) need to do better data conversion
+        final String strResourceUriFieldValue = resourceUriFieldValue.toString();
 
         final Model model = ModelFactory.createDefaultModel();
-        final Resource resource = model.createResource(resourceUri);
+        final Resource resource = model.createResource(strResourceUriFieldValue);
         resource.addProperty(RDF.type, meta.getResourceType());
 
         if (meta.getDbToJenaMappings() != null) {
@@ -139,14 +143,15 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                     }
                 }
 
-                final int index = inputRowMeta.indexOfValue(mapping.fieldName);
-                final Object value =  r[index];
+                final String fieldName = mapping.fieldName;
+                final int idxField = inputRowMeta.indexOfValue(fieldName);
+                final Object fieldValue =  r[idxField];
                 //TODO(AR) need to do better data conversion
-                final String strValue = value.toString();
+                final String strFieldValue = fieldValue.toString();
 
                 //TODO(AR) add literal typing for non xsd:string e.g. model.createTypedLiteral
 
-                resource.addLiteral(property, strValue);
+                resource.addLiteral(property, strFieldValue);
             }
         }
 

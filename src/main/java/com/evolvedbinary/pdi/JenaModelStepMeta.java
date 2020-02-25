@@ -63,6 +63,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     private static final String ELEM_NAME_TARGET_FIELD_NAME = "targetFieldName";
     private static final String ELEM_NAME_REMOVE_SELECTED_FIELDS = "removeSelectedFields";
     private static final String ELEM_NAME_RESOURCE_TYPE = "resourceType";
+    private static final String ELEM_NAME_RESOURCE_URI = "resourceUri";
     private static final String ELEM_NAME_NAMESPACES = "namespaces";
     private static final String ELEM_NAME_NAMESPACE = "namespace";
     private static final String ELEM_NAME_PREFIX = "prefix";
@@ -78,7 +79,9 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     // <editor-fold desc="settings">
     private String targetFieldName;
     private boolean removeSelectedFields;
-    private String resourceType;
+    private String resourceType; // TODO(AR) store as QName
+    private String resourceUriField;
+
     /**
      * Namespace mapping from prefix->uri
      */
@@ -96,6 +99,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         targetFieldName = "";
         removeSelectedFields = false;
         resourceType = "rdfs:Class";
+        resourceUriField = "";
         namespaces = new LinkedHashMap<>();
         namespaces.put(RDF_PREFIX, RDF_NAMESPACE_IRI);
         namespaces.put(RDF_SCHEMA_PREFIX, RDF_SCHEMA_NAMESPACE_IRI);
@@ -125,7 +129,10 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         builder
             .append(XMLHandler.addTagValue(ELEM_NAME_TARGET_FIELD_NAME, targetFieldName))
             .append(XMLHandler.addTagValue(ELEM_NAME_REMOVE_SELECTED_FIELDS, Boolean.toString(removeSelectedFields)))
-            .append(XMLHandler.addTagValue(ELEM_NAME_RESOURCE_TYPE, resourceType));
+            .append(XMLHandler.addTagValue(ELEM_NAME_RESOURCE_TYPE, resourceType))
+            .append(XMLHandler.openTag(ELEM_NAME_RESOURCE_URI))
+                .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, resourceUriField))
+            .append(XMLHandler.closeTag(ELEM_NAME_RESOURCE_URI));
 
         builder.append(XMLHandler.openTag(ELEM_NAME_NAMESPACES));
         for (final Map.Entry<String, String> pn : namespaces.entrySet()) {
@@ -187,6 +194,14 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
 
             final String xResourceType = XMLHandler.getTagValue(stepnode, ELEM_NAME_RESOURCE_TYPE);
             this.resourceType = emptyIfNull(xResourceType);
+
+            final Node resourceUriNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_RESOURCE_URI);
+            if (resourceUriNode == null) {
+                this.resourceUriField = "";
+            } else {
+                final String xResourceUriField = XMLHandler.getTagValue(resourceUriNode, ELEM_NAME_FIELD_NAME);
+                this.resourceUriField = xResourceUriField;
+            }
 
             final Node namespacesNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_NAMESPACES);
             if (namespacesNode == null) {
@@ -291,6 +306,9 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     @Override
     public void getFields(final RowMetaInterface rowMeta, final String origin, final RowMetaInterface[] info, final StepMeta nextStep,
                           final VariableSpace space, final Repository repository, final IMetaStore metaStore) throws KettleStepException {
+
+        //TODO(AR) we also need the database fields here?
+
         try {
             // add the target field to the output rows
             if (targetFieldName != null && !targetFieldName.isEmpty()) {
@@ -385,6 +403,14 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
 
     public void setResourceType(final String resourceType) {
         this.resourceType = resourceType;
+    }
+
+    public String getResourceUriField() {
+        return resourceUriField;
+    }
+
+    public void setResourceUriField(final String resourceUriField) {
+        this.resourceUriField = resourceUriField;
     }
 
     public Map<String, String> getNamespaces() {
