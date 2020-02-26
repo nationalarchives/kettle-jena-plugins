@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.evolvedbinary.pdi.step.jena.model;
+package uk.gov.nationalarchives.pdi.step.jena.model;
 
-import com.evolvedbinary.pdi.step.jena.Rdf11;
-import com.evolvedbinary.pdi.step.jena.Util;
+import uk.gov.nationalarchives.pdi.step.jena.Rdf11;
+import uk.gov.nationalarchives.pdi.step.jena.Util;
 import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
@@ -395,7 +395,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
 
     @Override
     public String getDialogClassName() {
-        return "com.evolvedbinary.pdi.step.jena.model.JenaModelStepDialog";
+        return "uk.gov.nationalarchives.pdi.step.jena.model.JenaModelStepDialog";
     }
 
 

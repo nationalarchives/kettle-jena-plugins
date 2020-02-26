@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.evolvedbinary.pdi.step.jena.model;
+package uk.gov.nationalarchives.pdi.step.jena.model;
 
-import com.evolvedbinary.pdi.step.jena.Rdf11;
-import com.evolvedbinary.pdi.step.jena.Util;
+import uk.gov.nationalarchives.pdi.step.jena.Rdf11;
+import uk.gov.nationalarchives.pdi.step.jena.Util;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;

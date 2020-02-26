@@ -1,4 +1,4 @@
-package com.evolvedbinary.pdi.step.jena;
+package uk.gov.nationalarchives.pdi.step.jena;
 
 import org.springframework.security.access.method.P;
 

@@ -16,19 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.evolvedbinary.pdi.step.jena.serializer;
+package uk.gov.nationalarchives.pdi.step.jena.serializer;
 
-import com.evolvedbinary.pdi.step.jena.Rdf11;
-import com.evolvedbinary.pdi.step.jena.Util;
+import uk.gov.nationalarchives.pdi.step.jena.Rdf11;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.*;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.ValueMeta;
-import org.pentaho.di.core.row.ValueMetaInterface;
-import org.pentaho.di.core.row.value.ValueMetaFactory;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
@@ -41,7 +37,6 @@ import org.pentaho.di.trans.step.*;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
-import javax.xml.namespace.QName;
 import java.util.*;
 
 
@@ -278,7 +273,7 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
 
     @Override
     public String getDialogClassName() {
-        return "com.evolvedbinary.pdi.step.jena.serializer.JenaSerializerStepDialog";
+        return "uk.gov.nationalarchives.pdi.step.jena.serializer.JenaSerializerStepDialog";
     }
 
 

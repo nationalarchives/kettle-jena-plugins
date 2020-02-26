@@ -1,6 +1,6 @@
-package com.evolvedbinary.pdi.step.jena.serializer;
+package uk.gov.nationalarchives.pdi.step.jena.serializer;
 
-import com.evolvedbinary.pdi.step.jena.Rdf11;
+import uk.gov.nationalarchives.pdi.step.jena.Rdf11;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.*;
@@ -23,7 +23,7 @@ import org.pentaho.di.ui.core.widget.ComboVar;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 
-import static com.evolvedbinary.pdi.step.jena.serializer.JenaSerializerStepMeta.DEFAULT_FILENAME;
+import static uk.gov.nationalarchives.pdi.step.jena.serializer.JenaSerializerStepMeta.DEFAULT_FILENAME;
 
 public class JenaSerializerStepDialog extends BaseStepDialog implements StepDialogInterface {
 

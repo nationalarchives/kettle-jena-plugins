@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.evolvedbinary.pdi.step.jena.model;
+package uk.gov.nationalarchives.pdi.step.jena.model;
 
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;

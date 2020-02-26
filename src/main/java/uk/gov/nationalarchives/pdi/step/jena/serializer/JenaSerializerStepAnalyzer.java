@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.evolvedbinary.pdi.step.jena.model;
+package uk.gov.nationalarchives.pdi.step.jena.serializer;
 
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.metaverse.api.IMetaverseNode;
@@ -27,16 +27,16 @@ import org.pentaho.metaverse.api.analyzer.kettle.step.StepAnalyzer;
 import java.util.HashSet;
 import java.util.Set;
 
-public class JenaModelStepAnalyzer extends StepAnalyzer<JenaModelStepMeta> {
+public class JenaSerializerStepAnalyzer extends StepAnalyzer<JenaSerializerStepMeta> {
 
   @Override
-    protected Set<StepField> getUsedFields(final JenaModelStepMeta meta) {
+    protected Set<StepField> getUsedFields(final JenaSerializerStepMeta meta) {
         // no incoming fields are used by the Dummy step
         return null;
     }
 
     @Override
-    protected void customAnalyze(final JenaModelStepMeta meta, final IMetaverseNode rootNode) throws MetaverseAnalyzerException {
+    protected void customAnalyze(final JenaSerializerStepMeta meta, final IMetaverseNode rootNode) throws MetaverseAnalyzerException {
         // add any custom properties or relationships here
         rootNode.setProperty("do_nothing", true);
     }
@@ -44,7 +44,7 @@ public class JenaModelStepAnalyzer extends StepAnalyzer<JenaModelStepMeta> {
     @Override
     public Set<Class<? extends BaseStepMeta>> getSupportedSteps() {
         final Set<Class<? extends BaseStepMeta>> supportedSteps = new HashSet<>();
-        supportedSteps.add(JenaModelStepMeta.class);
+        supportedSteps.add(JenaSerializerStepMeta.class);
         return supportedSteps;
     }
 }

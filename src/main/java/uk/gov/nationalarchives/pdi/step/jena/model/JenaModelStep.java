@@ -16,12 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.evolvedbinary.pdi.step.jena.model;
+package uk.gov.nationalarchives.pdi.step.jena.model;
 
 import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.rdf.model.*;
-import org.apache.jena.vocabulary.DC;
 import org.apache.jena.vocabulary.RDF;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;

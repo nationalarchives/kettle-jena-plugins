@@ -1,7 +1,6 @@
-package com.evolvedbinary.pdi.step.jena.serializer;
+package uk.gov.nationalarchives.pdi.step.jena.serializer;
 
-import com.evolvedbinary.pdi.step.jena.Rdf11;
-import com.evolvedbinary.pdi.step.jena.model.JenaModelStepMeta;
+import uk.gov.nationalarchives.pdi.step.jena.Rdf11;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.RDFWriter;
 import org.apache.jena.rdf.model.RDFWriterF;
@@ -13,7 +12,6 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -25,7 +23,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-import static com.evolvedbinary.pdi.step.jena.serializer.JenaSerializerStepMeta.DEFAULT_FILENAME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JenaSerializerStep extends BaseStep implements StepInterface {
@@ -121,13 +118,13 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
     private void serializeModel(final JenaSerializerStepMeta meta, final JenaSerializerStepData data) throws IOException {
         final Model model = data.getModel();
 
-        String filename = DEFAULT_FILENAME;
+        String filename = JenaSerializerStepMeta.DEFAULT_FILENAME;
 
         final JenaSerializerStepMeta.FileDetail fileDetail = meta.getFileDetail();
         if (fileDetail != null) {
             filename = fileDetail.filename;
             if (filename == null || filename.isEmpty()) {
-                filename = DEFAULT_FILENAME;
+                filename = JenaSerializerStepMeta.DEFAULT_FILENAME;
             }
 
             String additional = "";
