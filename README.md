@@ -1,5 +1,9 @@
 # Jena Plugins for Pentaho KETTLE
 
+[![Build Status](https://travis-ci.com/nationalarchives/kettle-jena-plugins.png?branch=master)](https://travis-ci.com/nationalarchives/kettle-jena-plugins)
+[![Java 8](https://img.shields.io/badge/java-8+-blue.svg)](https://adoptopenjdk.net/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 This project contains plugins for [Pentaho Data Integration](https://github.com/pentaho/pentaho-kettle) (or KETTLE as it is commonly known),
 that add functionality via [Apache Jena](https://jena.apache.org/) for producing RDF.
 
