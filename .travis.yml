@@ -10,7 +10,7 @@ matrix:
       env:
         - JAVA_HOME=$(/usr/libexec/java_home)
 
-    - os: windows
+#    - os: windows  ## Travis-CI does not yet support Java on Windows
 
 cache:
   directories:
