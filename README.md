@@ -9,10 +9,12 @@ that add functionality via [Apache Jena](https://jena.apache.org/) for producing
 
 The plugins provided are:
 1. Create Jena Model
-    This plugin can be used to create a Jena Model for each row sent to it. The plugin enables the mapping of database columns to RDF Literals or Resources.
+    
+    This transform plugin can be used to create a Jena Model for each row sent to it. The plugin enables the mapping of database columns to RDF Literals or Resources.
 
 2. Serialize Jena Model
-    Takes the output of the Jena Model plugin, and serializes it to an RDF file on disk. Supports Turtle, N3, N-Triples, and RDF/XML output formats.
+    
+    This output plugin takes the output of the Create Jena Model plugin, and serializes it to an RDF file on disk. Supports Turtle, N3, N-Triples, and RDF/XML output formats.
 
 This project was developed by [Evolved Binary](https://evolvedbinary.com) as part of Project OMEGA for the [National Archives](https://nationalarchives.gov.uk).
 
