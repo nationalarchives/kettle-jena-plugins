@@ -13,8 +13,8 @@
   <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>Jena Model Step</name>
-  <description>Constructs an Apache Jena Model</description>
+  <name>Kettle Jena Plugins</name>
+  <description>Apache Jena Plugins for Pentaho Data Integration (KETTLE) for producing RDF</description>
 
   <licenses>
     <license>

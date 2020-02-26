@@ -1,4 +1,4 @@
-package com.evolvedbinary.pdi;
+package com.evolvedbinary.pdi.step.jena;
 
 import javax.xml.XMLConstants;
 import java.util.Collections;
@@ -57,4 +57,13 @@ public interface Rdf11 {
                 "rdf:HTML",
                 "rdf:XMLLiteral"
     };
+
+    final String[] SERIALIZATION_FORMATS = new String[] {
+            "RDF/XML",
+            "RDF/XML-ABBREV",
+            "N-TRIPLE",
+            "TURTLE",
+            "N3"
+    };
+    final String DEFAULT_SERIALIZATION_FORMAT = "TURTLE";
 }

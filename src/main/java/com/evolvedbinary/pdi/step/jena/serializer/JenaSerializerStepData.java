@@ -16,15 +16,33 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.evolvedbinary.pdi;
+package com.evolvedbinary.pdi.step.jena.serializer;
 
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
 
-public class JenaModelStepData extends BaseStepData implements StepDataInterface {
+public class JenaSerializerStepData extends BaseStepData implements StepDataInterface {
 
-    public JenaModelStepData() {
+    private Model model;
+
+    public JenaSerializerStepData() {
         super();
+    }
+
+
+    public void init() {
+        this.model = ModelFactory.createDefaultModel();
+    }
+
+    public void dispose() {
+        this.model.close();
+        this.model = null;
+    }
+
+    public Model getModel() {
+        return model;
     }
 }

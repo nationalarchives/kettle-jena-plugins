@@ -16,8 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.evolvedbinary.pdi;
+package com.evolvedbinary.pdi.step.jena.model;
 
+import com.evolvedbinary.pdi.step.jena.Rdf11;
+import com.evolvedbinary.pdi.step.jena.Util;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
@@ -44,13 +46,10 @@ import org.pentaho.di.ui.core.widget.ComboVar;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
-import org.springframework.security.access.method.P;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import static com.evolvedbinary.pdi.Util.*;
 
 public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInterface {
 
@@ -77,18 +76,12 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
     private Label wResourceUriLabel;
     private ComboVar wResourceUriCombo;
     private Button wGetUriFieldButton;
-    private Label wRemoveLabel;
+    private Label wRemoveSelectedLabel;
     private Button wRemoveSelectedCheckbox;
-    private Button wRadioButton1;
-    private Button wRadioButton2;
-    private Button wCheckbox1;
-    private Button wCheckbox2;
-    //private Table wTable;
     private TableView wNamespacesTableView;
     private TableView wMappingsTableView;
     private Button wTableButton;
     private Button wCancel;
-    private Button wAction;
     private Button wOK;
     private ModifyListener lsMod;
     private Listener lsGetField;
@@ -98,7 +91,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
     private SelectionAdapter lsDef;
     private boolean changed;
 
-    public JenaModelStepDialog(Shell parent, Object in, TransMeta tr, String sname) {
+    public JenaModelStepDialog(final Shell parent, final Object in, final TransMeta tr, final String sname) {
         super(parent, (BaseStepMeta) in, tr, sname);
         meta = (JenaModelStepMeta) in;
     }
@@ -193,27 +186,33 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         wTargetLabel = new Label(group, SWT.LEFT);
         props.setLook(wTargetLabel);
         wTargetLabel.setText(BaseMessages.getString(PKG, "JenaModelStepDialog.TextFieldTarget"));
-        FormData fdlTransformation = new FormDataBuilder().left()
+        FormData fdlTransformation0 = new FormDataBuilder().left()
                 .top()
                 .result();
-        wTargetLabel.setLayoutData(fdlTransformation);
+        wTargetLabel.setLayoutData(fdlTransformation0);
 
         wTargetTextField = new TextVar(transMeta, group, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
         props.setLook(wTargetTextField);
-        FormData fdTransformation = new FormDataBuilder().left()
+        FormData fdTransformation0 = new FormDataBuilder().left()
                 .top(wTargetLabel, LABEL_SPACING)
                 .width(LARGE_FIELD)
                 .result();
-        wTargetTextField.setLayoutData(fdTransformation);
+        wTargetTextField.setLayoutData(fdTransformation0);
+
+        // remove selected label/checkbox
+        wRemoveSelectedLabel = new Label(group, SWT.LEFT);
+        props.setLook(wRemoveSelectedLabel);
+        wRemoveSelectedLabel.setText(BaseMessages.getString(PKG, "JenaModelStepDialog.CheckboxRemoveSelected"));
+        FormData fdlTransformation2 = new FormDataBuilder().left()
+                .top(wTargetTextField, ELEMENT_SPACING)
+                .result();
+        wRemoveSelectedLabel.setLayoutData(fdlTransformation2);
 
         wRemoveSelectedCheckbox = new Button(group, SWT.CHECK);
         props.setLook(wRemoveSelectedCheckbox);
-        wRemoveSelectedCheckbox.setOrientation(SWT.RIGHT_TO_LEFT);
-        wRemoveSelectedCheckbox.setText(BaseMessages.getString(PKG, "JenaModelStepDialog.CheckboxRemoveSelected"));
         wRemoveSelectedCheckbox.setBackground(display.getSystemColor(SWT.COLOR_TRANSPARENT));
-        FormData fdTransformation2 = new FormDataBuilder().left()
-                .top(wTargetTextField, LABEL_SPACING)
-                .width(LARGE_FIELD)
+        FormData fdTransformation2 = new FormDataBuilder().left(wRemoveSelectedLabel, LABEL_SPACING)
+                .top(wTargetTextField, ELEMENT_SPACING)
                 .result();
         wRemoveSelectedCheckbox.setLayoutData(fdTransformation2);
 
@@ -355,6 +354,9 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 .result();
         wTableButton.setLayoutData(fdTableButton);
 
+        final String[] propertyTypes = new String[Rdf11.DATA_TYPES.length + 1];
+        propertyTypes[0] = "Resource";
+        System.arraycopy(Rdf11.DATA_TYPES, 0, propertyTypes, 1, Rdf11.DATA_TYPES.length);
 
         ColumnInfo[] mappingsColumns = new ColumnInfo[] {
                 new ColumnInfo(
@@ -370,7 +372,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 new ColumnInfo(
                         BaseMessages.getString(PKG, "JenaModelStepDialog.RdfPropertyType"),
                         ColumnInfo.COLUMN_TYPE_CCOMBO,
-                        Rdf11.DATA_TYPES  // combo-box options
+                        propertyTypes  // combo-box options
                 ),
         };
 
@@ -420,14 +422,6 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 .result();
         wCancel.setLayoutData(fdCancel);
 
-        wAction = new Button(shell, SWT.PUSH);
-        wAction.setText(BaseMessages.getString(PKG, "JenaModelStepDialog.ActionButton"));
-        int actionButtonWidth = wAction.computeSize(SWT.DEFAULT, SWT.DEFAULT).x;
-        FormData fdAction = new FormDataBuilder().right(50, actionButtonWidth / 2)
-                .bottom()
-                .result();
-        wAction.setLayoutData(fdAction);
-
         wOK = new Button(shell, SWT.PUSH);
         wOK.setText(BaseMessages.getString(PKG, "System.Button.OK"));
         FormData fdOk = new FormDataBuilder().right(wCancel, -LABEL_SPACING)
@@ -466,7 +460,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         //Listeners
         lsGetField = new Listener() {
             @Override
-            public void handleEvent(Event e) {
+            public void handleEvent(final Event e) {
                 getFieldsFromPrevious(wResourceUriCombo, transMeta, stepMeta);
                 wResourceUriCombo.select(0);
             }
@@ -474,7 +468,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
 
         lsGetFields = new Listener() {
         @Override
-          public void handleEvent(Event e) {
+          public void handleEvent(final Event e) {
               //getFieldsFromPrevious(transMeta, meta, wTable, 0, new int[]{1}, new int[]{2}, 3, 4, null);
 
               getFieldsFromPrevious(transMeta, stepMeta, wMappingsTableView,
@@ -488,13 +482,13 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         };
         lsCancel = new Listener() {
             @Override
-            public void handleEvent(Event e) {
+            public void handleEvent(final Event e) {
                 cancel();
             }
         };
         lsOK = new Listener() {
             @Override
-            public void handleEvent(Event e) {
+            public void handleEvent(final Event e) {
                 ok();
             }
         };
@@ -505,7 +499,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         wCancel.addListener(SWT.Selection, lsCancel);
 
         lsDef = new SelectionAdapter() {
-            public void widgetDefaultSelected(SelectionEvent e) {
+            public void widgetDefaultSelected(final SelectionEvent e) {
                 ok();
             }
         };
@@ -561,17 +555,17 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             for (final JenaModelStepMeta.DbToJenaMapping dbToJenaMapping : dbToJenaMappings) {
                 wMappingsTableView.add(new String[] {
                         dbToJenaMapping.fieldName,
-                        asPrefixString(dbToJenaMapping.rdfPropertyName),
-                        asPrefixString(dbToJenaMapping.rdfType)
+                        Util.asPrefixString(dbToJenaMapping.rdfPropertyName),
+                        Util.asPrefixString(dbToJenaMapping.rdfType)
                 });
             }
         }
     }
 
     private Image getImage() {
-        PluginInterface plugin =
+        final PluginInterface plugin =
                 PluginRegistry.getInstance().getPlugin(StepPluginType.class, stepMeta.getStepMetaInterface());
-        String id = plugin.getIds()[0];
+        final String id = plugin.getIds()[0];
         if (id != null) {
             return GUIResource.getInstance().getImagesSteps().get(id).getAsBitmapForSize(shell.getDisplay(),
                     ConstUI.ICON_SIZE, ConstUI.ICON_SIZE);
@@ -614,9 +608,9 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             final JenaModelStepMeta.DbToJenaMapping mapping = new JenaModelStepMeta.DbToJenaMapping();
             mapping.fieldName = fieldName;
             final String propertyName = wMappingsTableView.getItem(i, 2);
-            mapping.rdfPropertyName = parseQName(namespaces, propertyName);
-            final String rdfType = nullIfEmpty(wMappingsTableView.getItem(i, 3));
-            mapping.rdfType = parseQName(namespaces, rdfType);
+            mapping.rdfPropertyName = Util.parseQName(namespaces, propertyName);
+            final String rdfType = Util.nullIfEmpty(wMappingsTableView.getItem(i, 3));
+            mapping.rdfType = Util.parseQName(namespaces, rdfType);
             mappings[mappingsCount++] = mapping;
         }
 

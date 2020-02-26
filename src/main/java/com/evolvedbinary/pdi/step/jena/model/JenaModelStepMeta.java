@@ -16,8 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.evolvedbinary.pdi;
+package com.evolvedbinary.pdi.step.jena.model;
 
+import com.evolvedbinary.pdi.step.jena.Rdf11;
+import com.evolvedbinary.pdi.step.jena.Util;
 import org.pentaho.di.core.annotations.Step;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
@@ -46,14 +48,11 @@ import org.w3c.dom.Node;
 import javax.xml.namespace.QName;
 import java.util.*;
 
-import static com.evolvedbinary.pdi.Rdf11.*;
-import static com.evolvedbinary.pdi.Util.emptyIfNull;
-
 
 /**
  * Skeleton for PDI Step plugin.
  */
-@Step(id = "JenaModelStep", image = "JenaModelStep.svg", name = "Jena Model Step",
+@Step(id = "JenaModelStep", image = "JenaModelStep.svg", name = "Create Jena Model",
         description = "Constructs an Apache Jena Model", categoryDescription = "Transform")
 public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface {
 
@@ -86,6 +85,24 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
      * Namespace mapping from prefix->uri
      */
     private Map<String, String> namespaces;
+    static class DbToJenaMapping implements Cloneable {
+        String fieldName;
+        QName rdfPropertyName;
+        QName rdfType;
+
+        @Override
+        public Object clone() {
+            return copy();
+        }
+
+        public DbToJenaMapping copy() {
+            final DbToJenaMapping copy = new DbToJenaMapping();
+            copy.fieldName = fieldName;
+            copy.rdfPropertyName = Util.copy(rdfPropertyName);
+            copy.rdfType = Util.copy(rdfType);
+            return copy;
+        }
+    }
     private DbToJenaMapping[] dbToJenaMappings;
     // </editor-fold>
 
@@ -101,9 +118,9 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         resourceType = "rdfs:Class";
         resourceUriField = "";
         namespaces = new LinkedHashMap<>();
-        namespaces.put(RDF_PREFIX, RDF_NAMESPACE_IRI);
-        namespaces.put(RDF_SCHEMA_PREFIX, RDF_SCHEMA_NAMESPACE_IRI);
-        namespaces.put(XSD_PREFIX, XSD_NAMESPACE_IRI);
+        namespaces.put(Rdf11.RDF_PREFIX, Rdf11.RDF_NAMESPACE_IRI);
+        namespaces.put(Rdf11.RDF_SCHEMA_PREFIX, Rdf11.RDF_SCHEMA_NAMESPACE_IRI);
+        namespaces.put(Rdf11.XSD_PREFIX, Rdf11.XSD_NAMESPACE_IRI);
         dbToJenaMappings = new DbToJenaMapping[0];
     }
 
@@ -115,8 +132,11 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         } else {
             retval.namespaces = Collections.emptyMap();
         }
-        if (dbToJenaMappings != null) {
-            retval.dbToJenaMappings = Arrays.copyOf(dbToJenaMappings, dbToJenaMappings.length);
+        if (dbToJenaMappings != null && dbToJenaMappings.length > 0) {
+            retval.dbToJenaMappings = new DbToJenaMapping[dbToJenaMappings.length];
+            for (int i = 0; i < dbToJenaMappings.length; i++) {
+                retval.dbToJenaMappings[i] = dbToJenaMappings[i].copy();
+            }
         } else {
             retval.dbToJenaMappings = new DbToJenaMapping[0];
         }
@@ -193,7 +213,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
             this.removeSelectedFields = xRemoveSelectedFields != null && !xRemoveSelectedFields.isEmpty() ? Boolean.parseBoolean(xRemoveSelectedFields) : false;
 
             final String xResourceType = XMLHandler.getTagValue(stepnode, ELEM_NAME_RESOURCE_TYPE);
-            this.resourceType = emptyIfNull(xResourceType);
+            this.resourceType = Util.emptyIfNull(xResourceType);
 
             final Node resourceUriNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_RESOURCE_URI);
             if (resourceUriNode == null) {
@@ -375,7 +395,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
 
     @Override
     public String getDialogClassName() {
-        return "com.evolvedbinary.pdi.JenaModelStepDialog";
+        return "com.evolvedbinary.pdi.step.jena.model.JenaModelStepDialog";
     }
 
 
@@ -434,10 +454,4 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         this.dbToJenaMappings = dbToJenaMappings;
     }
     // </editor-fold>
-
-    static class DbToJenaMapping {
-        String fieldName;
-        QName rdfPropertyName;
-        QName rdfType;
-    }
 }

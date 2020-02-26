@@ -1,4 +1,4 @@
-package com.evolvedbinary.pdi;
+package com.evolvedbinary.pdi.step.jena;
 
 import org.springframework.security.access.method.P;
 
@@ -64,5 +64,12 @@ public class Util {
                 return new QName(qname);
             }
         }
+    }
+
+    public static QName copy(final QName qname) {
+        if (qname == null) {
+            return null;
+        }
+        return new QName(qname.getNamespaceURI(), qname.getLocalPart(), qname.getPrefix());
     }
 }
