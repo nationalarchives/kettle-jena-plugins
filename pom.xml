@@ -143,6 +143,9 @@
             </goals>
             <configuration>
               <failOnWarning>true</failOnWarning>
+              <ignoredUsedUndeclaredDependencies>
+                <ignoredUsedUndeclaredDependency>wsdl4j:wsdl4j-qname:jar:1.6.1</ignoredUsedUndeclaredDependency>
+              </ignoredUsedUndeclaredDependencies>
             </configuration>
           </execution>
         </executions>
