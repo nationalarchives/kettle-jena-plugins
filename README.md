@@ -52,6 +52,6 @@ You can simply copy the plugins directory `kettle-jena-plugins` (from building a
 ## Using the plugins
 We wrote a short blog about working with the plugins: https://blog.adamretter.org.uk/rdf-plugins-for-pentaho-kettle/
 
-We also created a small screencast demonstrating how to use the plugins in Pentaho Kettle:
+We also created a small screencast demonstrating how to use the plugins in Pentaho Kettle. It's hosted on YouTube, click the image below to visit the video:
 
 [![Watch the video](https://img.youtube.com/vi/2uqG_z2Qy9g/maxresdefault.jpg)](https://www.youtube.com/embed/2uqG_z2Qy9g)
