@@ -28,7 +28,7 @@
 
   <groupId>uk.gov.nationalarchives.pdi</groupId>
   <artifactId>kettle-jena-plugins</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
 
   <name>Kettle Jena Plugins</name>
