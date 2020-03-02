@@ -54,5 +54,4 @@ We wrote a short blog about working with the plugins: https://blog.adamretter.or
 
 We also created a small screencast demonstrating how to use the plugins in Pentaho Kettle:
 
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/2uqG_z2Qy9g" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![Watch the video](https://img.youtube.com/vi/2uqG_z2Qy9g/maxresdefault.jpg)](https://www.youtube.com/embed/2uqG_z2Qy9g)
