@@ -48,3 +48,9 @@ You can simply copy the plugins directory `kettle-jena-plugins` (from building a
 ```
   $ cp -r target/kettle-jena-plugins-1.0.0-SNAPSHOT-kettle-plugin/kettle-jena-plugins /opt/data-integration/plugins/
 ```
+
+## Using the plugins
+We wrote a short blog about working with the plugins: https://blog.adamretter.org.uk/rdf-plugins-for-pentaho-kettle/
+
+We also created a small screencast demonstrating how to use the plugins in Pentaho Kettle:
+<iframe width="560" height="315" src="https://www.youtube.com/embed/2uqG_z2Qy9g" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
