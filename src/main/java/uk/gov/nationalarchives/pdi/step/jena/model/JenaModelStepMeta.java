@@ -49,6 +49,7 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
+import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
 import java.util.*;
 
@@ -78,12 +79,15 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     private static final String ELEM_NAME_PROPERTY_NAME = "rdfPropertyName";
     private static final String ELEM_NAME_RDF_TYPE = "rdfType";
     private static final String ELEM_NAME_ACTION_IF_NULL = "actionIfNull";
+    private static final String ELEM_NAME_BLANK_NODE_MAPPINGS = "blankNodeMappings";
+    private static final String ELEM_NAME_BLANK_NODE_MAPPING = "blankNodeMapping";
+    private static final String ELEM_NAME_ID = "id";
     // </editor-fold>
 
     // <editor-fold desc="settings">
     private String targetFieldName;
     private boolean removeSelectedFields;
-    private String resourceType; // TODO(AR) store as QName
+    private String resourceType;
     private String resourceUriField;
 
     /**
@@ -117,7 +121,31 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
             return copy;
         }
     }
+
+    static class BlankNodeMapping implements Comparable<BlankNodeMapping>, Cloneable {
+        int id;
+        DbToJenaMapping[] dbToJenaMappings;
+
+        @Override
+        public int compareTo(final BlankNodeMapping other) {
+            return this.id - other.id;
+        }
+
+        @Override
+        public Object clone() {
+            return copy();
+        }
+
+        public BlankNodeMapping copy() {
+            final BlankNodeMapping copy = new BlankNodeMapping();
+            copy.id = id;
+            copy.dbToJenaMappings = JenaModelStepMeta.copy(dbToJenaMappings);
+            return copy;
+        }
+    }
+
     private DbToJenaMapping[] dbToJenaMappings;
+    private BlankNodeMapping[] blankNodeMappings;
     // </editor-fold>
 
 
@@ -135,7 +163,9 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         namespaces.put(Rdf11.RDF_PREFIX, Rdf11.RDF_NAMESPACE_IRI);
         namespaces.put(Rdf11.RDF_SCHEMA_PREFIX, Rdf11.RDF_SCHEMA_NAMESPACE_IRI);
         namespaces.put(Rdf11.XSD_PREFIX, Rdf11.XSD_NAMESPACE_IRI);
+        namespaces.put(Util.BLANK_NODE_NAME, Util.BLANK_NODE_INTERNAL_URI);
         dbToJenaMappings = new DbToJenaMapping[0];
+        blankNodeMappings = new BlankNodeMapping[0];
     }
 
     @Override
@@ -147,12 +177,14 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
             retval.namespaces = Collections.emptyMap();
         }
         if (dbToJenaMappings != null && dbToJenaMappings.length > 0) {
-            retval.dbToJenaMappings = new DbToJenaMapping[dbToJenaMappings.length];
-            for (int i = 0; i < dbToJenaMappings.length; i++) {
-                retval.dbToJenaMappings[i] = dbToJenaMappings[i].copy();
-            }
+            retval.dbToJenaMappings = JenaModelStepMeta.copy(dbToJenaMappings);
         } else {
             retval.dbToJenaMappings = new DbToJenaMapping[0];
+        }
+        if (blankNodeMappings != null && blankNodeMappings.length > 0) {
+            retval.blankNodeMappings = JenaModelStepMeta.copy(blankNodeMappings);
+        } else {
+            retval.blankNodeMappings = new BlankNodeMapping[0];
         }
         return retval;
     }
@@ -178,32 +210,45 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         }
         builder.append(XMLHandler.closeTag(ELEM_NAME_NAMESPACES));
 
+        getDbToJenaMappingsXML(dbToJenaMappings, builder);
+
+        builder.append(XMLHandler.openTag(ELEM_NAME_BLANK_NODE_MAPPINGS));
+        for (final BlankNodeMapping blankNodeMapping : blankNodeMappings) {
+            builder.append(XMLHandler.openTag(ELEM_NAME_BLANK_NODE_MAPPING));
+                builder.append(XMLHandler.addTagValue(ELEM_NAME_ID, blankNodeMapping.id));
+                getDbToJenaMappingsXML(blankNodeMapping.dbToJenaMappings, builder);
+            builder.append(XMLHandler.closeTag(ELEM_NAME_BLANK_NODE_MAPPING));
+        }
+        builder.append(XMLHandler.closeTag(ELEM_NAME_BLANK_NODE_MAPPINGS));
+
+        return builder.toString();
+    }
+
+    private void getDbToJenaMappingsXML(final DbToJenaMapping[] dbToJenaMappings, final StringBuilder builder) {
         builder.append(XMLHandler.openTag(ELEM_NAME_DB_TO_JENA_MAPPINGS));
-        for (final DbToJenaMapping mapping : dbToJenaMappings) {
-            if (mapping.fieldName != null && !mapping.fieldName.isEmpty()) {
+        for (final DbToJenaMapping dbToJenaMapping : dbToJenaMappings) {
+            if (dbToJenaMapping.fieldName != null && !dbToJenaMapping.fieldName.isEmpty()) {
                 builder
-                    .append(XMLHandler.openTag(ELEM_NAME_DB_TO_JENA_MAPPING))
+                        .append(XMLHandler.openTag(ELEM_NAME_DB_TO_JENA_MAPPING))
 
-                        .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, mapping.fieldName))
+                            .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, dbToJenaMapping.fieldName))
 
-                        .append(XMLHandler.openTag(ELEM_NAME_PROPERTY_NAME))
-                            .append(addQNameValue(mapping.rdfPropertyName))
-                        .append(XMLHandler.closeTag(ELEM_NAME_PROPERTY_NAME))
+                            .append(XMLHandler.openTag(ELEM_NAME_PROPERTY_NAME))
+                                .append(addQNameValue(dbToJenaMapping.rdfPropertyName))
+                            .append(XMLHandler.closeTag(ELEM_NAME_PROPERTY_NAME))
 
-                        .append(XMLHandler.openTag(ELEM_NAME_RDF_TYPE));
-                        if (mapping.rdfType != null) {
-                            builder.append(addQNameValue(mapping.rdfType));
-                        }
-                        builder.append(XMLHandler.closeTag(ELEM_NAME_RDF_TYPE))
+                            .append(XMLHandler.openTag(ELEM_NAME_RDF_TYPE));
+                                if (dbToJenaMapping.rdfType != null) {
+                                    builder.append(addQNameValue(dbToJenaMapping.rdfType));
+                                }
+                            builder.append(XMLHandler.closeTag(ELEM_NAME_RDF_TYPE))
 
-                        .append(XMLHandler.addTagValue(ELEM_NAME_ACTION_IF_NULL, mapping.actionIfNull.name()))
+                            .append(XMLHandler.addTagValue(ELEM_NAME_ACTION_IF_NULL, dbToJenaMapping.actionIfNull.name()))
 
-                    .append(XMLHandler.closeTag(ELEM_NAME_DB_TO_JENA_MAPPING));
+                        .append(XMLHandler.closeTag(ELEM_NAME_DB_TO_JENA_MAPPING));
             }
         }
         builder.append(XMLHandler.closeTag(ELEM_NAME_DB_TO_JENA_MAPPINGS));
-
-        return builder.toString();
     }
 
     private String addQNameValue(final QName qname) {
@@ -264,52 +309,92 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                 }
             }
 
-            final Node mappingsNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_DB_TO_JENA_MAPPINGS);
-            if (mappingsNode == null) {
-                this.dbToJenaMappings = new DbToJenaMapping[0];
+            this.dbToJenaMappings = loadDbToJenaMappingsXML(stepnode);
+
+            final Node blankNodeMappingsNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_BLANK_NODE_MAPPINGS);
+            if (blankNodeMappingsNode == null) {
+                this.blankNodeMappings = new BlankNodeMapping[0];
             } else {
-                final List<Node> mappingNodes = XMLHandler.getNodes(mappingsNode, ELEM_NAME_DB_TO_JENA_MAPPING);
-                if (mappingNodes == null || mappingNodes.isEmpty()) {
-                    this.dbToJenaMappings = new DbToJenaMapping[0];
+                final List<Node> blankNodeMappingNodes = XMLHandler.getNodes(blankNodeMappingsNode, ELEM_NAME_BLANK_NODE_MAPPING);
+                if (blankNodeMappingNodes == null || blankNodeMappingNodes.isEmpty()) {
+                    this.blankNodeMappings = new BlankNodeMapping[0];
                 } else {
-                    final int len = mappingNodes.size();
-                    this.dbToJenaMappings = new DbToJenaMapping[len];
+                    final int len = blankNodeMappingNodes.size();
+                    this.blankNodeMappings = new BlankNodeMapping[len];
                     int mappingsCount = 0;
                     for (int i = 0; i < len; i++) {
-                        final Node mappingNode = mappingNodes.get(i);
+                        final Node blankNodeMappingNode = blankNodeMappingNodes.get(i);
 
-                        final String fieldName = XMLHandler.getTagValue(mappingNode, ELEM_NAME_FIELD_NAME);
-                        if (fieldName == null || fieldName.isEmpty()) {
+                        final String fieldId = XMLHandler.getTagValue(blankNodeMappingNode, ELEM_NAME_ID);
+                        if (fieldId == null || fieldId.isEmpty()) {
                             continue;
                         }
 
-                        final DbToJenaMapping mapping = new DbToJenaMapping();
-                        mapping.fieldName = fieldName;
+                        final BlankNodeMapping blankNodeMapping = new BlankNodeMapping();
+                        blankNodeMapping.id = Integer.valueOf(fieldId);
+                        blankNodeMapping.dbToJenaMappings = loadDbToJenaMappingsXML(blankNodeMappingNode);
 
-                        final Node propertyNameNode = XMLHandler.getSubNode(mappingNode, ELEM_NAME_PROPERTY_NAME);
-                        mapping.rdfPropertyName = getQNameValue(propertyNameNode);
-
-                        final Node rdfTypeNode = XMLHandler.getSubNode(mappingNode, ELEM_NAME_RDF_TYPE);
-                        mapping.rdfType = getQNameValue(rdfTypeNode);
-
-
-                        final String actionIfNullName = XMLHandler.getTagValue(mappingNode, ELEM_NAME_ACTION_IF_NULL);
-                        if (actionIfNullName != null) {
-                            mapping.actionIfNull = ActionIfNull.valueOf(actionIfNullName);
-                        } else {
-                            // default for backwards-compatibility with previous versions of our plugin
-                            mapping.actionIfNull = ActionIfNull.WARN;
-                        }
-
-                        this.dbToJenaMappings[mappingsCount++] = mapping;
+                        this.blankNodeMappings[mappingsCount++] = blankNodeMapping;
                     }
 
                     if (mappingsCount < len) {
-                        this.dbToJenaMappings = Arrays.copyOf(this.dbToJenaMappings, mappingsCount);
+                        this.blankNodeMappings = Arrays.copyOf(this.blankNodeMappings, mappingsCount);
                     }
                 }
             }
+            Arrays.sort(this.blankNodeMappings);  // just-in-case the incoming XML is not ordered correctly
         }
+    }
+
+    private DbToJenaMapping[] loadDbToJenaMappingsXML(final Node parentNode) {
+        DbToJenaMapping[] dbToJenaMappings = null;
+
+        final Node dbToJenaMappingsNode = XMLHandler.getSubNode(parentNode, ELEM_NAME_DB_TO_JENA_MAPPINGS);
+        if (dbToJenaMappingsNode == null) {
+            dbToJenaMappings = new DbToJenaMapping[0];
+        } else {
+            final List<Node> dbToJenaMappingNodes = XMLHandler.getNodes(dbToJenaMappingsNode, ELEM_NAME_DB_TO_JENA_MAPPING);
+            if (dbToJenaMappingNodes == null || dbToJenaMappingNodes.isEmpty()) {
+                dbToJenaMappings = new DbToJenaMapping[0];
+            } else {
+                final int len = dbToJenaMappingNodes.size();
+                dbToJenaMappings = new DbToJenaMapping[len];
+                int mappingsCount = 0;
+                for (int i = 0; i < len; i++) {
+                    final Node dbToJenaMappingNode = dbToJenaMappingNodes.get(i);
+
+                    final String fieldName = XMLHandler.getTagValue(dbToJenaMappingNode, ELEM_NAME_FIELD_NAME);
+                    if (fieldName == null || fieldName.isEmpty()) {
+                        continue;
+                    }
+
+                    final DbToJenaMapping dbToJenaMapping = new DbToJenaMapping();
+                    dbToJenaMapping.fieldName = fieldName;
+
+                    final Node propertyNameNode = XMLHandler.getSubNode(dbToJenaMappingNode, ELEM_NAME_PROPERTY_NAME);
+                    dbToJenaMapping.rdfPropertyName = getQNameValue(propertyNameNode);
+
+                    final Node rdfTypeNode = XMLHandler.getSubNode(dbToJenaMappingNode, ELEM_NAME_RDF_TYPE);
+                    dbToJenaMapping.rdfType = getQNameValue(rdfTypeNode);
+
+                    final String actionIfNullName = XMLHandler.getTagValue(dbToJenaMappingNode, ELEM_NAME_ACTION_IF_NULL);
+                    if (actionIfNullName != null) {
+                        dbToJenaMapping.actionIfNull = ActionIfNull.valueOf(actionIfNullName);
+                    } else {
+                        // default for backwards-compatibility with previous versions of our plugin
+                        dbToJenaMapping.actionIfNull = ActionIfNull.WARN;
+                    }
+
+                    dbToJenaMappings[mappingsCount++] = dbToJenaMapping;
+                }
+
+                if (mappingsCount < len) {
+                    dbToJenaMappings = Arrays.copyOf(dbToJenaMappings, mappingsCount);
+                }
+            }
+        }
+
+        return dbToJenaMappings;
     }
 
     private QName getQNameValue(final Node node) {
@@ -479,5 +564,38 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     public void setDbToJenaMappings(final DbToJenaMapping[] dbToJenaMappings) {
         this.dbToJenaMappings = dbToJenaMappings;
     }
+
+    public BlankNodeMapping[] getBlankNodeMappings() {
+        return blankNodeMappings;
+    }
+
+    public void setBlankNodeMappings(final BlankNodeMapping[] blankNodeMappings) {
+        this.blankNodeMappings = blankNodeMappings;
+    }
+
     // </editor-fold>
+
+    private static @Nullable DbToJenaMapping[] copy(@Nullable final DbToJenaMapping[] dbToJenaMappings) {
+        if (dbToJenaMappings == null) {
+            return null;
+        }
+
+        final DbToJenaMapping[] copiedDbToJenaMappings = new DbToJenaMapping[dbToJenaMappings.length];
+        for (int i = 0; i < dbToJenaMappings.length; i++) {
+            copiedDbToJenaMappings[i] = dbToJenaMappings[i].copy();
+        }
+        return copiedDbToJenaMappings;
+    }
+
+    private static @Nullable BlankNodeMapping[] copy(@Nullable final BlankNodeMapping[] blankNodeMappings) {
+        if (blankNodeMappings == null) {
+            return null;
+        }
+
+        final BlankNodeMapping[] copiedBlankNodeMappings = new BlankNodeMapping[blankNodeMappings.length];
+        for (int i = 0; i < blankNodeMappings.length; i++) {
+            copiedBlankNodeMappings[i] = blankNodeMappings[i].copy();
+        }
+        return copiedBlankNodeMappings;
+    }
 }

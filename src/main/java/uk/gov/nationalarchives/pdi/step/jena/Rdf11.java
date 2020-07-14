@@ -36,6 +36,8 @@ public interface Rdf11 {
     final String XSD_PREFIX = "xsd";
     final String XSD_NAMESPACE_IRI = "http://www.w3.org/2001/XMLSchema#";
 
+    final String RESOURCE_DATA_TYPE = "Resource";
+
     final String[] DATA_TYPES = new String[] {
                 "xsd:string",
                 "xsd:boolean",

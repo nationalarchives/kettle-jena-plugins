@@ -22,12 +22,24 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena;
 
-import org.springframework.security.access.method.P;
+import org.pentaho.di.i18n.BaseMessages;
+import uk.gov.nationalarchives.pdi.step.jena.model.JenaModelStepMeta;
 
 import javax.xml.namespace.QName;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class Util {
+
+    public static final String BLANK_NODE_NAME =
+            BaseMessages.getString(JenaModelStepMeta.class, "JenaModelStepDialog.TabBNode");
+
+    public static final String BLANK_NODE_INTERNAL_URI = "tag:nationalarchives.gov.uk,2020-07-16:kettle-jena-plugins#bNode";
+
+    public static final Pattern BLANK_NODE_ID_PATTERN =
+            Pattern.compile(BLANK_NODE_NAME + ":([0-9]+)");
+
+    public static final String BLANK_NODE_FIELD_NAME = "<N/A: " + BLANK_NODE_NAME + ">";
 
     public static String nullIfEmpty(final String s) {
         if (s != null && !s.isEmpty()) {
