@@ -116,9 +116,6 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
                 data.getModel().add(model);
             }
 
-            //TODO(AR) this is an output step, we should probably not do this!
-            //putRow(outputRowMeta, r); // copy row to possible alternate rowset(s).
-
             if (checkFeedback(getLinesRead())) {
                 if (log.isBasic())
                     logBasic(BaseMessages.getString(PKG, "JenaSerializerStep.Log.LineNumber") + getLinesRead());
@@ -128,13 +125,18 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
         }
     }
 
-    private Model getModel(final JenaSerializerStepMeta meta, final Object[] r, final RowMetaInterface inputRowMeta) {
+    private Model getModel(final JenaSerializerStepMeta meta, final Object[] r, final RowMetaInterface inputRowMeta)
+            throws KettleException {
         final String jenaModelField = meta.getJenaModelField();
         final int idxJenaModelField = inputRowMeta.indexOfValue(jenaModelField);
         final Object jenaModelFieldValue =  r[idxJenaModelField];
-        //TODO(AR) need to do better data type checking before cast?
-        final Model jenaModel = (Model)jenaModelFieldValue;
-        return jenaModel;
+
+        if (jenaModelFieldValue instanceof Model) {
+            return (Model) jenaModelFieldValue;
+        } else {
+            throw new KettleException("Expected field " + jenaModelField + " to contain a Jena Model, but found "
+                    + jenaModelFieldValue.getClass());
+        }
     }
 
     private void serializeModel(final JenaSerializerStepMeta meta, final JenaSerializerStepData data) throws IOException {
@@ -212,9 +214,19 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
         final RDFWriterF factory = new RDFWriterFImpl();
         final RDFWriter rdfWriter = factory.getWriter(serializationFormat);
 
+        // start a transaction on the model
+        if (model.supportsTransactions()) {
+            model.begin();
+        }
+
         try (final Writer writer = new OutputStreamWriter(Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING), UTF_8)) {
             //model.write(writer, serializationFormat);
             rdfWriter.write(model, writer, "");
+        }
+
+        // finish the transaction on the model
+        if (model.supportsTransactions()) {
+            model.commit();
         }
 
         model.close();
