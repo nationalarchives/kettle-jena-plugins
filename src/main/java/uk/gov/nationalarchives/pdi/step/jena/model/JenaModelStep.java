@@ -92,7 +92,17 @@ public class JenaModelStep extends BaseStep implements StepInterface {
             //TODO(AR) seems we have to duplicate behaviour of JenaModelStepMeta getFields here but on `r` ???
             if (meta.getTargetFieldName() != null && !meta.getTargetFieldName().isEmpty()) {
                 // create Jena model
-                final Model model = createModel(meta, r, inputRowMeta);
+                Model model = null;
+                try {
+                    model = createModel(meta, r, inputRowMeta);
+                }  catch (final KettleException e) {
+                    // close jena models in previously processed rows
+                    for (int i = inputRowMeta.size() - 1; i >= 0; i--) {
+                        ((Model)r[i]).close();
+                    }
+                    // re-throw the exception
+                    throw e;
+                }
 
                 // first, add the new column (for the Jena Model)
                 r = RowDataUtil.resizeArray(r, inputRowMeta.size() + 1);
@@ -123,14 +133,25 @@ public class JenaModelStep extends BaseStep implements StepInterface {
         }
     }
 
-    private Model createModel(final JenaModelStepMeta meta, final Object[] r, final RowMetaInterface inputRowMeta) {
+    private Model createModel(final JenaModelStepMeta meta, final Object[] r, final RowMetaInterface inputRowMeta) throws KettleException {
         final String resourceUriFieldName = meta.getResourceUriField();
         final int idxResourceUriField = inputRowMeta.indexOfValue(resourceUriFieldName);
         final Object resourceUriFieldValue =  r[idxResourceUriField];
-        //TODO(AR) need to do better data conversion
-        final String strResourceUriFieldValue = resourceUriFieldValue.toString();
+
+        final String strResourceUriFieldValue;
+        if (resourceUriFieldValue instanceof String) {
+            strResourceUriFieldValue = (String) resourceUriFieldValue;
+        } else {
+            logBasic("Expecting java.lang.String when processing resourceUriFieldValue, but found {}. Will default to Object#toString()...");
+            strResourceUriFieldValue = resourceUriFieldValue.toString();
+        }
 
         final Model model = ModelFactory.createDefaultModel();
+
+        // start a transaction on the model
+        if (model.supportsTransactions()) {
+            model.begin();
+        }
 
         // add namespaces
         final Map<String, String> namespaces = meta.getNamespaces();
@@ -145,6 +166,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
         // add the resource properties
         if (meta.getDbToJenaMappings() != null) {
             for (final JenaModelStepMeta.DbToJenaMapping mapping : meta.getDbToJenaMappings()) {
+
                 final QName qname = mapping.rdfPropertyName;
                 Property property;
                 if (qname.getNamespaceURI() == null || qname.getNamespaceURI().isEmpty()) {
@@ -164,7 +186,18 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                 final Object fieldValue = r[idxField];
 
                 if (fieldValue == null) {
-                    logBasic("Could not write property: {0} for resource: {1}, row field is null!", property.toString(), strResourceUriFieldValue);
+                    if (mapping.actionIfNull == JenaModelStepMeta.ActionIfNull.IGNORE) {
+                        // no-op - just ignore it!
+                    } else if (mapping.actionIfNull == JenaModelStepMeta.ActionIfNull.WARN) {
+                        logBasic("Could not write property: {0} for resource: {1}, row field is null!", property.toString(), strResourceUriFieldValue);
+                    } else if (mapping.actionIfNull == JenaModelStepMeta.ActionIfNull.ERROR) {
+                        // abort the transaction on the model
+                        if (model.supportsTransactions()) {
+                            model.abort();
+                        }
+                        model.close();
+                        throw new KettleException("Could not write property: " + property.toString() + " for resource: " + strResourceUriFieldValue + ", row field is null!");
+                    }
                 } else {
                     //TODO(AR) need to do better data conversion
                     final String strFieldValue = fieldValue.toString();
@@ -189,6 +222,11 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                     }
                 }
             }
+        }
+
+        // commit the transaction
+        if (model.supportsTransactions()) {
+            model.commit();
         }
 
         return model;

@@ -77,6 +77,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     private static final String ELEM_NAME_FIELD_NAME = "fieldName";
     private static final String ELEM_NAME_PROPERTY_NAME = "rdfPropertyName";
     private static final String ELEM_NAME_RDF_TYPE = "rdfType";
+    private static final String ELEM_NAME_ACTION_IF_NULL = "actionIfNull";
     // </editor-fold>
 
     // <editor-fold desc="settings">
@@ -89,10 +90,18 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
      * Namespace mapping from prefix->uri
      */
     private Map<String, String> namespaces;
+
+    enum ActionIfNull {
+        IGNORE,
+        WARN,
+        ERROR
+    }
+
     static class DbToJenaMapping implements Cloneable {
         String fieldName;
         QName rdfPropertyName;
         QName rdfType;
+        ActionIfNull actionIfNull;
 
         @Override
         public Object clone() {
@@ -104,6 +113,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
             copy.fieldName = fieldName;
             copy.rdfPropertyName = Util.copy(rdfPropertyName);
             copy.rdfType = Util.copy(rdfType);
+            copy.actionIfNull = actionIfNull;
             return copy;
         }
     }
@@ -174,17 +184,19 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                 builder
                     .append(XMLHandler.openTag(ELEM_NAME_DB_TO_JENA_MAPPING))
 
-                    .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, mapping.fieldName))
+                        .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, mapping.fieldName))
 
-                    .append(XMLHandler.openTag(ELEM_NAME_PROPERTY_NAME))
-                        .append(addQNameValue(mapping.rdfPropertyName))
-                    .append(XMLHandler.closeTag(ELEM_NAME_PROPERTY_NAME))
+                        .append(XMLHandler.openTag(ELEM_NAME_PROPERTY_NAME))
+                            .append(addQNameValue(mapping.rdfPropertyName))
+                        .append(XMLHandler.closeTag(ELEM_NAME_PROPERTY_NAME))
 
-                    .append(XMLHandler.openTag(ELEM_NAME_RDF_TYPE));
-                    if (mapping.rdfType != null) {
-                        builder.append(addQNameValue(mapping.rdfType));
-                    }
-                    builder.append(XMLHandler.closeTag(ELEM_NAME_RDF_TYPE))
+                        .append(XMLHandler.openTag(ELEM_NAME_RDF_TYPE));
+                        if (mapping.rdfType != null) {
+                            builder.append(addQNameValue(mapping.rdfType));
+                        }
+                        builder.append(XMLHandler.closeTag(ELEM_NAME_RDF_TYPE))
+
+                        .append(XMLHandler.addTagValue(ELEM_NAME_ACTION_IF_NULL, mapping.actionIfNull.name()))
 
                     .append(XMLHandler.closeTag(ELEM_NAME_DB_TO_JENA_MAPPING));
             }
@@ -279,6 +291,16 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
 
                         final Node rdfTypeNode = XMLHandler.getSubNode(mappingNode, ELEM_NAME_RDF_TYPE);
                         mapping.rdfType = getQNameValue(rdfTypeNode);
+
+
+                        final String actionIfNullName = XMLHandler.getTagValue(mappingNode, ELEM_NAME_ACTION_IF_NULL);
+                        if (actionIfNullName != null) {
+                            mapping.actionIfNull = ActionIfNull.valueOf(actionIfNullName);
+                        } else {
+                            // default for backwards-compatibility with previous versions of our plugin
+                            mapping.actionIfNull = ActionIfNull.WARN;
+                        }
+
                         this.dbToJenaMappings[mappingsCount++] = mapping;
                     }
 

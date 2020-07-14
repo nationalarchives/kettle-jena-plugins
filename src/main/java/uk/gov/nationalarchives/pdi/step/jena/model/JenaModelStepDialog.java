@@ -362,6 +362,13 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         propertyTypes[0] = "Resource";
         System.arraycopy(Rdf11.DATA_TYPES, 0, propertyTypes, 1, Rdf11.DATA_TYPES.length);
 
+        final JenaModelStepMeta.ActionIfNull[] actionsIfNull = JenaModelStepMeta.ActionIfNull.values();
+        final int actionsIfNullLen = actionsIfNull.length;
+        final String[] actionIfNullNames = new String[actionsIfNullLen];
+        for (int i = 0; i < actionsIfNullLen; i++) {
+            actionIfNullNames[i] = actionsIfNull[i].name();
+        }
+
         ColumnInfo[] mappingsColumns = new ColumnInfo[] {
                 new ColumnInfo(
                         BaseMessages.getString(PKG, "JenaModelStepDialog.Fieldname"),
@@ -377,6 +384,11 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                         BaseMessages.getString(PKG, "JenaModelStepDialog.RdfPropertyType"),
                         ColumnInfo.COLUMN_TYPE_CCOMBO,
                         propertyTypes  // combo-box options
+                ),
+                new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaModelStepDialog.IfNull"),
+                        ColumnInfo.COLUMN_TYPE_CCOMBO,
+                        actionIfNullNames  // combo-box options
                 ),
         };
 
@@ -560,7 +572,8 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 wMappingsTableView.add(new String[] {
                         dbToJenaMapping.fieldName,
                         Util.asPrefixString(dbToJenaMapping.rdfPropertyName),
-                        Util.asPrefixString(dbToJenaMapping.rdfType)
+                        Util.asPrefixString(dbToJenaMapping.rdfType),
+                        dbToJenaMapping.actionIfNull.name()
                 });
             }
         }
@@ -615,6 +628,8 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             mapping.rdfPropertyName = Util.parseQName(namespaces, propertyName);
             final String rdfType = Util.nullIfEmpty(wMappingsTableView.getItem(i, 3));
             mapping.rdfType = Util.parseQName(namespaces, rdfType);
+            final String actionIfNullName = wMappingsTableView.getItem(i, 4);
+            mapping.actionIfNull = JenaModelStepMeta.ActionIfNull.valueOf(actionIfNullName);
             mappings[mappingsCount++] = mapping;
         }
 
