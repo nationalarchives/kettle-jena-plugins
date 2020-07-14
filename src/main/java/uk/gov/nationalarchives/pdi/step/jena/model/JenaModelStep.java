@@ -38,9 +38,12 @@ import org.pentaho.di.trans.step.StepInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
+import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
 import java.util.Arrays;
 import java.util.Map;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Step for Creating a Jena Model
@@ -199,16 +202,16 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                         throw new KettleException("Could not write property: " + property.toString() + " for resource: " + strResourceUriFieldValue + ", row field is null!");
                     }
                 } else {
-                    //TODO(AR) need to do better data conversion
-                    final String strFieldValue = fieldValue.toString();
 
                     if (mapping.rdfType == null) {
                         // non-typed literal
-                        final Literal literal = model.createLiteral(strFieldValue);
+                        final String rdfLiteralValue = (String) convertSqlValueToRdf(fieldValue, null);
+                        final Literal literal = model.createLiteral(rdfLiteralValue);
                         resource.addLiteral(property, literal);
 
                     } else if ("Resource".equals(mapping.rdfType.getLocalPart())) {
                         // resource
+                        final String strFieldValue = (String) convertSqlValueToRdf(fieldValue, null);
                         final String otherResourceUri = asUri(meta.getNamespaces(), strFieldValue);
                         final Resource otherResource = model.createResource(otherResourceUri);
                         resource.addProperty(property, otherResource);
@@ -217,7 +220,8 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                         // typed literal
                         final String typeURI = mapping.rdfType.getNamespaceURI() + mapping.rdfType.getLocalPart();
                         final RDFDatatype rdfDatatype = TypeMapper.getInstance().getSafeTypeByName(typeURI);
-                        final Literal literal = model.createTypedLiteral(strFieldValue, rdfDatatype);
+                        final String rdfLiteralValue = (String) convertSqlValueToRdf(fieldValue, rdfDatatype);
+                        final Literal literal = model.createTypedLiteral(rdfLiteralValue, rdfDatatype);
                         resource.addLiteral(property, literal);
                     }
                 }
@@ -230,6 +234,36 @@ public class JenaModelStep extends BaseStep implements StepInterface {
         }
 
         return model;
+    }
+
+    private Object convertSqlValueToRdf(final Object sqlValue, @Nullable final RDFDatatype rdfDatatype) {
+        if (rdfDatatype == null || rdfDatatype.getURI().equals("http://www.w3.org/2001/XMLSchema#string")) {
+            // to xsd:string
+            if (sqlValue instanceof String) {
+                return sqlValue;
+
+            } else if (sqlValue instanceof byte[]) {
+                return new String((byte[]) sqlValue, UTF_8);
+
+            } else {
+                // fallback
+                logBasic("convertSqlValueToRdfLiteralValue: required xsd:string but was given: {1}, unsure how to convert... Will default to Object#toString()!", sqlValue.getClass());
+                return sqlValue.toString();
+            }
+
+        } else if (rdfDatatype.getURI().equals("http://www.w3.org/2001/XMLSchema#dateTime")) {
+            // to xsd:dateTime
+            if (sqlValue instanceof String) {
+                return sqlValue;
+
+            } else if (sqlValue instanceof java.sql.Date || sqlValue instanceof java.sql.Timestamp || sqlValue instanceof java.util.Date) {
+                return (java.util.Date) sqlValue;
+            }
+        }
+
+        // fallback
+        logBasic("convertSqlValueToRdfLiteralValue: required {0} but was given: {1}, unsure how to convert... Will default to Object#toString()!", rdfDatatype.getURI(), sqlValue.getClass());
+        return sqlValue;
     }
 
     private static String asUri(final Map<String, String> namespaces, final String fieldValue) {
