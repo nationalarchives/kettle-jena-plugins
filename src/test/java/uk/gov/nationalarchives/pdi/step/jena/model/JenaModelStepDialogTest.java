@@ -54,7 +54,7 @@ public class JenaModelStepDialogTest {
         };
         JenaModelStepDialog.addBNodeToRdfPropertyTypes(mappingsTables1, 0);
 
-        assertArrayEquals(new String[] { "bNode: 0", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
+        assertArrayEquals(new String[] { "bNode:0", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
         assertArrayEquals(defaultDataTypes, ciBNodeMappingsTableView1.getComboValues());
     }
 
@@ -79,7 +79,7 @@ public class JenaModelStepDialogTest {
         };
         JenaModelStepDialog.addBNodeToRdfPropertyTypes(mappingsTables1, 0);
 
-        assertArrayEquals(new String[] { "bNode: 0", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
+        assertArrayEquals(new String[] { "bNode:0", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
         assertArrayEquals(defaultDataTypes, ciBNodeMappingsTableView1.getComboValues());
 
 
@@ -97,9 +97,9 @@ public class JenaModelStepDialogTest {
         };
         JenaModelStepDialog.addBNodeToRdfPropertyTypes(mappingsTables2, 1);
 
-        assertArrayEquals(new String[] { "bNode: 0", "bNode: 1", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
-        assertArrayEquals(new String[] { "bNode: 1", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView1.getComboValues());
-        assertArrayEquals(new String[] { "bNode: 0", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView2.getComboValues());
+        assertArrayEquals(new String[] { "bNode:0", "bNode:1", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
+        assertArrayEquals(new String[] { "bNode:1", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView1.getComboValues());
+        assertArrayEquals(new String[] { "bNode:0", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView2.getComboValues());
     }
 
     @Test
@@ -123,7 +123,7 @@ public class JenaModelStepDialogTest {
         };
         JenaModelStepDialog.addBNodeToRdfPropertyTypes(mappingsTables1, 0);
 
-        assertArrayEquals(new String[] { "bNode: 0", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
+        assertArrayEquals(new String[] { "bNode:0", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
         assertArrayEquals(defaultDataTypes, ciBNodeMappingsTableView1.getComboValues());
 
 
@@ -141,9 +141,9 @@ public class JenaModelStepDialogTest {
         };
         JenaModelStepDialog.addBNodeToRdfPropertyTypes(mappingsTables2, 1);
 
-        assertArrayEquals(new String[] { "bNode: 0", "bNode: 1", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
-        assertArrayEquals(new String[] { "bNode: 1", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView1.getComboValues());
-        assertArrayEquals(new String[] { "bNode: 0", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView2.getComboValues());
+        assertArrayEquals(new String[] { "bNode:0", "bNode:1", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
+        assertArrayEquals(new String[] { "bNode:1", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView1.getComboValues());
+        assertArrayEquals(new String[] { "bNode:0", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView2.getComboValues());
 
         /* 3rd call - function under test: addBNodeToRdfPropertyTypes */
 
@@ -160,9 +160,9 @@ public class JenaModelStepDialogTest {
         };
         JenaModelStepDialog.addBNodeToRdfPropertyTypes(mappingsTables3, 2);
 
-        assertArrayEquals(new String[] { "bNode: 0", "bNode: 1", "bNode: 2", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
-        assertArrayEquals(new String[] { "bNode: 1", "bNode: 2", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView1.getComboValues());
-        assertArrayEquals(new String[] { "bNode: 0", "bNode: 2", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView2.getComboValues());
-        assertArrayEquals(new String[] { "bNode: 0", "bNode: 1", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView3.getComboValues());
+        assertArrayEquals(new String[] { "bNode:0", "bNode:1", "bNode:2", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciMainMappingsTableView.getComboValues());
+        assertArrayEquals(new String[] { "bNode:1", "bNode:2", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView1.getComboValues());
+        assertArrayEquals(new String[] { "bNode:0", "bNode:2", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView2.getComboValues());
+        assertArrayEquals(new String[] { "bNode:0", "bNode:1", "Resource", "xsd:string", "xsd:integer", "xsd:dateTime" }, ciBNodeMappingsTableView3.getComboValues());
     }
 }
