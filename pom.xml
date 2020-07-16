@@ -231,8 +231,11 @@
             <configuration>
               <failOnWarning>true</failOnWarning>
               <ignoredUsedUndeclaredDependencies>
-                <ignoredUsedUndeclaredDependency>wsdl4j:wsdl4j-qname:jar:1.6.1</ignoredUsedUndeclaredDependency>
+                <ignoredUsedUndeclaredDependency>wsdl4j:wsdl4j-qname</ignoredUsedUndeclaredDependency>
               </ignoredUsedUndeclaredDependencies>
+              <ignoredUnusedDeclaredDependencies>
+                <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter-engine</ignoredUnusedDeclaredDependency>
+              </ignoredUnusedDeclaredDependencies>
             </configuration>
           </execution>
         </executions>
