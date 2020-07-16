@@ -18,6 +18,10 @@ The plugins provided are:
 
 This project was developed by [Evolved Binary](https://evolvedbinary.com) as part of Project OMEGA for the [National Archives](https://nationalarchives.gov.uk).
 
+## Getting the Plugins
+
+You can either download the plugins from our GitHub releases page: https://github.com/nationalarchives/kettle-jena-plugins/releases/, or you can build them from source.
+
 ## Building from Source Code
 The plugins can be built from Source code by installing the pre-requisites and following the steps described below.
 
