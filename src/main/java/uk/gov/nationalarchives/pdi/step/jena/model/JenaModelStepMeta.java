@@ -53,6 +53,9 @@ import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
 import java.util.*;
 
+import static uk.gov.nationalarchives.pdi.step.jena.Util.BLANK_NODE_INTERNAL_URI;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.BLANK_NODE_NAME;
+
 
 /**
  * Skeleton for PDI Step plugin.
@@ -163,7 +166,6 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         namespaces.put(Rdf11.RDF_PREFIX, Rdf11.RDF_NAMESPACE_IRI);
         namespaces.put(Rdf11.RDF_SCHEMA_PREFIX, Rdf11.RDF_SCHEMA_NAMESPACE_IRI);
         namespaces.put(Rdf11.XSD_PREFIX, Rdf11.XSD_NAMESPACE_IRI);
-        namespaces.put(Util.BLANK_NODE_NAME, Util.BLANK_NODE_INTERNAL_URI);
         dbToJenaMappings = new DbToJenaMapping[0];
         blankNodeMappings = new BlankNodeMapping[0];
     }
@@ -215,7 +217,10 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         builder.append(XMLHandler.openTag(ELEM_NAME_BLANK_NODE_MAPPINGS));
         for (final BlankNodeMapping blankNodeMapping : blankNodeMappings) {
             builder.append(XMLHandler.openTag(ELEM_NAME_BLANK_NODE_MAPPING));
-                builder.append(XMLHandler.addTagValue(ELEM_NAME_ID, blankNodeMapping.id));
+                builder.append(XMLHandler.openTag(ELEM_NAME_ID));
+                    final QName idQName = new QName(BLANK_NODE_INTERNAL_URI, String.valueOf(blankNodeMapping.id), BLANK_NODE_NAME);
+                    builder.append(addQNameValue(idQName));
+                builder.append(XMLHandler.closeTag(ELEM_NAME_ID));
                 getDbToJenaMappingsXML(blankNodeMapping.dbToJenaMappings, builder);
             builder.append(XMLHandler.closeTag(ELEM_NAME_BLANK_NODE_MAPPING));
         }
@@ -304,6 +309,11 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                             continue;
                         }
 
+                        if (BLANK_NODE_INTERNAL_URI.equals(uri)) {
+                            // don't load the internal namespace to our namespaces map (as it is used for display)
+                            continue;
+                        }
+
                         this.namespaces.put(prefix, uri);
                     }
                 }
@@ -325,13 +335,18 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                     for (int i = 0; i < len; i++) {
                         final Node blankNodeMappingNode = blankNodeMappingNodes.get(i);
 
-                        final String fieldId = XMLHandler.getTagValue(blankNodeMappingNode, ELEM_NAME_ID);
-                        if (fieldId == null || fieldId.isEmpty()) {
+                        final Node idNode = XMLHandler.getSubNode(blankNodeMappingNode, ELEM_NAME_ID);
+                        if (idNode == null) {
+                            continue;
+                        }
+
+                        final QName idQName = getQNameValue(idNode);
+                        if (!BLANK_NODE_INTERNAL_URI.equals(idQName.getNamespaceURI())) {
                             continue;
                         }
 
                         final BlankNodeMapping blankNodeMapping = new BlankNodeMapping();
-                        blankNodeMapping.id = Integer.valueOf(fieldId);
+                        blankNodeMapping.id = Integer.valueOf(idQName.getLocalPart());
                         blankNodeMapping.dbToJenaMappings = loadDbToJenaMappingsXML(blankNodeMappingNode);
 
                         this.blankNodeMappings[mappingsCount++] = blankNodeMapping;
@@ -397,7 +412,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         return dbToJenaMappings;
     }
 
-    private QName getQNameValue(final Node node) {
+    private @Nullable QName getQNameValue(final Node node) {
         final String prefix = XMLHandler.getTagValue(node, ELEM_NAME_PREFIX);
         final String uri = XMLHandler.getTagValue(node, ELEM_NAME_URI);
         final String localPart = XMLHandler.getTagValue(node, ELEM_NAME_LOCAL_PART);

@@ -935,14 +935,18 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         }
         meta.setNamespaces(namespaces);
 
-        final JenaModelStepMeta.DbToJenaMapping[] dbToJenaMappings = dbToJenaMappingsDataFromTable(mappingsTables[0], namespaces);
+        // both user-specified namespaces and internal namespaces
+        final Map<String, String> allNamespaces = new LinkedHashMap<>(namespaces);
+        allNamespaces.put(BLANK_NODE_NAME, BLANK_NODE_INTERNAL_URI);
+
+        final JenaModelStepMeta.DbToJenaMapping[] dbToJenaMappings = dbToJenaMappingsDataFromTable(mappingsTables[0], allNamespaces);
         meta.setDbToJenaMappings(dbToJenaMappings);
 
         final JenaModelStepMeta.BlankNodeMapping[] blankNodeMappings = new JenaModelStepMeta.BlankNodeMapping[mappingsTables.length - 1];
         for (int i = 0; i < blankNodeMappings.length; i++) {
             final JenaModelStepMeta.BlankNodeMapping blankNodeMapping = new JenaModelStepMeta.BlankNodeMapping();
             blankNodeMapping.id = i;
-            blankNodeMapping.dbToJenaMappings = dbToJenaMappingsDataFromTable(mappingsTables[i + 1], namespaces);
+            blankNodeMapping.dbToJenaMappings = dbToJenaMappingsDataFromTable(mappingsTables[i + 1], allNamespaces);
             blankNodeMappings[i] = blankNodeMapping;
         }
         meta.setBlankNodeMappings(blankNodeMappings);
