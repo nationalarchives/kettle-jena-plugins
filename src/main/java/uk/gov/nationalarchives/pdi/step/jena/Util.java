@@ -91,7 +91,9 @@ public class Util {
             if (idxOpenBrace > -1 && idxCloseBrace > idxOpenBrace && idxCloseBrace < qname.length() - 1) {
                 final String ns = qname.substring(idxOpenBrace + 1, idxCloseBrace);
                 final String localPart = qname.substring(idxCloseBrace + 1);
+
                 //TODO(AR) should we auto number a prefix, e.g. ns1, ns2, etc?
+
                 return new QName(ns, localPart);
 
             } else {

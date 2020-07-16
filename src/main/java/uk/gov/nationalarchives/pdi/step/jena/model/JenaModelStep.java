@@ -221,7 +221,6 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                     }
                 }
 
-                //TODO(AR) need to handle bNodes here!
                 final String fieldName = nullIfEmpty(mapping.fieldName);
                 final boolean isBNodeFieldName = fieldName != null && fieldName.equals(BLANK_NODE_FIELD_NAME);
                 final Object fieldValue = valueLookup.apply(fieldName);
