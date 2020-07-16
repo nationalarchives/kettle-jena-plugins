@@ -319,9 +319,12 @@ public class JenaModelStep extends BaseStep implements StepInterface {
             } else if (sqlValue instanceof java.sql.Date || sqlValue instanceof java.sql.Timestamp) {
                 return sqlValue.toString();
 
+            } else if (sqlValue instanceof Number) {
+                return ((Number)sqlValue).toString();
+
             } else {
                 // fallback
-                logBasic("convertSqlValueToRdfLiteralValue: required xsd:string but was given: {1}, unsure how to convert... Will default to Object#toString()!", sqlValue.getClass());
+                logBasic("convertSqlValueToRdfLiteralValue: required xsd:string but was given: {0}, unsure how to convert... Will default to Object#toString()!", sqlValue.getClass());
                 return sqlValue.toString();
             }
 
