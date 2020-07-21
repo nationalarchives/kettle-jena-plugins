@@ -67,12 +67,27 @@ public class Util {
         }
     }
 
+    public static boolean isQName(final String qname) {
+        if (emptyIfNull(qname) == null) {
+            return false;
+        }
+
+        final int idxColon = qname.indexOf(':');
+        if (idxColon > -1 && idxColon < qname.length() - 1) {
+            return true;
+        }
+
+        final int idxOpenBrace = qname.indexOf('{');
+        final int idxCloseBrace = qname.indexOf('}');
+        return (idxOpenBrace > -1 && idxCloseBrace > idxOpenBrace && idxCloseBrace < qname.length() - 1);
+    }
+
     public static QName parseQName(final Map<String, String> namespaces, final String qname) {
         if (qname == null) {
             return null;
         }
 
-        int idxColon = qname.indexOf(':');
+        final int idxColon = qname.indexOf(':');
 
         if (idxColon > -1 && idxColon < qname.length() - 1) {
             final String prefix = qname.substring(0, idxColon);
