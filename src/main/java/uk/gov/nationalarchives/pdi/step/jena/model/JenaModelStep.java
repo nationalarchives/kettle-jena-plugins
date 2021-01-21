@@ -297,7 +297,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                         // typed literal
                         final String typeURI = mapping.rdfType.getNamespaceURI() + mapping.rdfType.getLocalPart();
                         final RDFDatatype rdfDatatype = TypeMapper.getInstance().getSafeTypeByName(typeURI);
-                        final String rdfLiteralValue = (String) convertSqlValueToRdf(fieldValue, rdfDatatype);
+                        final Object rdfLiteralValue = convertSqlValueToRdf(fieldValue, rdfDatatype);
                         final Literal literal = model.createTypedLiteral(rdfLiteralValue, rdfDatatype);
                         resource.addLiteral(property, literal);
                     }
@@ -347,7 +347,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
         }
 
         // fallback
-        logBasic("convertSqlValueToRdfLiteralValue: required {0} but was given: {1}, unsure how to convert... Will default to Object#toString()!", rdfDatatype.getURI(), sqlValue.getClass());
+        logBasic("convertSqlValueToRdfLiteralValue: required {0} but was given: {1}, unsure how to convert... Will default to {1}}!", rdfDatatype.getURI(), sqlValue.getClass());
         return sqlValue;
     }
 
