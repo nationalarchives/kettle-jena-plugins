@@ -90,7 +90,6 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     // <editor-fold desc="settings">
     private String targetFieldName;
     private boolean removeSelectedFields;
-    private String resourceType;
     private String resourceUriField;
 
     /**
@@ -160,7 +159,6 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     public void setDefault() {
         targetFieldName = "";
         removeSelectedFields = false;
-        resourceType = "rdfs:Class";
         resourceUriField = "";
         namespaces = new LinkedHashMap<>();
         namespaces.put(Rdf11.RDF_PREFIX, Rdf11.RDF_NAMESPACE_IRI);
@@ -197,7 +195,6 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         builder
             .append(XMLHandler.addTagValue(ELEM_NAME_TARGET_FIELD_NAME, targetFieldName))
             .append(XMLHandler.addTagValue(ELEM_NAME_REMOVE_SELECTED_FIELDS, Boolean.toString(removeSelectedFields)))
-            .append(XMLHandler.addTagValue(ELEM_NAME_RESOURCE_TYPE, resourceType))
             .append(XMLHandler.openTag(ELEM_NAME_RESOURCE_URI))
                 .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, resourceUriField))
             .append(XMLHandler.closeTag(ELEM_NAME_RESOURCE_URI));
@@ -277,9 +274,6 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
 
             final String xRemoveSelectedFields = XMLHandler.getTagValue(stepnode, ELEM_NAME_REMOVE_SELECTED_FIELDS);
             this.removeSelectedFields = xRemoveSelectedFields != null && !xRemoveSelectedFields.isEmpty() ? Boolean.parseBoolean(xRemoveSelectedFields) : false;
-
-            final String xResourceType = XMLHandler.getTagValue(stepnode, ELEM_NAME_RESOURCE_TYPE);
-            this.resourceType = Util.emptyIfNull(xResourceType);
 
             final Node resourceUriNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_RESOURCE_URI);
             if (resourceUriNode == null) {
@@ -541,14 +535,6 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
 
     public void setRemoveSelectedFields(boolean removeSelectedFields) {
         this.removeSelectedFields = removeSelectedFields;
-    }
-
-    public String getResourceType() {
-        return resourceType;
-    }
-
-    public void setResourceType(final String resourceType) {
-        this.resourceType = resourceType;
     }
 
     public String getResourceUriField() {

@@ -77,8 +77,6 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
     private Text wStepNameField;
     private Label wTargetLabel;
     private TextVar wTargetTextField;
-    private Label wResourceTypeLabel;
-    private TextVar wResourceTypeTextField;
     private Label wResourceUriLabel;
     private ComboVar wResourceUriCombo;
     private Button wGetUriFieldButton;
@@ -253,30 +251,12 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 .result();
         wNamespacesTableView.setLayoutData(fdNamespacesTableView);
 
-        //resource rdf:type label/field
-        wResourceTypeLabel = new Label(group, SWT.LEFT);
-        props.setLook(wResourceTypeLabel);
-        wResourceTypeLabel.setText(BaseMessages.getString(PKG, "JenaModelStepDialog.TextFieldResourceType"));
-        final FormData fdResourceTypeLabel = new FormDataBuilder().left()
-                //.top(wTargetTextField, ELEMENT_SPACING)
-                .top(wNamespacesTableView, ELEMENT_SPACING)
-                .result();
-        wResourceTypeLabel.setLayoutData(fdResourceTypeLabel);
-
-        wResourceTypeTextField = new TextVar(transMeta, group, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-        props.setLook(wResourceTypeTextField);
-        final FormData fdResourceTypeTextField = new FormDataBuilder().left()
-                .top(wResourceTypeLabel, LABEL_SPACING)
-                .width(LARGE_FIELD)
-                .result();
-        wResourceTypeTextField.setLayoutData(fdResourceTypeTextField);
-
         //resource URI label/field
         wResourceUriLabel = new Label(group, SWT.LEFT);
         props.setLook(wResourceUriLabel);
         wResourceUriLabel.setText(BaseMessages.getString(PKG, "JenaModelStepDialog.TextFieldResourceUri"));
         final FormData fdResourceUriLabel = new FormDataBuilder().left()
-                .top(wResourceTypeTextField, ELEMENT_SPACING)
+                .top(wNamespacesTableView, ELEMENT_SPACING)
                 .result();
         wResourceUriLabel.setLayoutData(fdResourceUriLabel);
 
@@ -465,11 +445,6 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         }
 
         wRemoveSelectedCheckbox.setSelection(meta.isRemoveSelectedFields());
-
-        final String resourceType = meta.getResourceType();
-        if (resourceType != null) {
-            wResourceTypeTextField.setText(resourceType);
-        }
 
         final String resourceUriField = meta.getResourceUriField();
         if (resourceUriField != null) {
@@ -921,7 +896,6 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
     private void saveData() {
         meta.setTargetFieldName(wTargetTextField.getText());
         meta.setRemoveSelectedFields(wRemoveSelectedCheckbox.getSelection());
-        meta.setResourceType(wResourceTypeTextField.getText());
         meta.setResourceUriField(wResourceUriCombo.getText());
 
         final Map<String, String> namespaces = new LinkedHashMap<>();

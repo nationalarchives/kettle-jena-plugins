@@ -157,16 +157,6 @@ public class JenaModelStep extends BaseStep implements StepInterface {
             // create the resource
             final Resource resource = model.createResource(strResourceUriFieldValue);
 
-            // add the resource type
-            final Property resourceTypeProperty;
-            if (isQName(meta.getResourceType())) {
-                final QName resourceType = parseQName(namespaces, meta.getResourceType());
-                resourceTypeProperty = model.createProperty(resourceType.getNamespaceURI(), resourceType.getLocalPart());
-            } else {
-                resourceTypeProperty = model.createProperty(meta.getResourceType());
-            }
-            resource.addProperty(RDF.type, resourceTypeProperty);
-
             // add the resource properties
             addResourceProperties(
                     fieldName -> valueLookup(inputRowMeta, row, fieldName),
