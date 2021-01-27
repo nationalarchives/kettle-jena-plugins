@@ -466,8 +466,8 @@
     </resourceUri>
     <namespaces>
       <namespace>
-        <prefix/>
-        <uri/>
+        <prefix>rdf</prefix>
+        <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#</uri>
       </namespace>
     </namespaces>
     <dbToJenaMappings>
@@ -475,7 +475,7 @@
         <fieldName>type</fieldName>
         <rdfPropertyName>
           <prefix>rdf</prefix>
-          <uri/>
+          <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#</uri>
           <localPart>type</localPart>
         </rdfPropertyName>
         <rdfType>
@@ -540,7 +540,7 @@
     </fields>
     <data>
       <line>
-        <item>C</item>
+        <item>http://example.com/C</item>
         <item>http://example.com/s</item>
       </line>
     </data>
