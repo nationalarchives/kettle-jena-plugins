@@ -32,6 +32,9 @@ import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class EndToEndIT {
@@ -46,20 +49,20 @@ public class EndToEndIT {
     }
 
     @Test
-    public void can_create_rdf_type_statement() throws KettleException {
-        // TODO(SL): This should be a resource.
-        final String transformationFilePath = "C:\\Users\\samu\\Source\\repos\\kettle-jena-plugins\\src\\test\\resources\\can_create_rdf_type_statement.ktr";
+    public void can_create_rdf_type_statement() throws KettleException, IOException {
+        try (final InputStream ktr = getClass().getResourceAsStream("can_create_rdf_type_statement.ktr")) {
+            final Trans trans = new Trans(new TransMeta(ktr, null, false, null, null));
 
-        final Trans trans = new Trans(new TransMeta(transformationFilePath));
-        trans.execute(null);
-        trans.waitUntilFinished();
+            trans.execute(null);
+            trans.waitUntilFinished();
 
-        // Actual value (Jena model created by step) is in the third field of the first row of the transformation result
-        final String actual = trans.getResult().getRows().get(0).getData()[2].toString();
+            // Actual value (Jena model created by step) is in the third field of the first row of the transformation result
+            final String actual = trans.getResult().getRows().get(0).getData()[2].toString();
 
-        // Using this lame string representation of the in-memory graph instead of some proper equality assertion because the class loaders differ between Kettle and test environments, so their Jena Model is not our Jena Model
-        final String expected = "<ModelCom   {http://example.com/s @type C} |  [http://example.com/s, type, C]>";
+            // Using this lame string representation of the in-memory graph instead of some proper equality assertion because the class loaders differ between Kettle and test environments, so their Jena Model is not our Jena Model
+            final String expected = "<ModelCom   {http://example.com/s @type C} |  [http://example.com/s, type, C]>";
 
-        assertEquals(expected, actual);
+            assertEquals(expected, actual);
+        }
     }
 }
