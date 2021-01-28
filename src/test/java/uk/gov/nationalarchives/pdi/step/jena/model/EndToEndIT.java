@@ -27,6 +27,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.Result;
 import org.pentaho.di.core.exception.KettleException;
@@ -34,6 +35,7 @@ import org.pentaho.di.core.plugins.PluginFolder;
 import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
+import uk.gov.nationalarchives.pdi.step.StepPluginResource;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -42,13 +44,12 @@ import java.lang.reflect.Method;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EndToEndIT {
+
+    @RegisterExtension
+    static final StepPluginResource JENA_MODEL_STEP_PLUGIN = new StepPluginResource(JenaModelStepMeta.class);
+
     @BeforeAll
     public static void setup() throws KettleException {
-        // TODO(SL): This should not be hard-coded.
-        // This the only way I could find to inject a plugin into Kettle
-        final String pluginFolderPath = "target\\kettle-jena-plugins-2.1.0-SNAPSHOT-kettle-plugin";
-        StepPluginType.getInstance().getPluginFolders().add(new PluginFolder(pluginFolderPath, false, true));
-
         KettleEnvironment.init();
     }
 
