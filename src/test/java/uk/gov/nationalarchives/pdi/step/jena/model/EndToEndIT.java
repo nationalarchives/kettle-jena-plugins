@@ -28,16 +28,14 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.pentaho.di.core.KettleEnvironment;
-import org.pentaho.di.core.Result;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.plugins.PluginFolder;
 import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 
-import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,47 +51,31 @@ public class EndToEndIT {
     }
 
     @Test
-    public void can_create_rdf_type_statement() throws KettleException, IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        final Result transformationResult = executeTransformation();
-        final Model actual = extractGraph(transformationResult);
+    public void can_create_rdf_type_statement() throws KettleException, IOException {
+        executeTransformation();
+        final Model actual = loadOutputGraph();
         final Model expected = createExpectedModel();
 
         assertTrue(actual.isIsomorphicWith(expected));
     }
 
-    private static Result executeTransformation() throws IOException, KettleException {
+    private static void executeTransformation() throws IOException, KettleException {
         try (final InputStream ktr = EndToEndIT.class.getResourceAsStream("can_create_rdf_type_statement.ktr")) {
             final Trans trans = new Trans(new TransMeta(ktr, null, false, null, null));
 
+            // TODO(SL): Inject output file path
             trans.execute(null);
             trans.waitUntilFinished();
-
-            return trans.getResult();
         }
     }
 
-    private static Model extractGraph(Result result) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
-        // Actual value (Jena model created by step) is in the third field of the first row of the transformation result.
-        final Object model = result.getRows().get(0).getData()[2];
+    private static Model loadOutputGraph() {
+        final Model output = ModelFactory.createDefaultModel();
 
-        // Use reflection to serialise original model, then deserialise back to an instance.
-        // This is required because the class loaders differ between Kettle and test environments, so their Jena Model is not our Jena Model.
-        return unmarshall(model);
-    }
+        // TODO(SL): Take from temp folder
+        output.read("file:/C:/Users/samu/Source/repos/kettle-jena-plugins/output.ttl", "TURTLE");
 
-    private static Model unmarshall(Object original) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
-        final Method method = original.getClass().getMethod("write", OutputStream.class);
-
-        try (final ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            method.invoke(original, output);
-
-            try (final InputStream inputStream = new ByteArrayInputStream(output.toByteArray())) {
-                final Model model = ModelFactory.createDefaultModel();
-                model.read(inputStream, null);
-
-                return model;
-            }
-        }
+        return output;
     }
 
     private static Model createExpectedModel() {

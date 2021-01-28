@@ -444,7 +444,7 @@
     </hop>
     <hop>
       <from>Create Jena Model</from>
-      <to>Copy rows to result</to>
+      <to>Serialize Jena Model</to>
       <enabled>Y</enabled>
     </hop>
   </order>
@@ -559,8 +559,8 @@
     </GUI>
   </step>
   <step>
-    <name>Copy rows to result</name>
-    <type>RowsToResult</type>
+    <name>Serialize Jena Model</name>
+    <type>JenaSerializerStep</type>
     <description/>
     <distribute>Y</distribute>
     <custom_distribution/>
@@ -569,6 +569,16 @@
       <method>none</method>
       <schema_name/>
     </partitioning>
+    <jenaModelField>model</jenaModelField>
+    <serializationFormat>TURTLE</serializationFormat>
+    <file>
+      <filename/>
+      <createParentFolder>false</createParentFolder>
+      <includeStepNr>false</includeStepNr>
+      <includePartitionNr>false</includePartitionNr>
+      <includeDate>false</includeDate>
+      <includeTime>false</includeTime>
+    </file>
     <attributes/>
     <cluster_schema/>
     <remotesteps>
