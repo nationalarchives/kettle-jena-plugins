@@ -30,11 +30,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.plugins.PluginFolder;
-import org.pentaho.di.core.plugins.StepPluginType;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import uk.gov.nationalarchives.pdi.step.StepPluginResource;
+import uk.gov.nationalarchives.pdi.step.jena.serializer.JenaSerializerStepMeta;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,9 +41,11 @@ import java.io.InputStream;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EndToEndIT {
-
     @RegisterExtension
     static final StepPluginResource JENA_MODEL_STEP_PLUGIN = new StepPluginResource(JenaModelStepMeta.class);
+
+    @RegisterExtension
+    static final StepPluginResource JENA_SERIALIZE_STEP_PLUGIN = new StepPluginResource(JenaSerializerStepMeta.class);
 
     @BeforeAll
     public static void setup() throws KettleException {
