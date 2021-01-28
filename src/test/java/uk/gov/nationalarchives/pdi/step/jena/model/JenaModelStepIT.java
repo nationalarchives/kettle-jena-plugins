@@ -23,19 +23,23 @@
 
 package uk.gov.nationalarchives.pdi.step.jena.model;
 
-import javax.xml.namespace.QName;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.pentaho.di.core.KettleClientEnvironment;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LoggingObjectInterface;
 import org.pentaho.di.core.row.RowMeta;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaInteger;
 import org.pentaho.di.core.row.value.ValueMetaString;
+import org.pentaho.di.trans.step.RowHandler;
 import org.pentaho.di.trans.steps.mock.StepMockHelper;
 
+import javax.xml.namespace.QName;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -56,6 +60,40 @@ public class JenaModelStepIT {
         final boolean rowProcessedSuccessfully = step.processRow(meta, helper.processRowsStepDataInterface);
 
         assertTrue(rowProcessedSuccessfully);
+    }
+
+    @Test
+    public void resolves_uri_field_variable() throws KettleException {
+        final JenaModelStepMeta meta = getMeta();
+        final StepMockHelper helper = mockHelper();
+        final JenaModelStep step = mockStep(helper);
+
+        step.setVariable("uriFieldVar", "uriField");
+        meta.setResourceUriField("${uriFieldVar}");
+
+        final boolean rowProcessedSuccessfully = step.processRow(meta, helper.processRowsStepDataInterface);
+
+        assertTrue(rowProcessedSuccessfully);
+    }
+
+    @Test
+    public void resolves_target_field_name_variable() throws KettleException {
+        final String expectedFieldName = "targetField";
+
+        final JenaModelStepMeta meta = getMeta();
+        final StepMockHelper helper = mockHelper();
+        final JenaModelStep step = mockStep(helper);
+        final SingleRowMetaObserver rowMetaObserver = new SingleRowMetaObserver(step.getRowHandler());
+        step.setRowHandler(rowMetaObserver);
+
+        step.setVariable("targetFieldVar", expectedFieldName);
+        meta.setTargetFieldName("${targetFieldVar}");
+
+        step.processRow(meta, helper.processRowsStepDataInterface);
+
+        final String actualFieldName = rowMetaObserver.meta.getFieldNames()[2];
+
+        assertEquals(expectedFieldName, actualFieldName);
     }
 
     private static JenaModelStepMeta getMeta() {
@@ -100,4 +138,32 @@ public class JenaModelStepIT {
 
         return step;
     }
+
+    private class SingleRowMetaObserver implements RowHandler {
+        private final RowHandler original;
+        private RowMetaInterface meta;
+
+        public SingleRowMetaObserver(RowHandler original) {
+            this.original = original;
+        }
+
+        @Override
+        public Object[] getRow() throws KettleException {
+            return original.getRow();
+        }
+
+        @Override
+        public void putRow(RowMetaInterface rowMetaInterface, Object[] objects) throws KettleStepException {
+            // Test this is used in only ever does one row anyway
+            meta = rowMetaInterface;
+
+            original.putRow(rowMetaInterface, objects);
+        }
+
+        @Override
+        public void putError(RowMetaInterface rowMetaInterface, Object[] objects, long l, String s, String s1, String s2) throws KettleStepException {
+            original.putError(rowMetaInterface, objects, l, s, s1, s2);
+        }
+    }
+
 }
