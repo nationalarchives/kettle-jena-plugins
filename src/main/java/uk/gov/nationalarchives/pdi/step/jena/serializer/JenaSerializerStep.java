@@ -127,7 +127,7 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
 
     private Model getModel(final JenaSerializerStepMeta meta, final Object[] r, final RowMetaInterface inputRowMeta)
             throws KettleException {
-        final String jenaModelField = meta.getJenaModelField();
+        final String jenaModelField = environmentSubstitute(meta.getJenaModelField());
         final int idxJenaModelField = inputRowMeta.indexOfValue(jenaModelField);
         final Object jenaModelFieldValue =  r[idxJenaModelField];
 
@@ -146,7 +146,7 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
 
         final JenaSerializerStepMeta.FileDetail fileDetail = meta.getFileDetail();
         if (fileDetail != null) {
-            filename = fileDetail.filename;
+            filename = environmentSubstitute(fileDetail.filename);
             if (filename == null || filename.isEmpty()) {
                 filename = JenaSerializerStepMeta.DEFAULT_FILENAME;
             }
@@ -199,7 +199,7 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
             }
         }
 
-        String serializationFormat = meta.getSerializationFormat();
+        String serializationFormat = environmentSubstitute(meta.getSerializationFormat());
         if (serializationFormat == null || serializationFormat.isEmpty()) {
             serializationFormat = Rdf11.DEFAULT_SERIALIZATION_FORMAT;
         }
