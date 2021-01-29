@@ -40,10 +40,7 @@ import org.pentaho.di.trans.steps.mock.StepMockHelper;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -168,10 +165,10 @@ public class JenaSerializerStepIT {
     }
 
     private static class StaticDataRowHandler implements RowHandler {
-        private final Queue<Object[]> rows;
+        private final Deque<Object[]> rows;
 
         public StaticDataRowHandler(Collection<Object[]> rows) {
-            this.rows = new LinkedList<>(rows);
+            this.rows = new ArrayDeque<>(rows);
         }
 
         @Override
