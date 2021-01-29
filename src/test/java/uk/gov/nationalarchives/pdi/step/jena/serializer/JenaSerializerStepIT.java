@@ -26,10 +26,10 @@ package uk.gov.nationalarchives.pdi.step.jena.serializer;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import org.pentaho.di.core.KettleClientEnvironment;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.logging.LoggingObjectInterface;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -37,13 +37,13 @@ import org.pentaho.di.core.row.value.ValueMetaInteger;
 import org.pentaho.di.trans.step.RowHandler;
 import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.steps.mock.StepMockHelper;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Random;
+import java.util.Queue;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,7 +61,7 @@ public class JenaSerializerStepIT {
     public void resolves_jena_model_field_variable() throws KettleException {
         final JenaSerializerStepMeta meta = getMeta();
         final StepDataInterface data = getData();
-        final StepMockHelper helper = mockHelper();
+        final StepMockHelper<JenaSerializerStepMeta, JenaSerializerStepData> helper = mockHelper();
         final JenaSerializerStep step = mockStep(helper);
 
         step.setVariable("jenaModelFieldVar", "model");
@@ -74,41 +74,45 @@ public class JenaSerializerStepIT {
     }
 
     @Test
-    public void resolves_filename_variable() throws KettleException {
-        // TODO(SL): Use temp folder instead of random file
-        final String expectedFilename = String.valueOf(new Random().nextInt());
+    public void resolves_filename_variable(@TempDir final Path tempDir) throws KettleException {
+        final Path expectedFile = tempDir.resolve("output.ttl");
 
         final JenaSerializerStepMeta meta = getMeta();
         final StepDataInterface data = getData();
-        final StepMockHelper helper = mockHelper();
+        final StepMockHelper<JenaSerializerStepMeta, JenaSerializerStepData> helper = mockHelper();
         final JenaSerializerStep step = mockStep(helper);
 
         meta.setJenaModelField("model");
 
-        step.setVariable("filenameVar", expectedFilename);
-        meta.setFileDetail(
-                new JenaSerializerStepMeta.FileDetail() {{
-                    filename = "${filenameVar}";
-                }});
+        step.setVariable("filenameVar", expectedFile.toString());
+
+        final JenaSerializerStepMeta.FileDetail fileDetail = new JenaSerializerStepMeta.FileDetail();
+        fileDetail.filename = "${filenameVar}";
+
+        meta.setFileDetail(fileDetail);
 
         // First pass create model, second serialise
         step.processRow(meta, data);
         step.processRow(meta, data);
 
-        File f = new File(expectedFilename);
-
-        assertTrue(f.exists() && !f.isDirectory());
+        assertTrue(Files.exists(expectedFile));
     }
 
     @Test
-    public void resolves_serialization_format_variable() throws KettleException {
+    public void resolves_serialization_format_variable(@TempDir final Path tempDir) throws KettleException {
+        final Path expectedFile = tempDir.resolve("output.xml");
+
         final JenaSerializerStepMeta meta = getMeta();
         final StepDataInterface data = getData();
-        final StepMockHelper helper = mockHelper();
+        final StepMockHelper<JenaSerializerStepMeta, JenaSerializerStepData> helper = mockHelper();
         final JenaSerializerStep step = mockStep(helper);
 
         meta.setJenaModelField("model");
-        meta.setFileDetail(new JenaSerializerStepMeta.FileDetail());
+
+        final JenaSerializerStepMeta.FileDetail fileDetail = new JenaSerializerStepMeta.FileDetail();
+        fileDetail.filename = expectedFile.toString();
+
+        meta.setFileDetail(fileDetail);
 
         step.setVariable("serialisationFormatVar", "RDF/XML");
         meta.setSerializationFormat("${serialisationFormatVar}");
@@ -122,19 +126,21 @@ public class JenaSerializerStepIT {
     }
 
     private StepDataInterface getData() {
-        return new JenaSerializerStepData() {{
-            init();
-        }};
+        final JenaSerializerStepData data = new JenaSerializerStepData();
+        data.init();
+
+        return data;
     }
 
     private static JenaSerializerStepMeta getMeta() {
-        return new JenaSerializerStepMeta() {{
-            setDefault();
-        }};
+        final JenaSerializerStepMeta meta = new JenaSerializerStepMeta();
+        meta.setDefault();
+
+        return meta;
     }
 
-    private static StepMockHelper mockHelper() {
-        final StepMockHelper helper = new StepMockHelper<>("Serialize Jena Model", JenaSerializerStepMeta.class, JenaSerializerStepData.class);
+    private static StepMockHelper<JenaSerializerStepMeta, JenaSerializerStepData> mockHelper() {
+        final StepMockHelper<JenaSerializerStepMeta, JenaSerializerStepData> helper = new StepMockHelper<>("Serialize Jena Model", JenaSerializerStepMeta.class, JenaSerializerStepData.class);
 
         when(helper.logChannelInterfaceFactory.create(any(), any(LoggingObjectInterface.class))).thenReturn(helper.logChannelInterface);
         when(helper.trans.isRunning()).thenReturn(true);
@@ -142,29 +148,27 @@ public class JenaSerializerStepIT {
         return helper;
     }
 
-    private JenaSerializerStep mockStep(StepMockHelper helper) throws KettleException {
+    private JenaSerializerStep mockStep(StepMockHelper<JenaSerializerStepMeta, JenaSerializerStepData> helper) {
         final JenaSerializerStep step = Mockito.spy(new JenaSerializerStep(helper.stepMeta, helper.stepDataInterface, 0, helper.transMeta, helper.trans));
 
-        step.setRowHandler(
-                new StaticDataRowHandler(
-                        new ArrayList() {{
-                            add(new Object[]{
-                                    ModelFactory.createDefaultModel()});
-                        }}
-                )
-        );
+        final Collection<Object[]> rows = new ArrayList<>();
+        rows.add(
+                new Object[]{
+                        ModelFactory.createDefaultModel()
+                });
 
-        final RowMeta inputRowSchema = new RowMeta() {{
-            addValueMeta(new ValueMetaInteger("model"));
-        }};
+        step.setRowHandler(new StaticDataRowHandler(rows));
+
+        final RowMeta inputRowSchema = new RowMeta();
+        inputRowSchema.addValueMeta(new ValueMetaInteger("model"));
 
         doReturn(inputRowSchema).when(step).getInputRowMeta();
 
         return step;
     }
 
-    private class StaticDataRowHandler implements RowHandler {
-        private final LinkedList<Object[]> rows;
+    private static class StaticDataRowHandler implements RowHandler {
+        private final Queue<Object[]> rows;
 
         public StaticDataRowHandler(Collection<Object[]> rows) {
             this.rows = new LinkedList<>(rows);
@@ -181,12 +185,12 @@ public class JenaSerializerStepIT {
 
         @Override
         public void putRow(RowMetaInterface rowMetaInterface, Object[] objects) {
-            throw new NotImplementedException();
+            throw new UnsupportedOperationException();
         }
 
         @Override
-        public void putError(RowMetaInterface rowMetaInterface, Object[] objects, long l, String s, String s1, String s2) throws KettleStepException {
-            throw new NotImplementedException();
+        public void putError(RowMetaInterface rowMetaInterface, Object[] objects, long l, String s, String s1, String s2) {
+            throw new UnsupportedOperationException();
         }
     }
 }

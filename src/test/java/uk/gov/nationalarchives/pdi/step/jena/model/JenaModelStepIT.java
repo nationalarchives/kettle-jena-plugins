@@ -41,7 +41,7 @@ import javax.xml.namespace.QName;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -54,7 +54,7 @@ public class JenaModelStepIT {
     @Test
     public void can_create_xsd_int_property() throws KettleException {
         final JenaModelStepMeta meta = getMeta();
-        final StepMockHelper helper = mockHelper();
+        final StepMockHelper<JenaModelStepMeta, JenaModelStepData> helper = mockHelper();
         final JenaModelStep step = mockStep(helper);
 
         final boolean rowProcessedSuccessfully = step.processRow(meta, helper.processRowsStepDataInterface);
@@ -65,7 +65,7 @@ public class JenaModelStepIT {
     @Test
     public void resolves_uri_field_variable() throws KettleException {
         final JenaModelStepMeta meta = getMeta();
-        final StepMockHelper helper = mockHelper();
+        final StepMockHelper<JenaModelStepMeta, JenaModelStepData> helper = mockHelper();
         final JenaModelStep step = mockStep(helper);
 
         step.setVariable("uriFieldVar", "uriField");
@@ -81,7 +81,7 @@ public class JenaModelStepIT {
         final String expectedFieldName = "targetField";
 
         final JenaModelStepMeta meta = getMeta();
-        final StepMockHelper helper = mockHelper();
+        final StepMockHelper<JenaModelStepMeta, JenaModelStepData> helper = mockHelper();
         final JenaModelStep step = mockStep(helper);
         final SingleRowMetaObserver rowMetaObserver = new SingleRowMetaObserver(step.getRowHandler());
         step.setRowHandler(rowMetaObserver);
@@ -97,22 +97,25 @@ public class JenaModelStepIT {
     }
 
     private static JenaModelStepMeta getMeta() {
-        return new JenaModelStepMeta() {{
-            setDefault();
-            setTargetFieldName("targetField");
-            setResourceUriField("uriField");
-            setDbToJenaMappings(new DbToJenaMapping[]{
-                    new DbToJenaMapping() {{
-                        fieldName = "field1";
-                        rdfPropertyName = new QName("rdf:predicate");
-                        rdfType = new QName("xsd:int");
-                    }},
-            });
-        }};
+        final JenaModelStepMeta meta = new JenaModelStepMeta();
+        meta.setDefault();
+        meta.setTargetFieldName("targetField");
+        meta.setResourceUriField("uriField");
+
+        final JenaModelStepMeta.DbToJenaMapping mapping = new JenaModelStepMeta.DbToJenaMapping();
+        mapping.fieldName = "field1";
+        mapping.rdfPropertyName = new QName("rdf:predicate");
+        mapping.rdfType = new QName("xsd:int");
+
+        meta.setDbToJenaMappings(new JenaModelStepMeta.DbToJenaMapping[]{
+                mapping,
+        });
+
+        return meta;
     }
 
-    private static StepMockHelper mockHelper() {
-        final StepMockHelper helper = new StepMockHelper<>("Create Jena Model", JenaModelStepMeta.class, JenaModelStepData.class);
+    private static StepMockHelper<JenaModelStepMeta, JenaModelStepData> mockHelper() {
+        final StepMockHelper<JenaModelStepMeta, JenaModelStepData> helper = new StepMockHelper<>("Create Jena Model", JenaModelStepMeta.class, JenaModelStepData.class);
 
         when(helper.logChannelInterfaceFactory.create(any(), any(LoggingObjectInterface.class))).thenReturn(helper.logChannelInterface);
         when(helper.trans.isRunning()).thenReturn(true);
@@ -120,7 +123,7 @@ public class JenaModelStepIT {
         return helper;
     }
 
-    private static JenaModelStep mockStep(StepMockHelper helper) throws KettleException {
+    private static JenaModelStep mockStep(StepMockHelper<JenaModelStepMeta, JenaModelStepData> helper) throws KettleException {
         final JenaModelStep step = Mockito.spy(new JenaModelStep(helper.stepMeta, helper.stepDataInterface, 0, helper.transMeta, helper.trans));
 
         final Object[] inputRowValues = {
@@ -128,10 +131,9 @@ public class JenaModelStepIT {
                 "http://example.com/resource"
         };
 
-        final RowMeta inputRowSchema = new RowMeta() {{
-            addValueMeta(new ValueMetaInteger("field1"));
-            addValueMeta(new ValueMetaString("uriField"));
-        }};
+        final RowMeta inputRowSchema = new RowMeta();
+        inputRowSchema.addValueMeta(new ValueMetaInteger("field1"));
+        inputRowSchema.addValueMeta(new ValueMetaString("uriField"));
 
         doReturn(inputRowValues).when(step).getRow();
         doReturn(inputRowSchema).when(step).getInputRowMeta();
@@ -139,7 +141,7 @@ public class JenaModelStepIT {
         return step;
     }
 
-    private class SingleRowMetaObserver implements RowHandler {
+    private static class SingleRowMetaObserver implements RowHandler {
         private final RowHandler original;
         private RowMetaInterface meta;
 
