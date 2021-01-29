@@ -28,6 +28,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.Trans;
@@ -37,6 +38,7 @@ import uk.gov.nationalarchives.pdi.step.jena.serializer.JenaSerializerStepMeta;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,29 +55,29 @@ public class EndToEndIT {
     }
 
     @Test
-    public void can_create_rdf_type_statement() throws KettleException, IOException {
-        executeTransformation();
-        final Model actual = loadOutputGraph();
+    public void can_create_rdf_type_statement(@TempDir final Path tempDir) throws KettleException, IOException {
+        final Path outputFilePath = tempDir.resolve("output.ttl");
+
+        executeTransformation(outputFilePath);
+        final Model actual = loadOutputGraph(outputFilePath);
         final Model expected = createExpectedModel();
 
         assertTrue(actual.isIsomorphicWith(expected));
     }
 
-    private static void executeTransformation() throws IOException, KettleException {
+    private static void executeTransformation(final Path outputFilePath) throws IOException, KettleException {
         try (final InputStream ktr = EndToEndIT.class.getResourceAsStream("can_create_rdf_type_statement.ktr")) {
             final Trans trans = new Trans(new TransMeta(ktr, null, false, null, null));
 
-            // TODO(SL): Inject output file path
+            trans.setVariable("Filename", outputFilePath.toString());
             trans.execute(null);
             trans.waitUntilFinished();
         }
     }
 
-    private static Model loadOutputGraph() {
+    private static Model loadOutputGraph(final Path outputFilePath) {
         final Model output = ModelFactory.createDefaultModel();
-
-        // TODO(SL): Take from temp folder
-        output.read("file:/C:/Users/samu/Source/repos/kettle-jena-plugins/output.ttl", "TURTLE");
+        output.read(outputFilePath.toUri().toString(), "TURTLE");
 
         return output;
     }

@@ -572,7 +572,7 @@
     <jenaModelField>model</jenaModelField>
     <serializationFormat>TURTLE</serializationFormat>
     <file>
-      <filename/>
+      <filename>${Filename}</filename>
       <createParentFolder>false</createParentFolder>
       <includeStepNr>false</includeStepNr>
       <includePartitionNr>false</includePartitionNr>
