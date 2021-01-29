@@ -129,7 +129,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
     }
 
     private Model createModel(final JenaModelStepMeta meta, final RowMetaInterface inputRowMeta, final Object[] row) throws KettleException {
-        final String resourceUriFieldName = meta.getResourceUriField();
+        final String resourceUriFieldName = environmentSubstitute(meta.getResourceUriField());
         final int idxResourceUriField = inputRowMeta.indexOfValue(resourceUriFieldName);
         final Object resourceUriFieldValue =  row[idxResourceUriField];
 

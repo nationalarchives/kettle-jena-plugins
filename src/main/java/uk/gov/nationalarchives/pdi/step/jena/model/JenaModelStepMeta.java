@@ -452,7 +452,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         try {
             // add the target field to the output rows
             if (targetFieldName != null && !targetFieldName.isEmpty()) {
-                final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(targetFieldName, ValueMeta.TYPE_SERIALIZABLE);
+                final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(space.environmentSubstitute(targetFieldName), ValueMeta.TYPE_SERIALIZABLE);
                 targetFieldValueMeta.setOrigin(origin);
                 rowMeta.addValueMeta(targetFieldValueMeta);
             }
