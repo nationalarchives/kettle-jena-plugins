@@ -25,18 +25,13 @@ package uk.gov.nationalarchives.pdi.step.jena.model;
 import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.rdf.model.*;
-import org.apache.jena.vocabulary.RDF;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.BaseStep;
-import org.pentaho.di.trans.step.StepDataInterface;
-import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.step.*;
 
 import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
@@ -238,11 +233,18 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                         closeAndThrow(model, "Could not write property: " + property.toString() + " for resource: " + rootResourceUri + ", row field is null!");
                     }
                 } else {
-
                     if (mapping.rdfType == null) {
-                        // non-typed literal
                         final String rdfLiteralValue = (String) convertSqlValueToRdf(fieldValue, null);
-                        final Literal literal = model.createLiteral(rdfLiteralValue);
+                        Literal literal;
+
+                        if (mapping.language == null) {
+                            // non-typed literal
+                            literal = model.createLiteral(rdfLiteralValue);
+                        } else {
+                            // language-tagged string
+                            literal = model.createLiteral(rdfLiteralValue, mapping.language);
+                        }
+
                         resource.addLiteral(property, literal);
 
                     } else if (isBNodeFieldName) {

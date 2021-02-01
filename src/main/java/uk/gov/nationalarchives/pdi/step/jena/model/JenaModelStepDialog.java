@@ -490,6 +490,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                         dbToJenaMapping.fieldName,
                         Util.asPrefixString(dbToJenaMapping.rdfPropertyName),
                         Util.asPrefixString(dbToJenaMapping.rdfType),
+                        dbToJenaMapping.language,
                         dbToJenaMapping.actionIfNull.name()
                 });
             }
@@ -547,6 +548,11 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 ColumnInfo.COLUMN_TYPE_CCOMBO,
                 propertyTypes  // combo-box options
         );
+        final ColumnInfo ciLanguage = new ColumnInfo(
+                BaseMessages.getString(PKG, "JenaModelStepDialog.Language"),
+                ColumnInfo.COLUMN_TYPE_TEXT,
+                false
+        );
         final ColumnInfo ciIfNull = new ColumnInfo(
                 BaseMessages.getString(PKG, "JenaModelStepDialog.IfNull"),
                 ColumnInfo.COLUMN_TYPE_CCOMBO,
@@ -577,6 +583,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 ciFieldName,
                 ciRdfPropertyName,
                 ciRdfPropertyType,
+                ciLanguage,
                 ciIfNull
         };
 
@@ -943,7 +950,8 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             dbToJenaMapping.rdfPropertyName = Util.parseQName(namespaces, propertyName);
             final String rdfType = Util.nullIfEmpty(tableView.getItem(i, 3));
             dbToJenaMapping.rdfType = Util.parseQName(namespaces, rdfType);
-            final String actionIfNullName = tableView.getItem(i, 4);
+            dbToJenaMapping.language = tableView.getItem(i, 4);
+            final String actionIfNullName = tableView.getItem(i, 5);
             if (actionIfNullName == null || actionIfNullName.isEmpty()) {
                 // default
                 dbToJenaMapping.actionIfNull = JenaModelStepMeta.ActionIfNull.WARN;
