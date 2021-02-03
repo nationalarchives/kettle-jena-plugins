@@ -469,10 +469,6 @@
         <prefix>ex</prefix>
         <uri>http://example.com/</uri>
       </namespace>
-      <namespace>
-        <prefix/>
-        <uri/>
-      </namespace>
     </namespaces>
     <dbToJenaMappings>
       <dbToJenaMapping>
@@ -484,6 +480,43 @@
         </rdfPropertyName>
         <rdfType/>
         <language>en</language>
+        <actionIfNull>WARN</actionIfNull>
+      </dbToJenaMapping>
+      <dbToJenaMapping>
+        <fieldName>f1</fieldName>
+        <rdfPropertyName>
+          <prefix>ex</prefix>
+          <uri>http://example.com/</uri>
+          <localPart>p</localPart>
+        </rdfPropertyName>
+        <rdfType/>
+        <language/>
+        <actionIfNull>WARN</actionIfNull>
+      </dbToJenaMapping>
+      <dbToJenaMapping>
+        <fieldName>f1</fieldName>
+        <rdfPropertyName>
+          <prefix>ex</prefix>
+          <uri>http://example.com/</uri>
+          <localPart>p</localPart>
+        </rdfPropertyName>
+        <rdfType/>
+        <language>fr</language>
+        <actionIfNull>WARN</actionIfNull>
+      </dbToJenaMapping>
+      <dbToJenaMapping>
+        <fieldName>f1</fieldName>
+        <rdfPropertyName>
+          <prefix>ex</prefix>
+          <uri>http://example.com/</uri>
+          <localPart>p</localPart>
+        </rdfPropertyName>
+        <rdfType>
+          <prefix>ex</prefix>
+          <uri>http://example.com/</uri>
+          <localPart>D</localPart>
+        </rdfType>
+        <language/>
         <actionIfNull>WARN</actionIfNull>
       </dbToJenaMapping>
     </dbToJenaMappings>

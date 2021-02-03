@@ -23,8 +23,11 @@
 
 package uk.gov.nationalarchives.pdi.step.jena.model;
 
+import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.Resource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -34,6 +37,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import uk.gov.nationalarchives.pdi.step.StepPluginResource;
+import uk.gov.nationalarchives.pdi.step.jena.serializer.JenaSerializerStepMeta;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +49,10 @@ public class LanguageTagIT {
     @SuppressWarnings("unused") // Marker field required to inject plugin
     @RegisterExtension
     static final StepPluginResource JENA_MODEL_STEP_PLUGIN = new StepPluginResource(JenaModelStepMeta.class);
+
+    @SuppressWarnings("unused") // Marker field required to inject plugin
+    @RegisterExtension
+    static final StepPluginResource JENA_MODEL_SERIALIZE_PLUGIN = new StepPluginResource(JenaSerializerStepMeta.class);
 
     @BeforeAll
     public static void setup() throws KettleException {
@@ -79,12 +87,23 @@ public class LanguageTagIT {
         return output;
     }
 
+    /**
+     * @see <a href="https://github.com/nationalarchives/kettle-jena-plugins/pull/16#discussion_r568929699"></a>
+     */
     private static Model createExpectedModel() {
         final Model expected = ModelFactory.createDefaultModel();
-        expected.add(
-                expected.createResource("http://example.com/s"),
-                expected.createProperty("http://example.com/p"),
-                expected.createLiteral("o","en"));
+        final Resource s = expected.createResource("http://example.com/s");
+        final Property p = expected.createProperty("http://example.com/p");
+
+        // Untyped literal object
+        expected.add(s, p, expected.createLiteral("o"));
+
+        // Language-tagged string literal objects
+        expected.add(s, p, expected.createLiteral("o", "en"));
+        expected.add(s, p, expected.createLiteral("o", "fr"));
+
+        // Typed literal object
+        expected.add(s, p, expected.createTypedLiteral("o", TypeMapper.getInstance().getSafeTypeByName("http://example.com/D")));
 
         return expected;
     }
