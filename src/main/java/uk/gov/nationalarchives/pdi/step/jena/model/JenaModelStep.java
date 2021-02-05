@@ -25,18 +25,13 @@ package uk.gov.nationalarchives.pdi.step.jena.model;
 import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.rdf.model.*;
-import org.apache.jena.vocabulary.RDF;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.BaseStep;
-import org.pentaho.di.trans.step.StepDataInterface;
-import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.step.*;
 
 import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
@@ -205,6 +200,9 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
         if (dbToJenaMappings != null) {
             for (final JenaModelStepMeta.DbToJenaMapping mapping : dbToJenaMappings) {
+                if (mapping.skip) {
+                    continue;
+                }
 
                 final QName qname = mapping.rdfPropertyName;
                 Property property;
