@@ -22,23 +22,20 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena;
 
-import javax.xml.XMLConstants;
-import java.util.Collections;
-
 public interface Rdf11 {
 
-    final String RDF_PREFIX = "rdf";
-    final String RDF_NAMESPACE_IRI = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+    String RDF_PREFIX = "rdf";
+    String RDF_NAMESPACE_IRI = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 
-    final String RDF_SCHEMA_PREFIX = "rdfs";
-    final String RDF_SCHEMA_NAMESPACE_IRI = "http://www.w3.org/2000/01/rdf-schema#";
+    String RDF_SCHEMA_PREFIX = "rdfs";
+    String RDF_SCHEMA_NAMESPACE_IRI = "http://www.w3.org/2000/01/rdf-schema#";
 
-    final String XSD_PREFIX = "xsd";
-    final String XSD_NAMESPACE_IRI = "http://www.w3.org/2001/XMLSchema#";
+    String XSD_PREFIX = "xsd";
+    String XSD_NAMESPACE_IRI = "http://www.w3.org/2001/XMLSchema#";
 
-    final String RESOURCE_DATA_TYPE = "Resource";
+    String RESOURCE_DATA_TYPE = "Resource";
 
-    final String[] DATA_TYPES = new String[] {
+    String[] DATA_TYPES = new String[] {
                 "xsd:string",
                 "xsd:boolean",
                 "xsd:decimal",
@@ -82,12 +79,12 @@ public interface Rdf11 {
                 "rdf:XMLLiteral"
     };
 
-    final String[] SERIALIZATION_FORMATS = new String[] {
+    String[] SERIALIZATION_FORMATS = new String[] {
             "RDF/XML",
             "RDF/XML-ABBREV",
             "N-TRIPLE",
             "TURTLE",
             "N3"
     };
-    final String DEFAULT_SERIALIZATION_FORMAT = "TURTLE";
+    String DEFAULT_SERIALIZATION_FORMAT = "TURTLE";
 }

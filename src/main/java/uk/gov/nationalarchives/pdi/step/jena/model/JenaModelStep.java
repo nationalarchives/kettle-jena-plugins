@@ -45,6 +45,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static uk.gov.nationalarchives.pdi.step.jena.Rdf11.RDF_NAMESPACE_IRI;
+import static uk.gov.nationalarchives.pdi.step.jena.Rdf11.XSD_NAMESPACE_IRI;
 import static uk.gov.nationalarchives.pdi.step.jena.Util.*;
 
 /**
@@ -306,7 +308,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
     }
 
     private Object convertSqlValueToRdf(final Object sqlValue, @Nullable final RDFDatatype rdfDatatype) {
-        if (rdfDatatype == null || rdfDatatype.getURI().equals("http://www.w3.org/2001/XMLSchema#string")) {
+        if (rdfDatatype == null || rdfDatatype.getURI().equals(XSD_NAMESPACE_IRI + "#string")) {
             // to xsd:string
             if (sqlValue instanceof String) {
                 return sqlValue;
@@ -320,13 +322,9 @@ public class JenaModelStep extends BaseStep implements StepInterface {
             } else if (sqlValue instanceof Number) {
                 return ((Number)sqlValue).toString();
 
-            } else {
-                // fallback
-                logBasic("convertSqlValueToRdfLiteralValue: required xsd:string but was given: {0}, unsure how to convert... Will default to Object#toString()!", sqlValue.getClass());
-                return sqlValue.toString();
             }
 
-        } else if (rdfDatatype.getURI().equals("http://www.w3.org/2001/XMLSchema#dateTime")) {
+        } else if (rdfDatatype.getURI().equals(XSD_NAMESPACE_IRI + "dateTime")) {
             // to xsd:dateTime
             if (sqlValue instanceof String) {
                 return sqlValue;
