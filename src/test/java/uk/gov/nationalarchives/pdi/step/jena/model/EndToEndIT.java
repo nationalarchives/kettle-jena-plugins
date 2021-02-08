@@ -23,6 +23,8 @@
 
 package uk.gov.nationalarchives.pdi.step.jena.model;
 
+import org.apache.jena.datatypes.RDFDatatype;
+import org.apache.jena.datatypes.xsd.impl.XMLLiteralType;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,6 +44,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.nationalarchives.pdi.step.jena.Constants.DCT_NAMESPACE_IRI;
+import static uk.gov.nationalarchives.pdi.step.jena.Rdf11.RDF_NAMESPACE_IRI;
 
 public class EndToEndIT {
     @RegisterExtension
@@ -65,6 +69,21 @@ public class EndToEndIT {
 
         final Path outputFilePath = Files.createTempFile(tempDir, "output", ".ttl");
         executeTransformation("createRdfTypeStatement.ktr", outputFilePath);
+        final Model actual = loadOutputGraph(outputFilePath);
+
+        assertTrue(actual.isIsomorphicWith(expected));
+    }
+
+    @Test
+    public void createXMLLiteral(@TempDir final Path tempDir) throws KettleException, IOException {
+        final Model expected = ModelFactory.createDefaultModel();
+        expected.add(
+                expected.createResource("http://example.com/s"),
+                expected.createProperty(DCT_NAMESPACE_IRI + "description"),
+                expected.createTypedLiteral("<greeting>Hello <b>World</b>!</greeting>", XMLLiteralType.theXMLLiteralType));
+
+        final Path outputFilePath = Files.createTempFile(tempDir, "output", ".ttl");
+        executeTransformation("createXMLLiteral.ktr", outputFilePath);
         final Model actual = loadOutputGraph(outputFilePath);
 
         assertTrue(actual.isIsomorphicWith(expected));
