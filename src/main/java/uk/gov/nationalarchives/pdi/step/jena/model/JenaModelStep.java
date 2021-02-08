@@ -24,6 +24,7 @@ package uk.gov.nationalarchives.pdi.step.jena.model;
 
 import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.TypeMapper;
+import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.RDF;
 import org.pentaho.di.core.exception.KettleException;
@@ -32,11 +33,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.BaseStep;
-import org.pentaho.di.trans.step.StepDataInterface;
-import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.step.*;
 
 import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
@@ -45,8 +42,6 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static uk.gov.nationalarchives.pdi.step.jena.Rdf11.RDF_NAMESPACE_IRI;
-import static uk.gov.nationalarchives.pdi.step.jena.Rdf11.XSD_NAMESPACE_IRI;
 import static uk.gov.nationalarchives.pdi.step.jena.Util.*;
 
 /**
@@ -308,7 +303,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
     }
 
     private Object convertSqlValueToRdf(final Object sqlValue, @Nullable final RDFDatatype rdfDatatype) {
-        if (rdfDatatype == null || rdfDatatype.getURI().equals(XSD_NAMESPACE_IRI + "#string")) {
+        if (rdfDatatype == null || rdfDatatype.equals(XSDDatatype.XSDstring)) {
             // to xsd:string
             if (sqlValue instanceof String) {
                 return sqlValue;
@@ -324,7 +319,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
             }
 
-        } else if (rdfDatatype.getURI().equals(XSD_NAMESPACE_IRI + "dateTime")) {
+        } else if (rdfDatatype.equals(XSDDatatype.XSDdateTime)) {
             // to xsd:dateTime
             if (sqlValue instanceof String) {
                 return sqlValue;
@@ -333,7 +328,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                 return (java.util.Date) sqlValue;
             }
 
-        } else if (rdfDatatype.getURI().equals(RDF_NAMESPACE_IRI + "XMLLiteral")) {
+        } else if (rdfDatatype.equals(RDF.dtXMLLiteral)) {
             // to rdf:XMLLiteral
             if (sqlValue instanceof String) {
                 return sqlValue;

@@ -23,10 +23,10 @@
 
 package uk.gov.nationalarchives.pdi.step.jena.model;
 
-import org.apache.jena.datatypes.RDFDatatype;
-import org.apache.jena.datatypes.xsd.impl.XMLLiteralType;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.vocabulary.DCTerms;
+import org.apache.jena.vocabulary.RDF;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -44,8 +44,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.gov.nationalarchives.pdi.step.jena.Constants.DCT_NAMESPACE_IRI;
-import static uk.gov.nationalarchives.pdi.step.jena.Rdf11.RDF_NAMESPACE_IRI;
 
 public class EndToEndIT {
     @RegisterExtension
@@ -64,7 +62,7 @@ public class EndToEndIT {
         final Model expected = ModelFactory.createDefaultModel();
         expected.add(
                 expected.createResource("http://example.com/s"),
-                expected.createProperty(RDF_NAMESPACE_IRI + "type"),
+                RDF.type,
                 expected.createResource("http://example.com/C"));
 
         final Path outputFilePath = Files.createTempFile(tempDir, "output", ".ttl");
@@ -79,8 +77,8 @@ public class EndToEndIT {
         final Model expected = ModelFactory.createDefaultModel();
         expected.add(
                 expected.createResource("http://example.com/s"),
-                expected.createProperty(DCT_NAMESPACE_IRI + "description"),
-                expected.createTypedLiteral("<greeting>Hello <b>World</b>!</greeting>", XMLLiteralType.theXMLLiteralType));
+                DCTerms.description,
+                expected.createTypedLiteral("<greeting>Hello <b>World</b>!</greeting>", RDF.dtXMLLiteral));
 
         final Path outputFilePath = Files.createTempFile(tempDir, "output", ".ttl");
         executeTransformation("createXMLLiteral.ktr", outputFilePath);

@@ -22,6 +22,9 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena.model;
 
+import org.apache.jena.vocabulary.RDF;
+import org.apache.jena.vocabulary.RDFS;
+import org.apache.jena.vocabulary.XSD;
 import uk.gov.nationalarchives.pdi.step.jena.Rdf11;
 import uk.gov.nationalarchives.pdi.step.jena.Util;
 import org.pentaho.di.core.annotations.Step;
@@ -161,9 +164,9 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         removeSelectedFields = false;
         resourceUriField = "";
         namespaces = new LinkedHashMap<>();
-        namespaces.put(Rdf11.RDF_PREFIX, Rdf11.RDF_NAMESPACE_IRI);
-        namespaces.put(Rdf11.RDF_SCHEMA_PREFIX, Rdf11.RDF_SCHEMA_NAMESPACE_IRI);
-        namespaces.put(Rdf11.XSD_PREFIX, Rdf11.XSD_NAMESPACE_IRI);
+        namespaces.put(Rdf11.RDF_PREFIX, RDF.uri);
+        namespaces.put(Rdf11.RDF_SCHEMA_PREFIX, RDFS.uri);
+        namespaces.put(Rdf11.XSD_PREFIX, XSD.NS);
         dbToJenaMappings = new DbToJenaMapping[0];
         blankNodeMappings = new BlankNodeMapping[0];
     }
