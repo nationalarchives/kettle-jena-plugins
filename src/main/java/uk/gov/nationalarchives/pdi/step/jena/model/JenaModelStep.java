@@ -332,6 +332,16 @@ public class JenaModelStep extends BaseStep implements StepInterface {
             } else if (sqlValue instanceof java.sql.Date || sqlValue instanceof java.sql.Timestamp || sqlValue instanceof java.util.Date) {
                 return (java.util.Date) sqlValue;
             }
+
+        } else if (rdfDatatype.getURI().equals(RDF_NAMESPACE_IRI + "XMLLiteral")) {
+            // to rdf:XMLLiteral
+            if (sqlValue instanceof String) {
+                return sqlValue;
+
+            } else if (sqlValue instanceof byte[]) {
+                return new String((byte[]) sqlValue, UTF_8);
+
+            }
         }
 
         // fallback
