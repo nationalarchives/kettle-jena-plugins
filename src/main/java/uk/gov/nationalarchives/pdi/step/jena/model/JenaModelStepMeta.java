@@ -107,8 +107,10 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     static class DbToJenaMapping implements Cloneable {
         String fieldName;
         QName rdfPropertyName;
+        @Nullable
         QName rdfType;
-        String language; // TODO(SL): Should this be java.util.Locale?
+        @Nullable
+        String language;
         ActionIfNull actionIfNull;
 
         @Override
