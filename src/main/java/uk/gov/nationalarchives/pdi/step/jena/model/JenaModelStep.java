@@ -200,6 +200,9 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
         if (dbToJenaMappings != null) {
             for (final JenaModelStepMeta.DbToJenaMapping mapping : dbToJenaMappings) {
+                if (mapping.skip) {
+                    continue;
+                }
 
                 final QName qname = mapping.rdfPropertyName;
                 Property property;

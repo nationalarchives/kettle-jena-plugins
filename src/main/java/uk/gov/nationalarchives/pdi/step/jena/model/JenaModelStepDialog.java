@@ -490,6 +490,9 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                         dbToJenaMapping.fieldName,
                         Util.asPrefixString(dbToJenaMapping.rdfPropertyName),
                         Util.asPrefixString(dbToJenaMapping.rdfType),
+                        dbToJenaMapping.skip ?
+                                BaseMessages.getString(PKG, "JenaModelStepDialog.SkipYes") :
+                                BaseMessages.getString(PKG, "JenaModelStepDialog.SkipNo"),
                         dbToJenaMapping.language,
                         dbToJenaMapping.actionIfNull.name()
                 });
@@ -532,6 +535,10 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         for (int i = 0; i < actionsIfNullLen; i++) {
             actionIfNullNames[i] = actionsIfNull[i].name();
         }
+        final String[] skipNames = {
+                BaseMessages.getString(PKG, "JenaModelStepDialog.SkipNo"),
+                BaseMessages.getString(PKG, "JenaModelStepDialog.SkipYes"),
+        };
 
         final ColumnInfo ciFieldName = new ColumnInfo(
                 BaseMessages.getString(PKG, "JenaModelStepDialog.Fieldname"),
@@ -547,6 +554,11 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 BaseMessages.getString(PKG, "JenaModelStepDialog.RdfPropertyType"),
                 ColumnInfo.COLUMN_TYPE_CCOMBO,
                 propertyTypes  // combo-box options
+        );
+        final ColumnInfo ciSkip = new ColumnInfo(
+                BaseMessages.getString(PKG, "JenaModelStepDialog.Skip"),
+                ColumnInfo.COLUMN_TYPE_CCOMBO,
+                skipNames  // combo-box options
         );
         final ColumnInfo ciLanguage = new ColumnInfo(
                 BaseMessages.getString(PKG, "JenaModelStepDialog.Language"),
@@ -583,6 +595,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 ciFieldName,
                 ciRdfPropertyName,
                 ciRdfPropertyType,
+                ciSkip,
                 ciLanguage,
                 ciIfNull
         };
@@ -950,8 +963,9 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             dbToJenaMapping.rdfPropertyName = Util.parseQName(namespaces, propertyName);
             final String rdfType = Util.nullIfEmpty(tableView.getItem(i, 3));
             dbToJenaMapping.rdfType = Util.parseQName(namespaces, rdfType);
-            dbToJenaMapping.language = tableView.getItem(i, 4);
-            final String actionIfNullName = tableView.getItem(i, 5);
+            dbToJenaMapping.skip = tableView.getItem(i, 4).equals(BaseMessages.getString(PKG, "JenaModelStepDialog.SkipYes"));
+            dbToJenaMapping.language = tableView.getItem(i, 5);
+            final String actionIfNullName = tableView.getItem(i, 6);
             if (actionIfNullName == null || actionIfNullName.isEmpty()) {
                 // default
                 dbToJenaMapping.actionIfNull = JenaModelStepMeta.ActionIfNull.WARN;
