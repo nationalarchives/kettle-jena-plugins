@@ -303,8 +303,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
     }
 
     private Object convertSqlValueToRdf(final Object sqlValue, @Nullable final RDFDatatype rdfDatatype) {
-        // Using reference equality because TypeMapper guarantees uniqueness in caller
-        if (rdfDatatype == null || rdfDatatype == XSDDatatype.XSDstring) {
+        if (rdfDatatype == null || rdfDatatype.equals(XSDDatatype.XSDstring)) {
             // to xsd:string
             if (sqlValue instanceof String) {
                 return sqlValue;
@@ -320,7 +319,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
             }
 
-        } else if (rdfDatatype == XSDDatatype.XSDdateTime) {
+        } else if (rdfDatatype.equals(XSDDatatype.XSDdateTime)) {
             // to xsd:dateTime
             if (sqlValue instanceof String) {
                 return sqlValue;
@@ -329,7 +328,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                 return (java.util.Date) sqlValue;
             }
 
-        } else if (rdfDatatype == RDF.dtXMLLiteral) {
+        } else if (rdfDatatype.equals(RDF.dtXMLLiteral)) {
             // to rdf:XMLLiteral
             if (sqlValue instanceof String) {
                 return sqlValue;
