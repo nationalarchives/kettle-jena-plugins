@@ -1,0 +1,6 @@
+@prefix ex: <http://example.com/> .
+
+ex:s ex:p "o" .
+ex:s ex:p "o"@en .
+ex:s ex:p "o"@fr .
+ex:s ex:p "o"^^ex:D .

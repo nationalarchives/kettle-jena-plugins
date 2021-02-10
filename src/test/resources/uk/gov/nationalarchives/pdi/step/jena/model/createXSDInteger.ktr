@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <transformation>
   <info>
-    <name>skipProperties</name>
+    <name>createXSDInteger</name>
     <description/>
     <extended_description/>
     <trans_version/>
@@ -466,31 +466,41 @@
     </resourceUri>
     <namespaces>
       <namespace>
-        <prefix>rdf</prefix>
-        <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#</uri>
+        <prefix>ex</prefix>
+        <uri>http://example.com/</uri>
+      </namespace>
+      <namespace>
+        <prefix>xsd</prefix>
+        <uri>http://www.w3.org/2001/XMLSchema#</uri>
       </namespace>
     </namespaces>
     <dbToJenaMappings>
       <dbToJenaMapping>
-        <fieldName>uri</fieldName>
+        <fieldName>f1</fieldName>
         <rdfPropertyName>
           <prefix>ex</prefix>
           <uri>http://example.com/</uri>
-          <localPart>pSkipNo</localPart>
+          <localPart>p</localPart>
         </rdfPropertyName>
         <rdfType/>
         <skip>N</skip>
+        <language/>
         <actionIfNull>WARN</actionIfNull>
       </dbToJenaMapping>
       <dbToJenaMapping>
-        <fieldName>uri</fieldName>
+        <fieldName>f1</fieldName>
         <rdfPropertyName>
-          <prefix>rdf</prefix>
-          <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#</uri>
-          <localPart>pSkipYes</localPart>
+          <prefix>ex</prefix>
+          <uri>http://example.com/</uri>
+          <localPart>p</localPart>
         </rdfPropertyName>
-        <rdfType/>
-        <skip>Y</skip>
+        <rdfType>
+          <prefix>xsd</prefix>
+          <uri>http://www.w3.org/2001/XMLSchema#</uri>
+          <localPart>integer</localPart>
+        </rdfType>
+        <skip>N</skip>
+        <language/>
         <actionIfNull>WARN</actionIfNull>
       </dbToJenaMapping>
     </dbToJenaMappings>
@@ -523,7 +533,19 @@
     <fields>
       <field>
         <name>uri</name>
-        <type>String</type>
+        <type/>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <field_null_if/>
+      </field>
+      <field>
+        <name>f1</name>
+        <type/>
         <format/>
         <currency/>
         <decimal/>
@@ -537,6 +559,7 @@
     <data>
       <line>
         <item>http://example.com/s</item>
+        <item>0</item>
       </line>
     </data>
     <attributes/>
