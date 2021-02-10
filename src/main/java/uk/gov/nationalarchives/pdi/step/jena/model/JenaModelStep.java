@@ -238,11 +238,18 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                         closeAndThrow(model, "Could not write property: " + property.toString() + " for resource: " + rootResourceUri + ", row field is null!");
                     }
                 } else {
-
                     if (mapping.rdfType == null) {
-                        // non-typed literal
                         final String rdfLiteralValue = (String) convertSqlValueToRdf(fieldValue, null);
-                        final Literal literal = model.createLiteral(rdfLiteralValue);
+                        Literal literal;
+
+                        if (mapping.language == null) {
+                            // non-typed literal
+                            literal = model.createLiteral(rdfLiteralValue);
+                        } else {
+                            // language-tagged string
+                            literal = model.createLiteral(rdfLiteralValue, mapping.language);
+                        }
+
                         resource.addLiteral(property, literal);
 
                     } else if (isBNodeFieldName) {

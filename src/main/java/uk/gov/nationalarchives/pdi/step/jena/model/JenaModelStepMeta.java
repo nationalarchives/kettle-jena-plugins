@@ -85,6 +85,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     private static final String ELEM_NAME_PROPERTY_NAME = "rdfPropertyName";
     private static final String ELEM_NAME_RDF_TYPE = "rdfType";
     private static final String ELEM_NAME_SKIP = "skip";
+    private static final String ELEM_NAME_LANGUAGE = "language";
     private static final String ELEM_NAME_ACTION_IF_NULL = "actionIfNull";
     private static final String ELEM_NAME_BLANK_NODE_MAPPINGS = "blankNodeMappings";
     private static final String ELEM_NAME_BLANK_NODE_MAPPING = "blankNodeMapping";
@@ -110,8 +111,11 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     static class DbToJenaMapping implements Cloneable {
         String fieldName;
         QName rdfPropertyName;
+        @Nullable
         QName rdfType;
         boolean skip;
+        @Nullable
+        String language;
         ActionIfNull actionIfNull;
 
         @Override
@@ -125,6 +129,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
             copy.rdfPropertyName = Util.copy(rdfPropertyName);
             copy.rdfType = Util.copy(rdfType);
             copy.skip = skip;
+            copy.language = language;
             copy.actionIfNull = actionIfNull;
             return copy;
         }
@@ -252,6 +257,8 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                             builder.append(XMLHandler.closeTag(ELEM_NAME_RDF_TYPE))
 
                             .append(XMLHandler.addTagValue(ELEM_NAME_SKIP, dbToJenaMapping.skip))
+
+                            .append(XMLHandler.addTagValue(ELEM_NAME_LANGUAGE, dbToJenaMapping.language))
 
                             .append(XMLHandler.addTagValue(ELEM_NAME_ACTION_IF_NULL, dbToJenaMapping.actionIfNull.name()))
 
@@ -396,6 +403,8 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
 
                     final String skipNode = XMLHandler.getTagValue(dbToJenaMappingNode, ELEM_NAME_SKIP);
                     dbToJenaMapping.skip = skipNode != null && skipNode.equals("Y");
+
+                    dbToJenaMapping.language = XMLHandler.getTagValue(dbToJenaMappingNode, ELEM_NAME_LANGUAGE);
 
                     final String actionIfNullName = XMLHandler.getTagValue(dbToJenaMappingNode, ELEM_NAME_ACTION_IF_NULL);
                     if (actionIfNullName != null) {

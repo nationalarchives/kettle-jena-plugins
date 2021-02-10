@@ -493,6 +493,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                         dbToJenaMapping.skip ?
                                 BaseMessages.getString(PKG, "JenaModelStepDialog.SkipYes") :
                                 BaseMessages.getString(PKG, "JenaModelStepDialog.SkipNo"),
+                        dbToJenaMapping.language,
                         dbToJenaMapping.actionIfNull.name()
                 });
             }
@@ -559,6 +560,11 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 ColumnInfo.COLUMN_TYPE_CCOMBO,
                 skipNames  // combo-box options
         );
+        final ColumnInfo ciLanguage = new ColumnInfo(
+                BaseMessages.getString(PKG, "JenaModelStepDialog.Language"),
+                ColumnInfo.COLUMN_TYPE_TEXT,
+                false
+        );
         final ColumnInfo ciIfNull = new ColumnInfo(
                 BaseMessages.getString(PKG, "JenaModelStepDialog.IfNull"),
                 ColumnInfo.COLUMN_TYPE_CCOMBO,
@@ -590,6 +596,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 ciRdfPropertyName,
                 ciRdfPropertyType,
                 ciSkip,
+                ciLanguage,
                 ciIfNull
         };
 
@@ -957,7 +964,8 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             final String rdfType = Util.nullIfEmpty(tableView.getItem(i, 3));
             dbToJenaMapping.rdfType = Util.parseQName(namespaces, rdfType);
             dbToJenaMapping.skip = tableView.getItem(i, 4).equals(BaseMessages.getString(PKG, "JenaModelStepDialog.SkipYes"));
-            final String actionIfNullName = tableView.getItem(i, 5);
+            dbToJenaMapping.language = tableView.getItem(i, 5);
+            final String actionIfNullName = tableView.getItem(i, 6);
             if (actionIfNullName == null || actionIfNullName.isEmpty()) {
                 // default
                 dbToJenaMapping.actionIfNull = JenaModelStepMeta.ActionIfNull.WARN;
