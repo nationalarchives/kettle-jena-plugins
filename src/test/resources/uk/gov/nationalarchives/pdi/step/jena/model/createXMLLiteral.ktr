@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <transformation>
   <info>
-    <name>first</name>
+    <name>createXMLLiteral</name>
     <description/>
     <extended_description/>
     <trans_version/>
@@ -469,19 +469,23 @@
         <prefix>rdf</prefix>
         <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#</uri>
       </namespace>
+      <namespace>
+        <prefix>dct</prefix>
+        <uri>http://purl.org/dc/terms/</uri>
+      </namespace>
     </namespaces>
     <dbToJenaMappings>
       <dbToJenaMapping>
-        <fieldName>type</fieldName>
+        <fieldName>xml_field</fieldName>
         <rdfPropertyName>
-          <prefix>rdf</prefix>
-          <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#</uri>
-          <localPart>type</localPart>
+          <prefix>dct</prefix>
+          <uri>http://purl.org/dc/terms/</uri>
+          <localPart>description</localPart>
         </rdfPropertyName>
         <rdfType>
-          <prefix/>
-          <uri/>
-          <localPart>Resource</localPart>
+          <prefix>rdf</prefix>
+          <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#</uri>
+          <localPart>XMLLiteral</localPart>
         </rdfType>
         <actionIfNull>WARN</actionIfNull>
       </dbToJenaMapping>
@@ -514,18 +518,6 @@
     </partitioning>
     <fields>
       <field>
-        <name>type</name>
-        <type>String</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <length>-1</length>
-        <precision>-1</precision>
-        <set_empty_string>N</set_empty_string>
-        <field_null_if/>
-      </field>
-      <field>
         <name>uri</name>
         <type>String</type>
         <format/>
@@ -535,13 +527,23 @@
         <length>-1</length>
         <precision>-1</precision>
         <set_empty_string>N</set_empty_string>
-        <field_null_if/>
+      </field>
+      <field>
+        <name>xml_field</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
       </field>
     </fields>
     <data>
       <line>
-        <item>http://example.com/C</item>
         <item>http://example.com/s</item>
+        <item>&lt;greeting>Hello &lt;b>World&lt;/b>!&lt;/greeting></item>
       </line>
     </data>
     <attributes/>

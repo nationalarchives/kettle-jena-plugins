@@ -24,6 +24,7 @@ package uk.gov.nationalarchives.pdi.step.jena.model;
 
 import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.TypeMapper;
+import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.rdf.model.*;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
@@ -304,7 +305,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
     }
 
     private Object convertSqlValueToRdf(final Object sqlValue, @Nullable final RDFDatatype rdfDatatype) {
-        if (rdfDatatype == null || rdfDatatype.getURI().equals("http://www.w3.org/2001/XMLSchema#string")) {
+        if (rdfDatatype == null || rdfDatatype.equals(XSDDatatype.XSDstring)) {
             // to xsd:string
             if (sqlValue instanceof String) {
                 return sqlValue;
@@ -318,19 +319,25 @@ public class JenaModelStep extends BaseStep implements StepInterface {
             } else if (sqlValue instanceof Number) {
                 return ((Number)sqlValue).toString();
 
-            } else {
-                // fallback
-                logBasic("convertSqlValueToRdfLiteralValue: required xsd:string but was given: {0}, unsure how to convert... Will default to Object#toString()!", sqlValue.getClass());
-                return sqlValue.toString();
             }
 
-        } else if (rdfDatatype.getURI().equals("http://www.w3.org/2001/XMLSchema#dateTime")) {
+        } else if (rdfDatatype.equals(XSDDatatype.XSDdateTime)) {
             // to xsd:dateTime
             if (sqlValue instanceof String) {
                 return sqlValue;
 
             } else if (sqlValue instanceof java.sql.Date || sqlValue instanceof java.sql.Timestamp || sqlValue instanceof java.util.Date) {
                 return (java.util.Date) sqlValue;
+            }
+
+        } else if (rdfDatatype.equals(RDF.dtXMLLiteral)) {
+            // to rdf:XMLLiteral
+            if (sqlValue instanceof String) {
+                return sqlValue;
+
+            } else if (sqlValue instanceof byte[]) {
+                return new String((byte[]) sqlValue, UTF_8);
+
             }
         }
 
