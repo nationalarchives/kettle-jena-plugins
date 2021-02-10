@@ -42,7 +42,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.gov.nationalarchives.pdi.step.jena.Rdf11.RDF_NAMESPACE_IRI;
 
 public class CanSkipIT {
     @SuppressWarnings("unused") // Marker field required to inject plugin
@@ -63,7 +62,7 @@ public class CanSkipIT {
         final Model expected = ModelFactory.createDefaultModel();
         expected.add(
                 expected.createResource("http://example.com/s"),
-                expected.createProperty(RDF_NAMESPACE_IRI + "pSkipNo"),
+                expected.createProperty("http://example.com/pSkipNo"),
                 expected.createLiteral("http://example.com/s"));
 
         final Path outputFilePath = Files.createTempFile(tempDir, "output", ".ttl");
