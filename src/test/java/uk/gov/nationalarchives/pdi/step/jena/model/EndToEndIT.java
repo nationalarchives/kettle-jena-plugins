@@ -33,8 +33,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.TransMeta;
 import uk.gov.nationalarchives.pdi.step.StepPluginResource;
 import uk.gov.nationalarchives.pdi.step.jena.serializer.JenaSerializerStepMeta;
 
@@ -44,6 +42,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.nationalarchives.pdi.step.jena.model.TestUtil.executeTransformation;
+import static uk.gov.nationalarchives.pdi.step.jena.model.TestUtil.loadTurtleGraph;
+
 
 public class EndToEndIT {
     @RegisterExtension
@@ -66,8 +67,10 @@ public class EndToEndIT {
                 expected.createResource("http://example.com/C"));
 
         final Path outputFilePath = Files.createTempFile(tempDir, "output", ".ttl");
-        executeTransformation("createRdfTypeStatement.ktr", outputFilePath);
-        final Model actual = loadOutputGraph(outputFilePath);
+        try (final InputStream kettleTransformation = getClass().getResourceAsStream("createRdfTypeStatement.ktr")) {
+            executeTransformation(kettleTransformation, outputFilePath);
+        }
+        final Model actual = loadTurtleGraph(outputFilePath);
 
         assertTrue(actual.isIsomorphicWith(expected));
     }
@@ -81,26 +84,11 @@ public class EndToEndIT {
                 expected.createTypedLiteral("<greeting>Hello <b>World</b>!</greeting>", RDF.dtXMLLiteral));
 
         final Path outputFilePath = Files.createTempFile(tempDir, "output", ".ttl");
-        executeTransformation("createXMLLiteral.ktr", outputFilePath);
-        final Model actual = loadOutputGraph(outputFilePath);
+        try (final InputStream kettleTransformation = getClass().getResourceAsStream("createXMLLiteral.ktr")) {
+            executeTransformation(kettleTransformation, outputFilePath);
+        }
+        final Model actual = loadTurtleGraph(outputFilePath);
 
         assertTrue(actual.isIsomorphicWith(expected));
-    }
-
-    private static void executeTransformation(final String kettleTransformation, final Path outputFilePath) throws IOException, KettleException {
-        try (final InputStream ktr = EndToEndIT.class.getResourceAsStream(kettleTransformation)) {
-            final Trans trans = new Trans(new TransMeta(ktr, null, false, null, null));
-
-            trans.setVariable("Filename", outputFilePath.toString());
-            trans.execute(null);
-            trans.waitUntilFinished();
-        }
-    }
-
-    private static Model loadOutputGraph(final Path outputFilePath) {
-        final Model output = ModelFactory.createDefaultModel();
-        output.read(outputFilePath.toUri().toString(), "TURTLE");
-
-        return output;
     }
 }

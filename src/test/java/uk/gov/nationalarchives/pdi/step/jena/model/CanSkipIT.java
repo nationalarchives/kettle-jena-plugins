@@ -31,8 +31,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.TransMeta;
 import uk.gov.nationalarchives.pdi.step.StepPluginResource;
 import uk.gov.nationalarchives.pdi.step.jena.serializer.JenaSerializerStepMeta;
 
@@ -42,6 +40,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.nationalarchives.pdi.step.jena.model.TestUtil.executeTransformation;
+import static uk.gov.nationalarchives.pdi.step.jena.model.TestUtil.loadTurtleGraph;
 
 public class CanSkipIT {
     @SuppressWarnings("unused") // Marker field required to inject plugin
@@ -66,26 +66,11 @@ public class CanSkipIT {
                 expected.createLiteral("http://example.com/s"));
 
         final Path outputFilePath = Files.createTempFile(tempDir, "output", ".ttl");
-        executeTransformation("skipProperties.ktr", outputFilePath);
-        final Model actual = loadOutputGraph(outputFilePath);
+        try (final InputStream kettleTransformation = getClass().getResourceAsStream("skipProperties.ktr")) {
+            executeTransformation(kettleTransformation, outputFilePath);
+        }
+        final Model actual = loadTurtleGraph(outputFilePath);
 
         assertTrue(actual.isIsomorphicWith(expected));
-    }
-
-    private static void executeTransformation(final String kettleTransformation, final Path outputFilePath) throws IOException, KettleException {
-        try (final InputStream ktr = EndToEndIT.class.getResourceAsStream(kettleTransformation)) {
-            final Trans trans = new Trans(new TransMeta(ktr, null, false, null, null));
-
-            trans.setVariable("Filename", outputFilePath.toString());
-            trans.execute(null);
-            trans.waitUntilFinished();
-        }
-    }
-
-    private static Model loadOutputGraph(final Path outputFilePath) {
-        final Model output = ModelFactory.createDefaultModel();
-        output.read(outputFilePath.toUri().toString(), "TURTLE");
-
-        return output;
     }
 }
