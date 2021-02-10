@@ -34,8 +34,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.trans.Trans;
-import org.pentaho.di.trans.TransMeta;
 import uk.gov.nationalarchives.pdi.step.StepPluginResource;
 import uk.gov.nationalarchives.pdi.step.jena.serializer.JenaSerializerStepMeta;
 
@@ -44,6 +42,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.nationalarchives.pdi.step.jena.model.TestUtil.executeTransformation;
+import static uk.gov.nationalarchives.pdi.step.jena.model.TestUtil.loadTurtleGraph;
 
 public class LanguageTagIT {
     @SuppressWarnings("unused") // Marker field required to inject plugin
@@ -59,38 +59,11 @@ public class LanguageTagIT {
         KettleEnvironment.init();
     }
 
-    @Test
-    public void can_create_lang_string(@TempDir final Path tempDir) throws KettleException, IOException {
-        final Path outputFilePath = tempDir.resolve("output.ttl");
-
-        executeTransformation(outputFilePath);
-        final Model actual = loadOutputGraph(outputFilePath);
-        final Model expected = createExpectedModel();
-
-        assertTrue(actual.isIsomorphicWith(expected));
-    }
-
-    private static void executeTransformation(final Path outputFilePath) throws IOException, KettleException {
-        try (final InputStream ktr = EndToEndIT.class.getResourceAsStream("can_create_lang_string.ktr")) {
-            final Trans trans = new Trans(new TransMeta(ktr, null, false, null, null));
-
-            trans.setVariable("Filename", outputFilePath.toString());
-            trans.execute(null);
-            trans.waitUntilFinished();
-        }
-    }
-
-    private static Model loadOutputGraph(final Path outputFilePath) {
-        final Model output = ModelFactory.createDefaultModel();
-        output.read(outputFilePath.toUri().toString(), "TURTLE");
-
-        return output;
-    }
-
     /**
-     * @see <a href="https://github.com/nationalarchives/kettle-jena-plugins/pull/16#discussion_r568929699"></a>
+     * @see <a href="https://github.com/nationalarchives/kettle-jena-plugins/pull/16#discussion_r568929699">nationalarchives/kettle-jena-plugins/pull/16#discussion_r568929699</a>
      */
-    private static Model createExpectedModel() {
+    @Test
+    public void createLangString(@TempDir final Path tempDir) throws KettleException, IOException {
         final Model expected = ModelFactory.createDefaultModel();
         final Resource s = expected.createResource("http://example.com/s");
         final Property p = expected.createProperty("http://example.com/p");
@@ -105,6 +78,13 @@ public class LanguageTagIT {
         // Typed literal object
         expected.add(s, p, expected.createTypedLiteral("o", TypeMapper.getInstance().getSafeTypeByName("http://example.com/D")));
 
-        return expected;
+
+        final Path outputFilePath = tempDir.resolve("output.ttl");
+        try (final InputStream kettleTransformation = getClass().getResourceAsStream("createLangString.ktr")) {
+            executeTransformation(kettleTransformation, outputFilePath);
+        }
+        final Model actual = loadTurtleGraph(outputFilePath);
+
+        assertTrue(actual.isIsomorphicWith(expected));
     }
 }
