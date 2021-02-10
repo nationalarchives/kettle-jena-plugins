@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <transformation>
   <info>
-    <name>can_skip</name>
+    <name>skipProperties</name>
     <description/>
     <extended_description/>
     <trans_version/>
@@ -474,8 +474,8 @@
       <dbToJenaMapping>
         <fieldName>uri</fieldName>
         <rdfPropertyName>
-          <prefix>rdf</prefix>
-          <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#</uri>
+          <prefix>ex</prefix>
+          <uri>http://example.com/</uri>
           <localPart>pSkipNo</localPart>
         </rdfPropertyName>
         <rdfType/>

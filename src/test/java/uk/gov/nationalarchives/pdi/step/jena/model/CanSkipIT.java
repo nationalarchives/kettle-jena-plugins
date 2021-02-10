@@ -38,6 +38,7 @@ import uk.gov.nationalarchives.pdi.step.jena.serializer.JenaSerializerStepMeta;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,18 +58,22 @@ public class CanSkipIT {
     }
 
     @Test
-    public void can_create_rdf_type_statement(@TempDir final Path tempDir) throws KettleException, IOException {
-        final Path outputFilePath = tempDir.resolve("output.ttl");
+    public void skipProperties(@TempDir final Path tempDir) throws KettleException, IOException {
+        final Model expected = ModelFactory.createDefaultModel();
+        expected.add(
+                expected.createResource("http://example.com/s"),
+                expected.createProperty("http://example.com/pSkipNo"),
+                expected.createLiteral("http://example.com/s"));
 
-        executeTransformation(outputFilePath);
+        final Path outputFilePath = Files.createTempFile(tempDir, "output", ".ttl");
+        executeTransformation("skipProperties.ktr", outputFilePath);
         final Model actual = loadOutputGraph(outputFilePath);
-        final Model expected = createExpectedModel();
 
         assertTrue(actual.isIsomorphicWith(expected));
     }
 
-    private static void executeTransformation(final Path outputFilePath) throws IOException, KettleException {
-        try (final InputStream ktr = EndToEndIT.class.getResourceAsStream("can_skip.ktr")) {
+    private static void executeTransformation(final String kettleTransformation, final Path outputFilePath) throws IOException, KettleException {
+        try (final InputStream ktr = EndToEndIT.class.getResourceAsStream(kettleTransformation)) {
             final Trans trans = new Trans(new TransMeta(ktr, null, false, null, null));
 
             trans.setVariable("Filename", outputFilePath.toString());
@@ -82,15 +87,5 @@ public class CanSkipIT {
         output.read(outputFilePath.toUri().toString(), "TURTLE");
 
         return output;
-    }
-
-    private static Model createExpectedModel() {
-        final Model expected = ModelFactory.createDefaultModel();
-        expected.add(
-                expected.createResource("http://example.com/s"),
-                expected.createProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#pSkipNo"),
-                expected.createLiteral("http://example.com/s"));
-
-        return expected;
     }
 }
