@@ -63,7 +63,7 @@ public class LanguageTagIT {
      * @see <a href="https://github.com/nationalarchives/kettle-jena-plugins/pull/16#discussion_r568929699">nationalarchives/kettle-jena-plugins/pull/16#discussion_r568929699</a>
      */
     @Test
-    public void can_create_lang_string(@TempDir final Path tempDir) throws KettleException, IOException {
+    public void createLangString(@TempDir final Path tempDir) throws KettleException, IOException {
         final Model expected = ModelFactory.createDefaultModel();
         final Resource s = expected.createResource("http://example.com/s");
         final Property p = expected.createProperty("http://example.com/p");
@@ -80,7 +80,7 @@ public class LanguageTagIT {
 
 
         final Path outputFilePath = tempDir.resolve("output.ttl");
-        try (final InputStream kettleTransformation = getClass().getResourceAsStream("can_create_lang_string.ktr")) {
+        try (final InputStream kettleTransformation = getClass().getResourceAsStream("createLangString.ktr")) {
             executeTransformation(kettleTransformation, outputFilePath);
         }
         final Model actual = loadTurtleGraph(outputFilePath);
