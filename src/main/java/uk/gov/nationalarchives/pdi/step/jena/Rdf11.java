@@ -25,13 +25,10 @@ package uk.gov.nationalarchives.pdi.step.jena;
 public interface Rdf11 {
 
     String RDF_PREFIX = "rdf";
-    String RDF_NAMESPACE_IRI = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 
     String RDF_SCHEMA_PREFIX = "rdfs";
-    String RDF_SCHEMA_NAMESPACE_IRI = "http://www.w3.org/2000/01/rdf-schema#";
 
     String XSD_PREFIX = "xsd";
-    String XSD_NAMESPACE_IRI = "http://www.w3.org/2001/XMLSchema#";
 
     String RESOURCE_DATA_TYPE = "Resource";
 
