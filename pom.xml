@@ -195,6 +195,9 @@
           <properties>
             <owner>${project.organization.name}</owner>
           </properties>
+          <mapping>
+            <ktr>XML_STYLE</ktr>
+          </mapping>
           <excludes>
             <exclude>.gitignore</exclude>
             <exclude>.travis.yml</exclude>
