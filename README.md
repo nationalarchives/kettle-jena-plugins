@@ -1,6 +1,6 @@
 # Jena Plugins for Pentaho KETTLE
 
-[![Build Status](https://travis-ci.com/nationalarchives/kettle-jena-plugins.svg?branch=master)](https://travis-ci.com/nationalarchives/kettle-jena-plugins)
+[![CI](https://github.com/nationalarchives/kettle-jena-plugins/workflows/CI/badge.svg)](https://github.com/nationalarchives/kettle-jena-plugins/actions?query=workflow%3ACI)
 [![Java 8](https://img.shields.io/badge/java-8+-blue.svg)](https://adoptopenjdk.net/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
