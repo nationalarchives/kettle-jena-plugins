@@ -197,6 +197,7 @@
           </properties>
           <mapping>
             <ktr>XML_STYLE</ktr>
+            <ttl>SCRIPT_STYLE</ttl>
           </mapping>
           <excludes>
             <exclude>.github/</exclude>

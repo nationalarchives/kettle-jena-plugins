@@ -20,30 +20,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package uk.gov.nationalarchives.pdi.step.jena;
 
-package uk.gov.nationalarchives.pdi.step.jena.model;
-
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.apache.jena.ext.com.google.common.collect.Streams;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
-import org.pentaho.di.core.KettleEnvironment;
-import org.pentaho.di.core.exception.KettleException;
 import uk.gov.nationalarchives.pdi.step.StepPluginResource;
+import uk.gov.nationalarchives.pdi.step.jena.model.JenaModelStepMeta;
 import uk.gov.nationalarchives.pdi.step.jena.serializer.JenaSerializerStepMeta;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.gov.nationalarchives.pdi.step.jena.model.TestUtil.executeTransformation;
-import static uk.gov.nationalarchives.pdi.step.jena.model.TestUtil.loadTurtleGraph;
 
-public class CanSkipIT {
+public class TestSuiteIT {
     @SuppressWarnings("unused") // Marker field required to inject plugin
     @RegisterExtension
     static final StepPluginResource JENA_MODEL_STEP_PLUGIN = new StepPluginResource(JenaModelStepMeta.class);
@@ -52,25 +45,15 @@ public class CanSkipIT {
     @RegisterExtension
     static final StepPluginResource JENA_SERIALIZE_STEP_PLUGIN = new StepPluginResource(JenaSerializerStepMeta.class);
 
-    @BeforeAll
-    public static void setup() throws KettleException {
-        KettleEnvironment.init();
-    }
+    @TestFactory
+    public Stream<DynamicTest> executeTest(@TempDir final Path tempDir) throws Exception {
+        final ManifestGraph g = new ManifestGraph();
+        final String manifestUrl = TestSuiteIT.class.getResource("manifest.ttl").toString();
+        g.read(manifestUrl, "TURTLE");
 
-    @Test
-    public void skipProperties(@TempDir final Path tempDir) throws KettleException, IOException {
-        final Model expected = ModelFactory.createDefaultModel();
-        expected.add(
-                expected.createResource("http://example.com/s"),
-                expected.createProperty("http://example.com/pSkipNo"),
-                expected.createLiteral("http://example.com/s"));
-
-        final Path outputFilePath = Files.createTempFile(tempDir, "output", ".ttl");
-        try (final InputStream kettleTransformation = getClass().getResourceAsStream("skipProperties.ktr")) {
-            executeTransformation(kettleTransformation, outputFilePath);
-        }
-        final Model actual = loadTurtleGraph(outputFilePath);
-
-        assertTrue(actual.isIsomorphicWith(expected));
+        return Streams
+                .stream(g.getManifests())
+                .flatMap(manifest -> Streams.stream(manifest.getEntries()))
+                .map(entry -> DynamicTest.dynamicTest(entry.getName(), () -> assertTrue(entry.execute(tempDir))));
     }
 }

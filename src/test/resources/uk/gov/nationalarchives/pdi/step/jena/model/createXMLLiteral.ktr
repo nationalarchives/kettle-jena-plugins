@@ -511,6 +511,8 @@
           <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#</uri>
           <localPart>XMLLiteral</localPart>
         </rdfType>
+        <skip>N</skip>
+        <language/>
         <actionIfNull>WARN</actionIfNull>
       </dbToJenaMapping>
     </dbToJenaMappings>
@@ -551,6 +553,7 @@
         <length>-1</length>
         <precision>-1</precision>
         <set_empty_string>N</set_empty_string>
+        <field_null_if/>
       </field>
       <field>
         <name>xml_field</name>
@@ -562,6 +565,7 @@
         <length>-1</length>
         <precision>-1</precision>
         <set_empty_string>N</set_empty_string>
+        <field_null_if/>
       </field>
     </fields>
     <data>
@@ -598,7 +602,7 @@
     <jenaModelField>model</jenaModelField>
     <serializationFormat>TURTLE</serializationFormat>
     <file>
-      <filename>${Filename}</filename>
+      <filename>${filename}</filename>
       <createParentFolder>false</createParentFolder>
       <includeStepNr>false</includeStepNr>
       <includePartitionNr>false</includePartitionNr>

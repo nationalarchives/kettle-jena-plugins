@@ -25,7 +25,7 @@
 -->
 <transformation>
   <info>
-    <name>createRdfTypeStatement</name>
+    <name>createXSDInteger</name>
     <description/>
     <extended_description/>
     <trans_version/>
@@ -490,23 +490,41 @@
     </resourceUri>
     <namespaces>
       <namespace>
-        <prefix>rdf</prefix>
-        <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#</uri>
+        <prefix>ex</prefix>
+        <uri>http://example.com/</uri>
+      </namespace>
+      <namespace>
+        <prefix>xsd</prefix>
+        <uri>http://www.w3.org/2001/XMLSchema#</uri>
       </namespace>
     </namespaces>
     <dbToJenaMappings>
       <dbToJenaMapping>
-        <fieldName>type</fieldName>
+        <fieldName>f1</fieldName>
         <rdfPropertyName>
-          <prefix>rdf</prefix>
-          <uri>http://www.w3.org/1999/02/22-rdf-syntax-ns#</uri>
-          <localPart>type</localPart>
+          <prefix>ex</prefix>
+          <uri>http://example.com/</uri>
+          <localPart>p</localPart>
+        </rdfPropertyName>
+        <rdfType/>
+        <skip>N</skip>
+        <language/>
+        <actionIfNull>WARN</actionIfNull>
+      </dbToJenaMapping>
+      <dbToJenaMapping>
+        <fieldName>f1</fieldName>
+        <rdfPropertyName>
+          <prefix>ex</prefix>
+          <uri>http://example.com/</uri>
+          <localPart>p</localPart>
         </rdfPropertyName>
         <rdfType>
-          <prefix/>
-          <uri/>
-          <localPart>Resource</localPart>
+          <prefix>xsd</prefix>
+          <uri>http://www.w3.org/2001/XMLSchema#</uri>
+          <localPart>integer</localPart>
         </rdfType>
+        <skip>N</skip>
+        <language/>
         <actionIfNull>WARN</actionIfNull>
       </dbToJenaMapping>
     </dbToJenaMappings>
@@ -538,8 +556,8 @@
     </partitioning>
     <fields>
       <field>
-        <name>type</name>
-        <type>String</type>
+        <name>uri</name>
+        <type/>
         <format/>
         <currency/>
         <decimal/>
@@ -550,8 +568,8 @@
         <field_null_if/>
       </field>
       <field>
-        <name>uri</name>
-        <type>String</type>
+        <name>f1</name>
+        <type/>
         <format/>
         <currency/>
         <decimal/>
@@ -564,8 +582,8 @@
     </fields>
     <data>
       <line>
-        <item>http://example.com/C</item>
         <item>http://example.com/s</item>
+        <item>0</item>
       </line>
     </data>
     <attributes/>

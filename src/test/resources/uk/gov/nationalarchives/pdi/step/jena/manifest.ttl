@@ -1,0 +1,151 @@
+#
+# The MIT License
+# Copyright © 2020 The National Archives
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+
+@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix ex: <http://example.com/> .
+
+[
+   a mf:Manifest ;
+   mf:entries (
+       [
+           a ex:CompareGraphsEntry ;
+           mf:name "Create RDF type statement" ;
+           mf:action [
+               a ex:TransformationAction ;
+               ex:path <model/createRdfTypeStatement.ktr> ;
+           ] ;
+           mf:result [
+               a ex:LoadGraphAction ;
+               ex:path <model/createRdfTypeStatementResult.ttl> ;
+           ] ;
+       ]
+       [
+           a ex:CompareGraphsEntry ;
+           mf:name "Skip properties" ;
+           mf:action [
+               a ex:TransformationAction ;
+               ex:path <model/skipProperties.ktr> ;
+           ] ;
+           mf:result [
+               a ex:LoadGraphAction ;
+               ex:path <model/skipPropertiesResult.ttl> ;
+           ] ;
+       ]
+       [
+           a ex:CompareGraphsEntry ;
+           mf:name "Create step resolves target field variable" ;
+           mf:action [
+               a ex:TransformationAction ;
+               ex:path <model/createStepResolvesTargetFieldVariable.ktr> ;
+           ] ;
+           mf:result [
+               a ex:LoadGraphAction ;
+               ex:path <model/createStepResolvesTargetFieldVariableResult.ttl> ;
+           ] ;
+       ]
+       [
+           a ex:CompareGraphsEntry ;
+           mf:name "Create step resolves uri variable" ;
+           mf:action [
+               a ex:TransformationAction ;
+               ex:path <model/createStepResolvesUriVariable.ktr> ;
+           ] ;
+           mf:result [
+               a ex:LoadGraphAction ;
+               ex:path <model/createStepResolvesUriVariableResult.ttl> ;
+           ] ;
+       ]
+       [
+           a ex:CompareGraphsEntry ;
+           mf:name "Create language-tagged string" ;
+           mf:action [
+               a ex:TransformationAction ;
+               ex:path <model/createLangString.ktr> ;
+           ] ;
+           mf:result [
+               a ex:LoadGraphAction ;
+               ex:path <model/createLangStringResult.ttl> ;
+           ] ;
+       ]
+       [
+           a ex:CompareGraphsEntry ;
+           mf:name "Create xsd:integer" ;
+           mf:action [
+               a ex:TransformationAction ;
+               ex:path <model/createXSDInteger.ktr> ;
+           ] ;
+           mf:result [
+               a ex:LoadGraphAction ;
+               ex:path <model/createXSDIntegerResult.ttl> ;
+           ] ;
+       ]
+       [
+           a ex:CompareGraphsEntry ;
+           mf:name "Serialize step resolves field variable" ;
+           mf:action [
+               a ex:TransformationAction ;
+               ex:path <model/serializeStepResolvesFieldVariable.ktr> ;
+           ] ;
+           mf:result [
+               a ex:LoadGraphAction ;
+               ex:path <model/serializeStepResolvesFieldVariableResult.ttl> ;
+           ] ;
+       ]
+       [
+           a ex:CompareGraphsEntry ;
+           mf:name "Serialize step resolves format variable" ;
+           mf:action [
+               a ex:TransformationAction ;
+               ex:path <model/serializeStepResolvesFormatVariable.ktr> ;
+           ] ;
+           mf:result [
+               a ex:LoadGraphAction ;
+               ex:path <model/serializeStepResolvesFormatVariableResult.ttl> ;
+           ] ;
+       ]
+       [
+           a ex:CompareGraphsEntry ;
+           mf:name "Serialize step resolves filename variable" ;
+           mf:action [
+               a ex:TransformationAction ;
+               ex:path <model/serializeStepResolvesFilenameVariable.ktr> ;
+           ] ;
+           mf:result [
+               a ex:LoadGraphAction ;
+               ex:path <model/serializeStepResolvesFilenameVariableResult.ttl> ;
+           ] ;
+       ]
+       [
+           a ex:CompareGraphsEntry ;
+           mf:name "Create XML literal" ;
+           mf:action [
+               a ex:TransformationAction ;
+               ex:path <model/createXMLLiteral.ktr> ;
+           ] ;
+           mf:result [
+               a ex:LoadGraphAction ;
+               ex:path <model/createXMLLiteralResult.ttl> ;
+           ] ;
+       ]
+   ) ;
+] .
