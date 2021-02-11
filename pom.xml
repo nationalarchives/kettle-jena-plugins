@@ -199,6 +199,7 @@
             <ktr>XML_STYLE</ktr>
           </mapping>
           <excludes>
+            <exclude>.github/</exclude>
             <exclude>.gitignore</exclude>
             <exclude>.travis.yml</exclude>
             <exclude>appveyor.yml</exclude>
