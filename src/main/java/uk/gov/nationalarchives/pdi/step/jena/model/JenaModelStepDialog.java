@@ -831,8 +831,8 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                 final String[] rdfPropertyTypes = ciRdfPropertyTypes.getComboValues();
 
                 int removeIdx = -1;
-                for (i = 0; i < rdfPropertyTypes.length; i++) {
-                    final String rdfPropertyType = rdfPropertyTypes[i];
+                for (int j = 0; j < rdfPropertyTypes.length; j++) {
+                    final String rdfPropertyType = rdfPropertyTypes[j];
                     if (rdfPropertyType.equals(RESOURCE_DATA_TYPE)) {
                         break;
                     }
@@ -841,13 +841,13 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
                     if (mtcBlankNodeId.matches()) {
                         final int bNodeId = Integer.parseInt(mtcBlankNodeId.group(1));
                         if (bNodeId == removedBNodeTabId) {
-                            removeIdx = i;
+                            removeIdx = j;
                         }
 
                         if (bNodeId > removedBNodeTabId) {
                             // decrement the entry
                             final int newBNodeId = bNodeId - 1;
-                            rdfPropertyTypes[i] = BLANK_NODE_NAME + ":" + newBNodeId;
+                            rdfPropertyTypes[j] = BLANK_NODE_NAME + ":" + newBNodeId;
                         }
                     }
                 }
