@@ -246,12 +246,12 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
                     } else if (mapping.actionIfNull == JenaModelStepMeta.ActionIfNull.WARN) {
                         // log a warning
-                        logBasic("Could not write property: {0} for resource: {1}, row field is null!", property.toString(), rootResourceUri);
+                        logBasic("Could not write property: {0} for resource: {1}, row field: {2} is null!", property.toString(), rootResourceUri, fieldName);
 
                     } else if (mapping.actionIfNull == JenaModelStepMeta.ActionIfNull.ERROR) {
                         // throw an exception
 
-                        closeAndThrow(model, "Could not write property: " + property.toString() + " for resource: " + rootResourceUri + ", row field is null!");
+                        closeAndThrow(model, "Could not write property: " + property.toString() + " for resource: " + rootResourceUri + ", row field: " + fieldName + " is null!");
                     }
                 } else {
                     if (mapping.rdfType == null) {
