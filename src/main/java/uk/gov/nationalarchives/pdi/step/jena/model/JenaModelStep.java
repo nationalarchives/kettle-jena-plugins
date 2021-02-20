@@ -25,6 +25,7 @@ package uk.gov.nationalarchives.pdi.step.jena.model;
 import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
+import org.apache.jena.datatypes.xsd.XSDDateTime;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.RDF;
 import org.pentaho.di.core.exception.KettleException;
@@ -38,8 +39,12 @@ import org.pentaho.di.trans.step.*;
 import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static uk.gov.nationalarchives.pdi.step.jena.Util.*;
@@ -50,6 +55,17 @@ import static uk.gov.nationalarchives.pdi.step.jena.Util.*;
 public class JenaModelStep extends BaseStep implements StepInterface {
 
     private static Class<?> PKG = JenaModelStepMeta.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
+
+    /**
+     * Regular expression for xsd:dateTime
+     */
+    private static final Pattern PATTERN_XSD_DATE_TIME = Pattern.compile("-?[0-9]{4}-(((0(1|3|5|7|8)|1(0|2))-(0[1-9]|(1|2)[0-9]|3[0-1]))|((0(4|6|9)|11)-(0[1-9]|(1|2)[0-9]|30))|(02-(0[1-9]|(1|2)[0-9])))T([0-1][0-9]|2[0-4]):(0[0-9]|[1-5][0-9]):(0[0-9]|[1-5][0-9])(\\.[0-9]{1,3})?((\\+|-)([0-1][0-9]|2[0-4]):(0[0-9]|[1-5][0-9])|Z)?");
+
+    /**
+     * Regular expression for xsd:date
+     */
+    private static final Pattern PATTERN_XSD_DATE = Pattern.compile("-?[0-9]{4}-(((0(1|3|5|7|8)|1(0|2))-(0[1-9]|(1|2)[0-9]|3[0-1]))|((0(4|6|9)|11)-(0[1-9]|(1|2)[0-9]|30))|(02-(0[1-9]|(1|2)[0-9])))((\\+|-)([0-1][0-9]|2[0-4]):(0[0-9]|[1-5][0-9])|Z)?");
+
 
     public JenaModelStep(final StepMeta stepMeta, final StepDataInterface stepDataInterface, final int copyNr,
             final TransMeta transMeta, final Trans trans) {
@@ -329,13 +345,44 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
             }
 
+        } else if (rdfDatatype.equals(XSDDatatype.XSDdate)) {
+            // to xsd:date
+            if (sqlValue instanceof String) {
+                if (sqlValue != null) {
+                    // check lexical form
+                    final Matcher matcher = PATTERN_XSD_DATE.matcher(sqlValue.toString());
+                    if (matcher.matches()) {
+                        return sqlValue;
+                    }
+                } else {
+                    return sqlValue;
+                }
+
+            } else if (sqlValue instanceof java.sql.Date || sqlValue instanceof java.sql.Timestamp || sqlValue instanceof java.util.Date) {
+                // TODO(AR) need to check about the locale/timezone here... make configurable?
+                final Calendar ukCalendar = Calendar.getInstance(Locale.UK);
+                ukCalendar.setTime((java.util.Date) sqlValue);
+                return new XSDDateTime(ukCalendar);
+            }
+
         } else if (rdfDatatype.equals(XSDDatatype.XSDdateTime)) {
             // to xsd:dateTime
             if (sqlValue instanceof String) {
-                return sqlValue;
+                if (sqlValue != null) {
+                    // check lexical form
+                    final Matcher matcher = PATTERN_XSD_DATE_TIME.matcher(sqlValue.toString());
+                    if (matcher.matches()) {
+                        return sqlValue;
+                    }
+                } else {
+                    return sqlValue;
+                }
 
             } else if (sqlValue instanceof java.sql.Date || sqlValue instanceof java.sql.Timestamp || sqlValue instanceof java.util.Date) {
-                return (java.util.Date) sqlValue;
+                // TODO(AR) need to check about the locale/timezone here... make configurable?
+                final Calendar ukCalendar = Calendar.getInstance(Locale.UK);
+                ukCalendar.setTime((java.util.Date) sqlValue);
+                return new XSDDateTime(ukCalendar);
             }
 
         } else if (rdfDatatype.equals(RDF.dtXMLLiteral)) {
@@ -345,7 +392,15 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
             } else if (sqlValue instanceof byte[]) {
                 return new String((byte[]) sqlValue, UTF_8);
+            }
 
+        } else if (rdfDatatype.equals(RDF.dtRDFHTML)) {
+            // to rdf:HTML
+            if (sqlValue instanceof String) {
+                return sqlValue;
+
+            } else if (sqlValue instanceof byte[]) {
+                return new String((byte[]) sqlValue, UTF_8);
             }
         }
 
