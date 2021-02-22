@@ -115,6 +115,8 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
 
                 // merge this rows model with model for all rows
                 data.getModel().add(model);
+
+                // TODO(AR) can we call close on the input `model` to save mem? if not, make a comment to that effect here so we don't wonder about it in future...
             }
 
             if (checkFeedback(getLinesRead())) {
@@ -215,21 +217,25 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
         final RDFWriterF factory = new RDFWriterFImpl();
         final RDFWriter rdfWriter = factory.getWriter(serializationFormat);
 
-        // start a transaction on the model
-        if (model.supportsTransactions()) {
-            model.begin();
-        }
+        try {
+            // start a transaction on the model
+            if (model.supportsTransactions()) {
+                model.begin();
+            }
 
-        try (final Writer writer = new OutputStreamWriter(Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING), UTF_8)) {
-            //model.write(writer, serializationFormat);
-            rdfWriter.write(model, writer, "");
-        }
+            try (final Writer writer = new OutputStreamWriter(Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING), UTF_8)) {
+                //model.write(writer, serializationFormat);
+                rdfWriter.write(model, writer, "");
+            }
 
-        // finish the transaction on the model
-        if (model.supportsTransactions()) {
-            model.commit();
+            // finish the transaction on the model
+            if (model.supportsTransactions()) {
+                model.commit();
+            }
+        } catch (final IOException e) {
+            closeAndThrow(model, e);
+        } finally {
+            model.close();
         }
-
-        model.close();
     }
 }

@@ -26,6 +26,7 @@ import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.datatypes.xsd.XSDDateTime;
+import org.apache.jena.datatypes.xsd.impl.XSDYearType;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.RDF;
 import org.pentaho.di.core.exception.KettleException;
@@ -71,22 +72,6 @@ public class JenaModelStep extends BaseStep implements StepInterface {
     public JenaModelStep(final StepMeta stepMeta, final StepDataInterface stepDataInterface, final int copyNr,
             final TransMeta transMeta, final Trans trans) {
         super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
-    }
-
-    /**
-     * Initialize and do work where other steps need to wait for...
-     *
-     * @param stepMetaInterface The metadata to work with
-     * @param stepDataInterface The data to initialize
-     */
-    @Override
-    public boolean init(final StepMetaInterface stepMetaInterface, final StepDataInterface stepDataInterface) {
-        return super.init(stepMetaInterface, stepDataInterface);
-    }
-
-    @Override
-    public void dispose(final StepMetaInterface smi, final StepDataInterface sdi) {
-        super.dispose(smi, sdi);
     }
 
     @Override
@@ -238,17 +223,20 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                 final Object fieldValue = valueLookup.apply(fieldName);
 
                 if ((!isBNodeFieldName) && fieldValue == null) {
-                    if (mapping.actionIfNull == JenaModelStepMeta.ActionIfNull.IGNORE) {
-                        // no-op - just ignore it!
+                    switch (mapping.actionIfNull) {
+                        case IGNORE:
+                            // no-op - just ignore it!
+                            break;
 
-                    } else if (mapping.actionIfNull == JenaModelStepMeta.ActionIfNull.WARN) {
-                        // log a warning
-                        logBasic("Could not write property: {0} for resource: {1}, row field: {2} is null!", property.toString(), rootResourceUri, fieldName);
+                        case WARN:
+                            // log a warning
+                            logBasic("Could not write property: {0} for resource: {1}, row field: {2} is null!", property.toString(), rootResourceUri, fieldName);
+                            break;
 
-                    } else if (mapping.actionIfNull == JenaModelStepMeta.ActionIfNull.ERROR) {
-                        // throw an exception
-
-                        closeAndThrow(model, "Could not write property: " + property.toString() + " for resource: " + rootResourceUri + ", row field: " + fieldName + " is null!");
+                        case ERROR:
+                            // throw an exception
+                            closeAndThrow(model, "Could not write property: " + property.toString() + " for resource: " + rootResourceUri + ", row field: " + fieldName + " is null!");
+                            break;
                     }
                 } else {
                     if (mapping.rdfType == null) {
@@ -371,6 +359,15 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                 final Calendar ukCalendar = Calendar.getInstance(Locale.UK);
                 ukCalendar.setTime((java.util.Date) sqlValue);
                 return new XSDDateTime(ukCalendar);
+            }
+
+        } else if (rdfDatatype.equals(XSDDatatype.XSDgYear)) {
+            // to xsd:gYear
+            if (sqlValue instanceof Long) {
+                if (sqlValue != null) {
+                    // TODO(AR) should we check the lexical form?
+                    return sqlValue;
+                }
             }
 
         } else if (rdfDatatype.equals(RDF.dtXMLLiteral)) {
