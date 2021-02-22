@@ -47,6 +47,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static uk.gov.nationalarchives.pdi.step.jena.JenaUtil.closeAndThrow;
 import static uk.gov.nationalarchives.pdi.step.jena.Util.*;
 
 /**
@@ -185,11 +186,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                 model.commit();
             }
         } catch (final KettleException e) {
-            // close the jena model
-            model.close();
-
-            // rethrow the exception
-            throw e;
+            closeAndThrow(model, e);
         }
 
         return model;
@@ -317,15 +314,6 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                 }
             }
         }
-    }
-
-    private void closeAndThrow(final Model model, final String message) throws KettleException {
-        // abort the transaction on the model
-        if (model.supportsTransactions()) {
-            model.abort();
-        }
-        model.close();
-        throw new KettleException(message);
     }
 
     private Object convertSqlValueToRdf(final Object sqlValue, @Nullable final RDFDatatype rdfDatatype) {

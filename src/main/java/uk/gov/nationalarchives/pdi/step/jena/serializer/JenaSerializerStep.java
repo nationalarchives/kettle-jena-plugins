@@ -46,6 +46,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static uk.gov.nationalarchives.pdi.step.jena.JenaUtil.closeAndThrow;
 
 public class JenaSerializerStep extends BaseStep implements StepInterface {
     private static Class<?> PKG = JenaSerializerStepMeta.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
