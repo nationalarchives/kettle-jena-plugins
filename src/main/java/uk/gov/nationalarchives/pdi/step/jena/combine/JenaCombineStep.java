@@ -32,6 +32,7 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -67,48 +68,55 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
 
             if (meta.isMutateFirstModel() || meta.getTargetFieldName() != null && !meta.getTargetFieldName().isEmpty()) {
                 // get all Jena models from fields
-                final List<Model> fieldModels = getModels(meta, row, inputRowMeta);
+                final List<FieldModel> fieldModels = getModels(meta, row, inputRowMeta);
 
                 // get the Head Jena Model
                 final int tailIdx;
-                final Model headModel;
+                final FieldModel headModel;
                 if (meta.isMutateFirstModel()) {
                     // get first model
                     headModel = fieldModels.get(0);
                     tailIdx = 1;
+
+                    if (headModel.model.isClosed()) {
+                        throw new KettleException("Model is already closed in row: " + getLinesRead() + " for field: " + headModel.fieldName);
+                    }
                 } else {
                     // create new model
-                    headModel = ModelFactory.createDefaultModel();
+                    headModel = new FieldModel(ModelFactory.createDefaultModel());
                     tailIdx = 0;
-
                 }
 
                 try {
                     // start a transaction on the model
-                    if (headModel.supportsTransactions()) {
-                        headModel.begin();
+                    if (headModel.model.supportsTransactions()) {
+                        headModel.model.begin();
                     }
 
                     // first, add each Jena model from fields to the baseModel
                     int[] removeIndexes = new int[0];
                     for (int i = tailIdx; i < fieldModels.size(); i++) {
-                        final Model fieldModel = fieldModels.get(i);
+                        final FieldModel fieldModel = fieldModels.get(i);
 
-                        if (fieldModel.supportsTransactions()) {
-                            fieldModel.begin();
+                        if (fieldModel.model.isClosed()) {
+                            throw new KettleException("Model is already closed in row: " + getLinesRead() + " for field: " + fieldModel.fieldName);
                         }
 
-                        headModel.add(fieldModel);
+                        if (fieldModel.model.supportsTransactions()) {
+                            fieldModel.model.begin();
+                        }
 
-                        if (fieldModel.supportsTransactions()) {
-                            fieldModel.commit();
+                        headModel.model.add(fieldModel.model);
+
+                        if (fieldModel.model.supportsTransactions()) {
+                            fieldModel.model.commit();
                         }
 
                         // second, remove the column if it is no longer needed
                         if (meta.isRemoveSelectedFields()) {
 
                             // we no longer need this model so we can close it
-                            fieldModel.close();
+                            fieldModel.model.close();
 
                             final String jenaModelFieldName = environmentSubstitute(meta.getJenaModelFields().get(i).fieldName);
                             final int removeIndex = inputRowMeta.indexOfValue(jenaModelFieldName);
@@ -134,14 +142,14 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
                     }
 
                     // commit the transaction
-                    if (headModel.supportsTransactions()) {
-                        headModel.commit();
+                    if (headModel.model.supportsTransactions()) {
+                        headModel.model.commit();
                     }
 
                     return true;  // signal that we want the next row...
 
                 } catch (final KettleException e) {
-                   closeAndThrow(headModel, e);
+                   closeAndThrow(headModel.model, e);
                    throw e; // needed for the compiler to pass
                 }
 
@@ -152,13 +160,27 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
         }
     }
 
-    private List<Model> getModels(final JenaCombineStepMeta meta, final Object[] row, final RowMetaInterface inputRowMeta)
+    private static class FieldModel {
+        @Nullable final String fieldName;
+        final Model model;
+
+        private FieldModel(final String fieldName, final Model model) {
+            this.fieldName = fieldName;
+            this.model = model;
+        }
+
+        public FieldModel(final Model model) {
+            this(null, model);
+        }
+    }
+
+    private List<FieldModel> getModels(final JenaCombineStepMeta meta, final Object[] row, final RowMetaInterface inputRowMeta)
             throws KettleException {
         if (meta.getJenaModelFields().isEmpty()) {
             throw new KettleException("No fields configured");
         }
 
-        final List<Model> models = new ArrayList<>(meta.getJenaModelFields().size());
+        final List<FieldModel> models = new ArrayList<>(meta.getJenaModelFields().size());
 
         for (int i = 0; i < meta.getJenaModelFields().size(); i++) {
             final JenaCombineStepMeta.JenaModelField jenaModelField = meta.getJenaModelFields().get(i);
@@ -202,7 +224,7 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
                     }
                 } else {
                     if (jenaModelFieldValue instanceof Model) {
-                        models.add((Model) jenaModelFieldValue);
+                        models.add(new FieldModel(jenaModelFieldName, (Model) jenaModelFieldValue));
                     } else {
                         throw new KettleException("Expected field '" + jenaModelFieldName + "' to contain a Jena Model, but found "
                                 + jenaModelFieldValue.getClass());
