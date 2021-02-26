@@ -22,7 +22,6 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena.combine;
 
-import org.pentaho.di.ui.core.widget.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.*;
@@ -41,8 +40,10 @@ import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.ui.core.ConstUI;
 import org.pentaho.di.ui.core.FormDataBuilder;
 import org.pentaho.di.ui.core.gui.GUIResource;
+import org.pentaho.di.ui.core.widget.ColumnInfo;
+import org.pentaho.di.ui.core.widget.TableView;
+import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
-import uk.gov.nationalarchives.pdi.step.jena.model.JenaModelStepMeta;
 
 import java.util.ArrayList;
 import java.util.List;
