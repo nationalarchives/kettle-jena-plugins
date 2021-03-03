@@ -17,9 +17,15 @@ The plugins provided are:
 2. Combine Jena Models
     
     <img alt="Combine Jena Models Icon" src="https://raw.githubusercontent.com/nationalarchives/kettle-jena-plugins/main/src/main/resources/JenaCombineStep.svg" width="32"/>
-    This transform plugin allows you to merge multiple Jena Models that are within the same row into a single model.
+    This transform plugin allows you to merge multiple Jena Models that are within the same row into a single model. This can be considered as a horizontal transformation within a row.
 
-3. Serialize Jena Model
+2. Group Merge Jena Models
+
+    <img alt="Group Merge Jena Models Icon" src="https://raw.githubusercontent.com/nationalarchives/kettle-jena-plugins/main/src/main/resources/JenaGroupMergeStep.svg" width="32"/>
+    This transform plugin performs a Group By operation across consecutive rows, allowing you to merge multiple Jena Models that are within consecutive rows into a single model in a single row.
+    This can be considered as a vertical transformation across rows.
+
+4. Serialize Jena Model
     
     <img alt="Serialize Jena Model Icon" src="https://raw.githubusercontent.com/nationalarchives/kettle-jena-plugins/main/src/main/resources/JenaSerializerStep.svg" width="32"/>
     This output plugin takes the output of the Create Jena Model plugin, and serializes it to an RDF file on disk. Supports Turtle, N3, N-Triples, and RDF/XML output formats.
