@@ -45,7 +45,9 @@ import java.util.*;
 
 
 /**
- * Skeleton for PDI Step plugin.
+ * Jena Serializer Step meta.
+ *
+ * Deals with describing the step, and saving and loading the step configuration data from XML.
  */
 @Step(id = "JenaSerializerStep", image = "JenaSerializerStep.svg", name = "Serialize Jena Model",
         description = "Serializes an Apache Jena Model", categoryDescription = "Output")

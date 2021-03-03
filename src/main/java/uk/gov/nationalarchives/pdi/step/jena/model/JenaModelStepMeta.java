@@ -61,7 +61,9 @@ import static uk.gov.nationalarchives.pdi.step.jena.Util.BLANK_NODE_NAME;
 
 
 /**
- * Skeleton for PDI Step plugin.
+ * Jena Model Step meta.
+ *
+ * Deals with describing the step, and saving and loading the step configuration data from XML.
  */
 @Step(id = "JenaModelStep", image = "JenaModelStep.svg", name = "Create Jena Model",
         description = "Constructs an Apache Jena Model", categoryDescription = "Transform")

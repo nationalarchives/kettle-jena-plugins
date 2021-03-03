@@ -22,6 +22,7 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena.serializer;
 
+import org.pentaho.di.core.row.RowDataUtil;
 import uk.gov.nationalarchives.pdi.step.jena.Rdf11;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.RDFWriter;
@@ -46,6 +47,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static uk.gov.nationalarchives.pdi.step.jena.JenaUtil.closeAndThrow;
 
 public class JenaSerializerStep extends BaseStep implements StepInterface {
     private static Class<?> PKG = JenaSerializerStepMeta.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
@@ -85,8 +87,8 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
         final JenaSerializerStepMeta meta = (JenaSerializerStepMeta) smi;
         final JenaSerializerStepData data = (JenaSerializerStepData) sdi;
 
-        Object[] r = getRow(); // try and get a row
-        if (r == null) {
+        Object[] row = getRow(); // try and get a row
+        if (row == null) {
 
             // serialize the jena model
             try {
@@ -110,10 +112,20 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
             //TODO(AR) seems we have to duplicate behaviour of JenaModelStepMeta getFields here but on `r` ???
             if (meta.getJenaModelField() != null && !meta.getJenaModelField().isEmpty()) {
                 // get Jena model from row
-                final Model model = getModel(meta, r, inputRowMeta);
+                final Model model = getModel(meta, row, inputRowMeta);
 
-                // merge this rows model with model for all rows
-                data.getModel().add(model);
+                try {
+                    // merge this rows model with model for all rows
+                    data.getModel().add(model);
+                } finally {
+                    //TODO(AR) consider adding a 'removeSelectedFields' option to the dialog, if not set, don't close and remove, instead call putRow to pass it on.
+
+                    // we are now finished with the input model from the row, so let's close it to release any resources
+                    model.close();
+
+                    // model can no longer be used, so remove it from the row
+                    removeModel(meta, row, inputRowMeta);
+                }
             }
 
             if (checkFeedback(getLinesRead())) {
@@ -125,11 +137,11 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
         }
     }
 
-    private Model getModel(final JenaSerializerStepMeta meta, final Object[] r, final RowMetaInterface inputRowMeta)
+    private Model getModel(final JenaSerializerStepMeta meta, final Object[] row, final RowMetaInterface inputRowMeta)
             throws KettleException {
         final String jenaModelField = environmentSubstitute(meta.getJenaModelField());
         final int idxJenaModelField = inputRowMeta.indexOfValue(jenaModelField);
-        final Object jenaModelFieldValue =  r[idxJenaModelField];
+        final Object jenaModelFieldValue =  row[idxJenaModelField];
 
         if (jenaModelFieldValue instanceof Model) {
             return (Model) jenaModelFieldValue;
@@ -137,6 +149,13 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
             throw new KettleException("Expected field " + jenaModelField + " to contain a Jena Model, but found "
                     + jenaModelFieldValue.getClass());
         }
+    }
+
+    private void removeModel(final JenaSerializerStepMeta meta, Object[] row, final RowMetaInterface inputRowMeta) throws KettleException {
+        final String jenaModelField = environmentSubstitute(meta.getJenaModelField());
+        final int idxJenaModelField = inputRowMeta.indexOfValue(jenaModelField);
+
+        row = RowDataUtil.removeItem(row, idxJenaModelField);
     }
 
     private void serializeModel(final JenaSerializerStepMeta meta, final JenaSerializerStepData data) throws IOException {
@@ -214,21 +233,25 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
         final RDFWriterF factory = new RDFWriterFImpl();
         final RDFWriter rdfWriter = factory.getWriter(serializationFormat);
 
-        // start a transaction on the model
-        if (model.supportsTransactions()) {
-            model.begin();
-        }
+        try {
+            // start a transaction on the model
+            if (model.supportsTransactions()) {
+                model.begin();
+            }
 
-        try (final Writer writer = new OutputStreamWriter(Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING), UTF_8)) {
-            //model.write(writer, serializationFormat);
-            rdfWriter.write(model, writer, "");
-        }
+            try (final Writer writer = new OutputStreamWriter(Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING), UTF_8)) {
+                //model.write(writer, serializationFormat);
+                rdfWriter.write(model, writer, "");
+            }
 
-        // finish the transaction on the model
-        if (model.supportsTransactions()) {
-            model.commit();
+            // finish the transaction on the model
+            if (model.supportsTransactions()) {
+                model.commit();
+            }
+        } catch (final IOException e) {
+            closeAndThrow(model, e);
+        } finally {
+            model.close();
         }
-
-        model.close();
     }
 }
