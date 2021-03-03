@@ -9,11 +9,19 @@ that add functionality via [Apache Jena](https://jena.apache.org/) for producing
 
 The plugins provided are:
 1. Create Jena Model
-    
-    This transform plugin can be used to create a Jena Model for each row sent to it. The plugin enables the mapping of database columns to RDF Literals or Resources.
+   
+    <img alt="Create Jena Model Icon" src="https://raw.githubusercontent.com/nationalarchives/kettle-jena-plugins/main/src/main/resources/JenaModelStep.svg" width="32"/>
+    This transform plugin can be used to create a Jena Model for each row sent to it. Each Row becomes a Resource, and the plugin enables the mapping of fields to RDF Literals or Resources.
+    The plugin includes support for constructing Blank Nodes within Resources.
 
-2. Serialize Jena Model
+2. Combine Jena Models
     
+    <img alt="Combine Jena Models Icon" src="https://raw.githubusercontent.com/nationalarchives/kettle-jena-plugins/main/src/main/resources/JenaCombineStep.svg" width="32"/>
+    This transform plugin allows you to merge multiple Jena Models that are within the same row into a single model.
+
+3. Serialize Jena Model
+    
+    <img alt="Serialize Jena Model Icon" src="https://raw.githubusercontent.com/nationalarchives/kettle-jena-plugins/main/src/main/resources/JenaSerializerStep.svg" width="32"/>
     This output plugin takes the output of the Create Jena Model plugin, and serializes it to an RDF file on disk. Supports Turtle, N3, N-Triples, and RDF/XML output formats.
 
 This project was developed by [Evolved Binary](https://evolvedbinary.com) as part of Project OMEGA for the [National Archives](https://nationalarchives.gov.uk).
