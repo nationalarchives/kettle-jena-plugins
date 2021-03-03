@@ -32,6 +32,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
+import uk.gov.nationalarchives.pdi.step.jena.FieldModel;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -270,20 +271,6 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         }
 
         return true;
-    }
-
-    private static class FieldModel {
-        @Nullable final String fieldName;
-        final Model model;
-
-        private FieldModel(final String fieldName, final Model model) {
-            this.fieldName = fieldName;
-            this.model = model;
-        }
-
-        public FieldModel(final Model model) {
-            this(null, model);
-        }
     }
 
     private LinkedHashMap<String, Object> getGroupFields(final JenaGroupMergeStepMeta meta, final Object[] row, final RowMetaInterface inputRowMeta) throws KettleException {

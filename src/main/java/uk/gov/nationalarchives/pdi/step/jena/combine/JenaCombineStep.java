@@ -31,8 +31,8 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
+import uk.gov.nationalarchives.pdi.step.jena.FieldModel;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -157,20 +157,6 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
                 // error mutate is not set and the target field is empty
                 throw new KettleException("Mutate First Model is not selected, and the Target Field Name is empty. One or the other must be selected");
             }
-        }
-    }
-
-    private static class FieldModel {
-        @Nullable final String fieldName;
-        final Model model;
-
-        private FieldModel(final String fieldName, final Model model) {
-            this.fieldName = fieldName;
-            this.model = model;
-        }
-
-        public FieldModel(final Model model) {
-            this(null, model);
         }
     }
 
