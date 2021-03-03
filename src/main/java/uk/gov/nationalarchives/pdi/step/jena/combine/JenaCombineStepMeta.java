@@ -72,10 +72,6 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
     private boolean mutateFirstModel;
     private String targetFieldName;
     private boolean removeSelectedFields;
-
-    /**
-     * Namespace mapping from prefix->uri
-     */
     private List<JenaModelField> jenaModelFields;
 
     enum ActionIfNull {

@@ -25,6 +25,7 @@ package uk.gov.nationalarchives.pdi.step.jena;
 import org.pentaho.di.i18n.BaseMessages;
 import uk.gov.nationalarchives.pdi.step.jena.model.JenaModelStepMeta;
 
+import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -41,7 +42,7 @@ public class Util {
 
     public static final String BLANK_NODE_FIELD_NAME = "<N/A: " + BLANK_NODE_NAME + ">";
 
-    public static String nullIfEmpty(final String s) {
+    public static @Nullable String nullIfEmpty(@Nullable final String s) {
         if (s != null && !s.isEmpty()) {
             return s;
         } else {
@@ -49,12 +50,16 @@ public class Util {
         }
     }
 
-    public static String emptyIfNull(final String s) {
+    public static String emptyIfNull(@Nullable final String s) {
         if (s == null) {
             return "";
         } else {
             return s;
         }
+    }
+
+    public static boolean isNullOrEmpty(@Nullable final String s) {
+        return s == null || s.isEmpty();
     }
 
     public static String asPrefixString(final QName qname) {
