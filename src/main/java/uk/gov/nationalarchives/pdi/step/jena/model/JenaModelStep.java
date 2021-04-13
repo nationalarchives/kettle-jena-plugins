@@ -321,6 +321,12 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
             }
 
+        } else if (rdfDatatype.equals(XSDDatatype.XSDboolean)) {
+            // to xsd:boolean
+            if (sqlValue instanceof Boolean) {
+                return sqlValue;
+            }
+
         } else if (rdfDatatype.equals(XSDDatatype.XSDdate)) {
             // to xsd:date
             if (sqlValue instanceof String) {
