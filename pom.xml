@@ -53,7 +53,7 @@
     <repository>
       <id>pentaho-nexus</id>
       <name>PentahoNexus</name>
-      <url>http://nexus.pentaho.org/content/groups/omni</url>
+      <url>https://nexus.pentaho.org/content/groups/omni</url>
     </repository>
   </repositories>
 
