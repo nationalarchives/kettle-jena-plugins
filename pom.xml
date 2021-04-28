@@ -59,6 +59,7 @@
 
   <properties>
     <pentaho-kettle.version>8.3.0.9-719</pentaho-kettle.version>
+    <pentaho-kettle.plugins.dir>C:\data-integration9.1\plugins</pentaho-kettle.plugins.dir>
     <source.encoding>UTF-8</source.encoding>
     <java.source.version>1.8</java.source.version>
     <java.target.version>1.8</java.target.version>
@@ -331,4 +332,36 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>deploy-pdi-local</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>3.0.0</version>
+            <executions>
+              <execution>
+                <id>deploy-to-pdi</id>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <phase>deploy</phase>
+                <configuration>
+                  <target>
+                    <copy verbose="true" todir="${pentaho-kettle.plugins.dir}">
+                      <fileset dir="${project.build.directory}/${project.artifactId}-${project.version}-kettle-plugin"/>
+                    </copy>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>
