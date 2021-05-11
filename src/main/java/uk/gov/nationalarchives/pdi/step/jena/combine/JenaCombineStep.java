@@ -132,7 +132,7 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
 
                     if (meta.getTargetFieldName() != null) {
                         row = RowDataUtil.resizeArray(row, inputRowMeta.size() - removeIndexes.length + 1);
-                        row[inputRowMeta.size()] = headModel;
+                        row[inputRowMeta.size()] = headModel.model;
                         // TODO AR how does it know the target field name in the output row?
                     }
 
