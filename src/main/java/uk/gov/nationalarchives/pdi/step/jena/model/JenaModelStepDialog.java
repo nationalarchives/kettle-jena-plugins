@@ -103,8 +103,8 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
      */
     TableView[] mappingsTables;
 
-    public JenaModelStepDialog(final Shell parent, final Object in, final TransMeta tr, final String sname) {
-        super(parent, (BaseStepMeta) in, tr, sname);
+    public JenaModelStepDialog(final Shell parent, final Object in, final TransMeta transMeta, final String stepname) {
+        super(parent, (BaseStepMeta) in, transMeta, stepname);
         meta = (JenaModelStepMeta) in;
     }
 

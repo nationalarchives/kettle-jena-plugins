@@ -36,7 +36,6 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
@@ -316,18 +315,13 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     }
 
     @Override
-    public StepInterface getStep(final StepMeta stepMeta, final StepDataInterface stepDataInterface, final int cnr, final TransMeta tr, final Trans trans) {
-        return new JenaGroupMergeStep(stepMeta, stepDataInterface, cnr, tr, trans);
+    public StepInterface getStep(final StepMeta stepMeta, final StepDataInterface stepDataInterface, final int copyNr, final TransMeta transMeta, final Trans trans) {
+        return new JenaGroupMergeStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
     @Override
     public StepDataInterface getStepData() {
         return new JenaGroupMergeStepData();
-    }
-
-    @Override
-    public RepositoryDirectory getRepositoryDirectory() {
-        return super.getRepositoryDirectory();
     }
 
     @Override

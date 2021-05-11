@@ -94,8 +94,8 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
     private boolean changed;
 
 
-    public JenaGroupMergeStepDialog(final Shell parent, final Object in, final TransMeta tr, final String sname) {
-        super(parent, (BaseStepMeta) in, tr, sname);
+    public JenaGroupMergeStepDialog(final Shell parent, final Object in, final TransMeta transMeta, final String stepname) {
+        super(parent, (BaseStepMeta) in, transMeta, stepname);
         meta = (JenaGroupMergeStepMeta) in;
     }
 

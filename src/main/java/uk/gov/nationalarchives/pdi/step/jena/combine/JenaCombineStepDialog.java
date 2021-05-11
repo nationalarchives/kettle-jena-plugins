@@ -89,8 +89,8 @@ public class JenaCombineStepDialog extends BaseStepDialog implements StepDialogI
     private boolean changed;
 
 
-    public JenaCombineStepDialog(final Shell parent, final Object in, final TransMeta tr, final String sname) {
-        super(parent, (BaseStepMeta) in, tr, sname);
+    public JenaCombineStepDialog(final Shell parent, final Object in, final TransMeta transMeta, final String stepname) {
+        super(parent, (BaseStepMeta) in, transMeta, stepname);
         meta = (JenaCombineStepMeta) in;
     }
 

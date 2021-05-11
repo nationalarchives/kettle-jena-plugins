@@ -97,8 +97,8 @@ public class JenaSerializerStepDialog extends BaseStepDialog implements StepDial
     private boolean changed;
 
 
-    public JenaSerializerStepDialog(final Shell parent, final Object in, final TransMeta tr, final String sname) {
-        super(parent, (BaseStepMeta) in, tr, sname);
+    public JenaSerializerStepDialog(final Shell parent, final Object in, final TransMeta transMeta, final String stepname) {
+        super(parent, (BaseStepMeta) in, transMeta, stepname);
         meta = (JenaSerializerStepMeta) in;
     }
 
