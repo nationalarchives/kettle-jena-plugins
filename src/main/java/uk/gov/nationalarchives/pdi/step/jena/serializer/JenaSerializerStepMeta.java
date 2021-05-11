@@ -43,6 +43,9 @@ import org.w3c.dom.Node;
 
 import java.util.*;
 
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
+
 
 /**
  * Jena Serializer Step meta.
@@ -159,7 +162,7 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
             this.jenaModelField = xJenaModelField;
 
             final String xSerializationFormat = XMLHandler.getTagValue(stepnode, ELEM_NAME_SERIALIZATION_FORMAT);
-            this.serializationFormat = xSerializationFormat != null && !xSerializationFormat.isEmpty() ? xSerializationFormat : Rdf11.DEFAULT_SERIALIZATION_FORMAT;
+            this.serializationFormat = isNotEmpty(xSerializationFormat) ? xSerializationFormat : Rdf11.DEFAULT_SERIALIZATION_FORMAT;
 
             final Node fileNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_FILE);
             if (fileNode == null) {
@@ -168,22 +171,22 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
                 this.fileDetail = new FileDetail();
 
                 final String xFilename = XMLHandler.getTagValue(fileNode, ELEM_NAME_FILENAME);
-                this.fileDetail.filename = xFilename != null && !xFilename.isEmpty() ? xFilename : DEFAULT_FILENAME;
+                this.fileDetail.filename = isNotEmpty(xFilename) ? xFilename : DEFAULT_FILENAME;
 
                 final String xCreateParentFolder = XMLHandler.getTagValue(fileNode, ELEM_NAME_CREATE_PARENT_FOLDER);
-                this.fileDetail.createParentFolder = xCreateParentFolder != null && !xCreateParentFolder.isEmpty() ? Boolean.parseBoolean(xCreateParentFolder) : true;
+                this.fileDetail.createParentFolder = isNotEmpty(xCreateParentFolder) ? Boolean.parseBoolean(xCreateParentFolder) : true;
 
                 final String xIncludeStepNr = XMLHandler.getTagValue(fileNode, ELEM_NAME_INCLUDE_STEP_NR);
-                this.fileDetail.includeStepNr = xIncludeStepNr != null && !xIncludeStepNr.isEmpty() ? Boolean.parseBoolean(xIncludeStepNr) : false;
+                this.fileDetail.includeStepNr = isNotEmpty(xIncludeStepNr) ? Boolean.parseBoolean(xIncludeStepNr) : false;
 
                 final String xIncludePartitionNr = XMLHandler.getTagValue(fileNode, ELEM_NAME_INCLUDE_PARTITION_NR);
-                this.fileDetail.includePartitionNr = xIncludePartitionNr != null && !xIncludePartitionNr.isEmpty() ? Boolean.parseBoolean(xIncludePartitionNr) : false;
+                this.fileDetail.includePartitionNr = isNotEmpty(xIncludePartitionNr) ? Boolean.parseBoolean(xIncludePartitionNr) : false;
 
                 final String xIncludeDate = XMLHandler.getTagValue(fileNode, ELEM_NAME_INCLUDE_DATE);
-                this.fileDetail.includeDate = xIncludeDate != null && !xIncludeDate.isEmpty() ? Boolean.parseBoolean(xIncludeDate) : false;
+                this.fileDetail.includeDate = isNotEmpty(xIncludeDate) ? Boolean.parseBoolean(xIncludeDate) : false;
 
                 final String xIncludeTime = XMLHandler.getTagValue(fileNode, ELEM_NAME_INCLUDE_TIME);
-                this.fileDetail.includeTime = xIncludeTime != null && !xIncludeTime.isEmpty() ? Boolean.parseBoolean(xIncludeTime) : false;
+                this.fileDetail.includeTime = isNotEmpty(xIncludeTime) ? Boolean.parseBoolean(xIncludeTime) : false;
             }
         }
     }
@@ -199,7 +202,7 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
     @Override
     public void readRep(final Repository repo, final IMetaStore metaStore, final ObjectId id_step, final List<DatabaseMeta> databases) throws KettleException {
         final String rep = repo.getStepAttributeString(id_step, "step-xml");
-        if (rep == null || rep.isEmpty()) {
+        if (isNullOrEmpty(rep)) {
             setDefault();
         }
 
@@ -215,7 +218,7 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
 
 //        try {
 //            // add the target field to the output rows
-//            if (targetFieldName != null && !targetFieldName.isEmpty()) {
+//            if (isNotEmpty(targetFieldName)) {
 //                final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(targetFieldName, ValueMeta.TYPE_SERIALIZABLE);
 //                targetFieldValueMeta.setOrigin(origin);
 //                rowMeta.addValueMeta(targetFieldValueMeta);

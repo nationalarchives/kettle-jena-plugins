@@ -93,7 +93,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
             smi.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
 
             //TODO(AR) seems we have to duplicate behaviour of JenaModelStepMeta getFields here but on `r` ???
-            if (meta.getTargetFieldName() != null && !meta.getTargetFieldName().isEmpty()) {
+            if (isNotEmpty(meta.getTargetFieldName())) {
                 // create Jena model
                 final Model model = createModel(meta, inputRowMeta, row);
 
@@ -213,7 +213,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
                 final QName qname = mapping.rdfPropertyName;
                 Property property;
-                if (qname.getNamespaceURI() == null || qname.getNamespaceURI().isEmpty()) {
+                if (isNullOrEmpty(qname.getNamespaceURI())) {
                     property = model.getProperty(qname.getLocalPart());
                     if (property == null) {
                         property = model.createProperty(qname.getLocalPart());

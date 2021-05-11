@@ -48,6 +48,8 @@ import java.util.Date;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static uk.gov.nationalarchives.pdi.step.jena.JenaUtil.closeAndThrow;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
 
 public class JenaSerializerStep extends BaseStep implements StepInterface {
     private static Class<?> PKG = JenaSerializerStepMeta.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
@@ -110,7 +112,7 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
             smi.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
 
             //TODO(AR) seems we have to duplicate behaviour of JenaModelStepMeta getFields here but on `r` ???
-            if (meta.getJenaModelField() != null && !meta.getJenaModelField().isEmpty()) {
+            if (isNotEmpty(meta.getJenaModelField())) {
                 // get Jena model from row
                 final Model model = getModel(meta, row, inputRowMeta);
 
@@ -166,7 +168,7 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
         final JenaSerializerStepMeta.FileDetail fileDetail = meta.getFileDetail();
         if (fileDetail != null) {
             filename = environmentSubstitute(fileDetail.filename);
-            if (filename == null || filename.isEmpty()) {
+            if (isNullOrEmpty(filename)) {
                 filename = JenaSerializerStepMeta.DEFAULT_FILENAME;
             }
 
@@ -219,7 +221,7 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
         }
 
         String serializationFormat = environmentSubstitute(meta.getSerializationFormat());
-        if (serializationFormat == null || serializationFormat.isEmpty()) {
+        if (isNullOrEmpty(serializationFormat)) {
             serializationFormat = Rdf11.DEFAULT_SERIALIZATION_FORMAT;
         }
 

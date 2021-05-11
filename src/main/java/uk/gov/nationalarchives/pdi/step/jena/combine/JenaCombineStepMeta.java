@@ -46,6 +46,9 @@ import org.w3c.dom.Node;
 import java.util.ArrayList;
 import java.util.List;
 
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
+
 
 /**
  * Jena Combine Step meta.
@@ -163,14 +166,14 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
             this.targetFieldName = xTargetFieldName != null ? xTargetFieldName : "";
 
             final String xRemoveSelectedField = XMLHandler.getTagValue(stepnode, ELEM_NAME_MUTATE_FIRST_MODEL);
-            this.removeSelectedFields = xRemoveSelectedField != null && !xRemoveSelectedField.isEmpty() ? xRemoveSelectedField.equals("Y") : false;
+            this.removeSelectedFields = isNotEmpty(xRemoveSelectedField) ? xRemoveSelectedField.equals("Y") : false;
 
             final Node jenaModelFieldsNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_JENA_MODEL_FIELDS);
             if (jenaModelFieldsNode == null) {
                 this.jenaModelFields = new ArrayList<>();
             } else {
                 final List<Node> jenaModelFieldNodes = XMLHandler.getNodes(jenaModelFieldsNode, ELEM_NAME_JENA_MODEL_FIELD);
-                if (jenaModelFieldNodes == null || jenaModelFieldNodes.isEmpty()) {
+                if (isNullOrEmpty(jenaModelFieldNodes)) {
                     this.jenaModelFields = new ArrayList<>();
                 } else {
                     this.jenaModelFields = new ArrayList<>();
@@ -180,12 +183,12 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
                         final Node jenaModelFieldNode = jenaModelFieldNodes.get(i);
 
                         final String xFieldName = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_FIELD_NAME);
-                        if (xFieldName == null || xFieldName.isEmpty()) {
+                        if (isNullOrEmpty(xFieldName)) {
                             continue;
                         }
 
                         final String xActionIfNull = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_ACTION_IF_NULL);
-                        final ActionIfNull actionIfNull = xActionIfNull != null && !xActionIfNull.isEmpty() ? ActionIfNull.valueOf(xActionIfNull) : ActionIfNull.ERROR;
+                        final ActionIfNull actionIfNull = isNotEmpty(xActionIfNull) ? ActionIfNull.valueOf(xActionIfNull) : ActionIfNull.ERROR;
                         this.jenaModelFields.add(new JenaModelField(xFieldName, actionIfNull));
                     }
                 }
@@ -204,7 +207,7 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
     @Override
     public void readRep(final Repository repo, final IMetaStore metaStore, final ObjectId id_step, final List<DatabaseMeta> databases) throws KettleException {
         final String rep = repo.getStepAttributeString(id_step, "step-xml");
-        if (rep == null || rep.isEmpty()) {
+        if (isNullOrEmpty(rep)) {
             setDefault();
         }
 
@@ -220,7 +223,7 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
 
         try {
             // add the target field to the output row
-            if (targetFieldName != null && !targetFieldName.isEmpty()) {
+            if (isNotEmpty(targetFieldName)) {
                 final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(space.environmentSubstitute(targetFieldName), ValueMeta.TYPE_SERIALIZABLE);
                 targetFieldValueMeta.setOrigin(origin);
                 rowMeta.addValueMeta(targetFieldValueMeta);

@@ -953,7 +953,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         int mappingsCount = 0;
         for (int i = 0; i < mappingsLen; i++) {
             final String fieldName = tableView.getItem(i, 1);
-            if (fieldName == null || fieldName.isEmpty()) {
+            if (isNullOrEmpty(fieldName)) {
                 continue;
             }
 
@@ -966,7 +966,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             dbToJenaMapping.skip = tableView.getItem(i, 4).equals(BaseMessages.getString(PKG, "JenaModelStepDialog.SkipYes"));
             dbToJenaMapping.language = tableView.getItem(i, 5);
             final String actionIfNullName = tableView.getItem(i, 6);
-            if (actionIfNullName == null || actionIfNullName.isEmpty()) {
+            if (isNullOrEmpty(actionIfNullName)) {
                 // default
                 dbToJenaMapping.actionIfNull = JenaModelStepMeta.ActionIfNull.WARN;
             } else {
