@@ -25,6 +25,7 @@ package uk.gov.nationalarchives.pdi.step.jena.combine;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
@@ -34,11 +35,9 @@ import org.pentaho.di.trans.step.*;
 import uk.gov.nationalarchives.pdi.step.jena.FieldModel;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static uk.gov.nationalarchives.pdi.step.jena.JenaUtil.closeAndThrow;
-import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
 import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
 
 public class JenaCombineStep extends BaseStep implements StepInterface {
@@ -51,115 +50,166 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
 
     @Override
     public boolean processRow(final StepMetaInterface smi, final StepDataInterface sdi) throws KettleException {
-
-        final JenaCombineStepMeta meta = (JenaCombineStepMeta) smi;
-
         Object[] row = getRow(); // try and get a row
         if (row == null) {
             // no more rows...
             setOutputDone();
             return false;  // signal that we are DONE
+        }
+
+        // process a row...
+        final RowMetaInterface inputRowMeta = getInputRowMeta();
+        final JenaCombineStepMeta meta = (JenaCombineStepMeta) smi;
+        final JenaCombineStepData data = (JenaCombineStepData) sdi;
+
+        if (first) {
+            first = false;
+
+            // create output row meta data
+            createOutputRowMeta(inputRowMeta, meta, data);
+
+            // if we are removing fields, we need to map fields from input row to output row
+            // NOTE: this must come after createOutputRowMeta
+            prepareForReMap(inputRowMeta, meta, data);
+        }
+
+        if (!meta.isMutateFirstModel() && isNullOrEmpty(meta.getTargetFieldName())) {
+            // error mutate is not set and the target field is empty
+            throw new KettleException("Mutate First Model is not selected, and the Target Field Name is empty. One or the other must be selected");
+        }
+
+        // get all Jena models from fields and combine
+        final List<FieldModel> fieldModels = getModels(meta, row, inputRowMeta);
+        final FieldModel combinedFieldModel = combineModels(meta, fieldModels);
+
+        // remap any fields that we are keeping from the input row to the output row
+        row = prepareOutputRow(meta, data, row);
+
+        // if we are not mutating the first model, we need to set the combined Jena model as the target field
+        if (!meta.isMutateFirstModel()) {
+            // Set combined Jena model in target field of the output row
+            row[data.getTargetFieldIndex()] = combinedFieldModel.model;
+        }
+
+        // output the row
+        putRow(data.getOutputRowMeta(), row);
+
+        if (checkFeedback(getLinesRead())) {
+            if (log.isBasic())
+                logBasic(BaseMessages.getString(PKG, "JenaCombineStep.Log.LineNumber") + getLinesRead());
+        }
+
+        return true;  // signal that we want the next row...
+    }
+
+    private void createOutputRowMeta(final RowMetaInterface inputRowMeta, final JenaCombineStepMeta meta, final JenaCombineStepData data) throws KettleStepException {
+        final RowMetaInterface outputRowMeta = inputRowMeta.clone();
+        meta.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
+        data.setOutputRowMeta(outputRowMeta);
+
+        // if there is a target field
+        if (meta.isMutateFirstModel()) {
+            data.setTargetFieldIndex(null);
+        } else {
+            // must be done on the output row meta!
+            final int targetFieldIndex = outputRowMeta.indexOfValue(meta.getTargetFieldName());
+            if (targetFieldIndex < 0) {
+                throw new KettleStepException(BaseMessages.getString(
+                        PKG, "JenaCombineStep.Error.TargetFieldNotFoundOutputStream", meta.getTargetFieldName()));
+            }
+            data.setTargetFieldIndex(targetFieldIndex);
+        }
+    }
+
+    /**
+     * Stores the indexes of any fields from the input row
+     * that need to be copied into the output row in the data object.
+     *
+     * The remapping itself is performed in {@link #prepareOutputRow(JenaCombineStepMeta, JenaCombineStepData, Object[])}.
+     *
+     * @param inputRowMeta the input row meta
+     * @param meta the metadata
+     * @param data the data
+     *
+     * @throws KettleException if an error occurs whilst preparing
+     */
+    private void prepareForReMap(final RowMetaInterface inputRowMeta, final JenaCombineStepMeta meta, final JenaCombineStepData data) throws KettleStepException {
+        // prepare for re-map when removeSelectedFields is checked and mutateFirstModel is not checked
+        if (willRemoveFields(meta)) {
+            final int hasTargetField = meta.isMutateFirstModel() ? 0 : 1;
+            final int[] remainingInputFieldIndexes = new int[data.getOutputRowMeta().size() - hasTargetField]; // NOTE: the `- hasTargetField` - we don't need the new target field (if it is present)
+
+            // fields present in the outputRowMeta
+            final String[] outputRowFieldName = data.getOutputRowMeta().getFieldNames();
+            // NOTE the `- hasTargetField` - we don't search the new target field (if it is present)
+            for (int i = 0; i < outputRowFieldName.length - hasTargetField; i++) {
+                final int remainingInputFieldIndex = inputRowMeta.indexOfValue(outputRowFieldName[i]);
+                if (remainingInputFieldIndex < 0) {
+                    throw new KettleStepException(BaseMessages.getString(PKG,
+                            "JenaCombineStep.Error.RemainingFieldNotFoundInputStream", outputRowFieldName[i]));
+                }
+                remainingInputFieldIndexes[i] = remainingInputFieldIndex;
+            }
+
+            data.setRemainingInputFieldIndexes(remainingInputFieldIndexes);
+        }
+    }
+
+    /**
+     * Reserve room for the target field and re-map the fields
+     * from input row to output row that were stored in
+     * {@link #prepareForReMap(RowMetaInterface, JenaCombineStepMeta, JenaCombineStepData)}.
+     *
+     * @param meta the metadata
+     * @param data the data
+     * @param row the input row
+     *
+     * @return the output row
+     */
+    private Object[] prepareOutputRow(final JenaCombineStepMeta meta, final JenaCombineStepData data, final Object[] row) {
+        final Object[] outputRowData;
+
+        if (willRemoveFields(meta)) {
+            // re-map fields from input to output when removeSelectedFields is checked and mutateFirstModel is not checked
+
+            // reserve room for the target field
+            outputRowData = new Object[data.getOutputRowMeta().size() + RowDataUtil.OVER_ALLOCATE_SIZE];
+
+            // re-map the fields from input to output
+            final int[] remainingInputFieldIndexes = data.getRemainingInputFieldIndexes();
+            for (int i = 0; i < remainingInputFieldIndexes.length; i++) { // NOTE: this does not include the new target field (see prepareForReMap)
+                final int remainingInputFieldIndex = remainingInputFieldIndexes[i];
+                outputRowData[i] = row[remainingInputFieldIndex];
+            }
 
         } else {
-
-            // process a row...
-
-            final RowMetaInterface inputRowMeta = getInputRowMeta();
-            final RowMetaInterface outputRowMeta = inputRowMeta.clone();
-            smi.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
-
-            if (meta.isMutateFirstModel() || isNotEmpty(meta.getTargetFieldName())) {
-                // get all Jena models from fields
-                final List<FieldModel> fieldModels = getModels(meta, row, inputRowMeta);
-
-                // get the Head Jena Model
-                final int tailIdx;
-                final FieldModel headModel;
-                if (meta.isMutateFirstModel()) {
-                    // get first model
-                    headModel = fieldModels.get(0);
-                    tailIdx = 1;
-
-                    if (headModel.model.isClosed()) {
-                        throw new KettleException("Head Model (mutateFirstModel=true) is already closed in row: " + getLinesRead() + " for field: " + headModel.fieldName);
-                    }
-                } else {
-                    // create new model
-                    headModel = new FieldModel(ModelFactory.createDefaultModel());
-                    tailIdx = 0;
-                }
-
-                try {
-                    // start a transaction on the model
-                    if (headModel.model.supportsTransactions()) {
-                        headModel.model.begin();
-                    }
-
-                    // first, add each Jena model from fields to the baseModel
-                    int[] removeIndexes = new int[0];
-                    for (int i = tailIdx; i < fieldModels.size(); i++) {
-                        final FieldModel fieldModel = fieldModels.get(i);
-
-                        if (fieldModel.model.isClosed()) {
-                            throw new KettleException("Tail Model[" + i + "] (mutateFirstModel=" + meta.isMutateFirstModel() + ") is already closed in row: " + getLinesRead() + " for field: " + fieldModel.fieldName);
-                        }
-
-                        if (fieldModel.model.supportsTransactions()) {
-                            fieldModel.model.begin();
-                        }
-
-                        headModel.model.add(fieldModel.model);
-
-                        if (fieldModel.model.supportsTransactions()) {
-                            fieldModel.model.commit();
-                        }
-
-                        // second, remove the column if it is no longer needed
-                        if (meta.isRemoveSelectedFields()) {
-
-                            // we no longer need this model so we can close it
-                            fieldModel.model.close();
-
-                            final String jenaModelFieldName = environmentSubstitute(meta.getJenaModelFields().get(i).fieldName);
-                            final int removeIndex = inputRowMeta.indexOfValue(jenaModelFieldName);
-                            removeIndexes = Arrays.copyOf(removeIndexes, removeIndexes.length + 1);
-                            removeIndexes[removeIndexes.length - 1] = removeIndex;
-                        }
-                    }
-
-                    Arrays.sort(removeIndexes);
-                    row = RowDataUtil.removeItems(row, removeIndexes);
-
-                    if (meta.getTargetFieldName() != null) {
-                        row = RowDataUtil.resizeArray(row, inputRowMeta.size() - removeIndexes.length + 1);
-                        row[inputRowMeta.size()] = headModel.model;
-                        // TODO AR how does it know the target field name in the output row?
-                    }
-
-                    putRow(outputRowMeta, row); // copy row to possible alternate rowset(s).
-
-                    if (checkFeedback(getLinesRead())) {
-                        if (log.isBasic())
-                            logBasic(BaseMessages.getString(PKG, "JenaCombineStep.Log.LineNumber") + getLinesRead());
-                    }
-
-                    // commit the transaction
-                    if (headModel.model.supportsTransactions()) {
-                        headModel.model.commit();
-                    }
-
-                    return true;  // signal that we want the next row...
-
-                } catch (final KettleException e) {
-                   closeAndThrow(headModel.model, e);
-                   throw e; // needed for the compiler to pass
-                }
-
-            } else {
-                // error mutate is not set and the target field is empty
-                throw new KettleException("Mutate First Model is not selected, and the Target Field Name is empty. One or the other must be selected");
-            }
+            // reserve room for the target field
+            outputRowData = RowDataUtil.resizeArray(row, data.getOutputRowMeta().size());
         }
+        return outputRowData;
+    }
+
+
+    /**
+     * Returns true if fields will be removed
+     * from the input row.
+     *
+     * @para meta the metadata
+     *
+     * @return true if fields will be removed from the input
+     *     row (i.e. not copied to the output row), false otherwise.
+     */
+    private boolean willRemoveFields(final JenaCombineStepMeta meta) {
+        if (!meta.isRemoveSelectedFields()) {
+            return false;
+        }
+
+        int fieldsToRemove = meta.getJenaModelFields() == null ? 0 : meta.getJenaModelFields().size();
+        if (fieldsToRemove > 0 && meta.isMutateFirstModel()) {
+            // NOTE: if we are mutating the first model, we don't need to remove it from the output row
+            fieldsToRemove--;
+        }
+        return fieldsToRemove > 0;
     }
 
     private List<FieldModel> getModels(final JenaCombineStepMeta meta, final Object[] row, final RowMetaInterface inputRowMeta)
@@ -222,5 +272,67 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
         }
 
         return models;
+    }
+
+    private FieldModel combineModels(final JenaCombineStepMeta meta, final List<FieldModel> fieldModels) throws KettleException {
+        // get the Head Jena Model
+        final int tailIdx;
+        final FieldModel headModel;
+        if (meta.isMutateFirstModel()) {
+            // get first model
+            headModel = fieldModels.get(0);
+            tailIdx = 1;
+
+            if (headModel.model.isClosed()) {
+                throw new KettleException("Head Model (mutateFirstModel=true) is already closed in row: " + getLinesRead() + " for field: " + headModel.fieldName);
+            }
+        } else {
+            // create new model
+            headModel = new FieldModel(ModelFactory.createDefaultModel());
+            tailIdx = 0;
+        }
+
+        try {
+            // start a transaction on the model
+            if (headModel.model.supportsTransactions()) {
+                headModel.model.begin();
+            }
+
+            // first, add each Jena model filed from tail to the headModel
+            for (int i = tailIdx; i < fieldModels.size(); i++) {
+                final FieldModel fieldModel = fieldModels.get(i);
+
+                if (fieldModel.model.isClosed()) {
+                    throw new KettleException("Tail Model[" + i + "] (mutateFirstModel=" + meta.isMutateFirstModel() + ") is already closed in row: " + getLinesRead() + " for field: " + fieldModel.fieldName);
+                }
+
+                if (fieldModel.model.supportsTransactions()) {
+                    fieldModel.model.begin();
+                }
+
+                headModel.model.add(fieldModel.model);
+
+                if (fieldModel.model.supportsTransactions()) {
+                    fieldModel.model.commit();
+                }
+
+                // second, if the field will be removed from the output row
+                if (meta.isRemoveSelectedFields()) {
+                    // we no longer need this model so we can close it
+                    fieldModel.model.close();
+                }
+            }
+
+            // commit the transaction
+            if (headModel.model.supportsTransactions()) {
+                headModel.model.commit();
+            }
+
+            return headModel;
+
+        } catch (final KettleException e) {
+            closeAndThrow(headModel.model, e);
+            throw e; // needed for the compiler to pass
+        }
     }
 }

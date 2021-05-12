@@ -42,11 +42,11 @@ import org.pentaho.di.trans.step.*;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
-import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.*;
 
 
 /**
@@ -72,10 +72,10 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
 
     // <editor-fold desc="settings">
     private boolean mutateFirstModel;
-    private String targetFieldName;
+    @Nullable private String targetFieldName;
     private boolean removeSelectedFields;
     private List<JenaModelField> jenaModelFields;
-
+    
     enum ActionIfNull {
         IGNORE,
         WARN,
@@ -139,7 +139,7 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
         final StringBuilder builder = new StringBuilder();
         builder
             .append(XMLHandler.addTagValue(ELEM_NAME_MUTATE_FIRST_MODEL, mutateFirstModel))
-            .append(XMLHandler.addTagValue(ELEM_NAME_TARGET_FIELD_NAME, targetFieldName))
+            .append(XMLHandler.addTagValue(ELEM_NAME_TARGET_FIELD_NAME, emptyIfNull(targetFieldName)))
             .append(XMLHandler.addTagValue(ELEM_NAME_REMOVE_SELECTED_FIELDS, removeSelectedFields));
 
         builder.append(XMLHandler.openTag(ELEM_NAME_JENA_MODEL_FIELDS));
@@ -218,37 +218,46 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
     public void getFields(final RowMetaInterface rowMeta, final String origin, final RowMetaInterface[] info, final StepMeta nextStep,
                           final VariableSpace space, final Repository repository, final IMetaStore metaStore) throws KettleStepException {
 
-        //TODO(AR) we also need the database fields here?
-
-        try {
-            // add the target field to the output row
-            if (isNotEmpty(targetFieldName)) {
-                final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(space.environmentSubstitute(targetFieldName), ValueMeta.TYPE_SERIALIZABLE);
-                targetFieldValueMeta.setOrigin(origin);
-                rowMeta.addValueMeta(targetFieldValueMeta);
-            }
-
-        } catch (final KettlePluginException e) {
-            throw new KettleStepException(e);
+        if (!mutateFirstModel && isNullOrEmpty(targetFieldName)) {
+            throw new KettleStepException("Mutate First Model is not selected, and the Target Field Name is empty. One or the other must be selected");
         }
 
-        if (removeSelectedFields) {
+        /**
+         * 1. Remove any fields that we have mapped to RDF properties when `removeSelectedFields` is checked
+         */
+        if (removeSelectedFields && isNotEmpty(jenaModelFields)) {
+            int startRemovalIdx = 0;
+            if (mutateFirstModel) {
+                // if we are mutating the first model, we must not remove it from the output row
+                startRemovalIdx++;
+            }
 
-            // if we are mutating the first model, we must not remove it from the output row
-            boolean skipFirst = mutateFirstModel;
-
-            for (final JenaModelField jenaModelField : jenaModelFields) {
-                if (!skipFirst) {
+            for (int i = startRemovalIdx; i < jenaModelFields.size(); i++) {
+                final JenaModelField jenaModelField = jenaModelFields.get(i);
+                if (isNotEmpty(jenaModelField.fieldName)) {
                     try {
                         rowMeta.removeValueMeta(jenaModelField.fieldName);
                     } catch (final KettleValueException e) {
-                        //TODO(AR) log error or throw?
-                        System.out.println(e.getMessage());
-                        e.printStackTrace();
+                        throw new KettleStepException("Unable to remove field: " + jenaModelField.fieldName + ": " + e.getMessage(), e);
                     }
                 }
-                skipFirst = false;
             }
+        }
+
+        /**
+         * 2. if we have a target field, add it to the output rows
+         * NOTE: it is important this is added last, as such
+         * behaviour is relied on in {@link JenaCombineStep#prepareForReMap(JenaCombineStepMeta, JenaCombineStepData)}.
+         */
+        if (!mutateFirstModel) {
+            final ValueMetaInterface targetFieldValueMeta;
+            try {
+                targetFieldValueMeta = ValueMetaFactory.createValueMeta(space.environmentSubstitute(targetFieldName), ValueMeta.TYPE_SERIALIZABLE);
+            } catch (final KettlePluginException e) {
+                throw new KettleStepException("Unable to create Value Meta for target field: " + targetFieldName + ", : " + e.getMessage(), e);
+            }
+            targetFieldValueMeta.setOrigin(origin);
+            rowMeta.addValueMeta(targetFieldValueMeta);
         }
     }
 
@@ -302,11 +311,11 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
         this.mutateFirstModel = mutateFirstModel;
     }
 
-    public String getTargetFieldName() {
+    public @Nullable String getTargetFieldName() {
         return targetFieldName;
     }
 
-    public void setTargetFieldName(final String targetFieldName) {
+    public void setTargetFieldName(@Nullable final String targetFieldName) {
         this.targetFieldName = targetFieldName;
     }
 
