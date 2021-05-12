@@ -24,6 +24,7 @@ package uk.gov.nationalarchives.pdi.step.jena.model;
 
 import org.eclipse.swt.custom.CCombo;
 import org.pentaho.di.ui.core.widget.*;
+import uk.gov.nationalarchives.pdi.step.jena.ActionIfNull;
 import uk.gov.nationalarchives.pdi.step.jena.Rdf11;
 import uk.gov.nationalarchives.pdi.step.jena.Util;
 import org.eclipse.swt.SWT;
@@ -529,12 +530,6 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
     private TableView createMappingsTable(final Composite parent, final FormData formData, final ModifyListener lsMod) {
         final String[] propertyTypes = getPropertyTypes(mappingsTables);
 
-        final JenaModelStepMeta.ActionIfNull[] actionsIfNull = JenaModelStepMeta.ActionIfNull.values();
-        final int actionsIfNullLen = actionsIfNull.length;
-        final String[] actionIfNullNames = new String[actionsIfNullLen];
-        for (int i = 0; i < actionsIfNullLen; i++) {
-            actionIfNullNames[i] = actionsIfNull[i].name();
-        }
         final String[] skipNames = {
                 BaseMessages.getString(PKG, "JenaModelStepDialog.SkipNo"),
                 BaseMessages.getString(PKG, "JenaModelStepDialog.SkipYes"),
@@ -568,7 +563,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
         final ColumnInfo ciIfNull = new ColumnInfo(
                 BaseMessages.getString(PKG, "JenaModelStepDialog.IfNull"),
                 ColumnInfo.COLUMN_TYPE_CCOMBO,
-                actionIfNullNames  // combo-box options
+                ActionIfNull.names()  // combo-box options
         );
 
         ciRdfPropertyType.setSelectionAdapter(new SelectionListener() {
@@ -968,9 +963,9 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             final String actionIfNullName = tableView.getItem(i, 6);
             if (isNullOrEmpty(actionIfNullName)) {
                 // default
-                dbToJenaMapping.actionIfNull = JenaModelStepMeta.ActionIfNull.WARN;
+                dbToJenaMapping.actionIfNull = ActionIfNull.WARN;
             } else {
-                dbToJenaMapping.actionIfNull = JenaModelStepMeta.ActionIfNull.valueOf(actionIfNullName);
+                dbToJenaMapping.actionIfNull = ActionIfNull.valueOf(actionIfNullName);
             }
             dbToJenaMappings[mappingsCount++] = dbToJenaMapping;
         }

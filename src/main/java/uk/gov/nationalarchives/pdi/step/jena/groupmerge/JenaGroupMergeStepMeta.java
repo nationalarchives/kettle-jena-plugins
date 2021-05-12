@@ -41,6 +41,9 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
+import uk.gov.nationalarchives.pdi.step.jena.ActionIfNoSuchField;
+import uk.gov.nationalarchives.pdi.step.jena.ActionIfNull;
+import uk.gov.nationalarchives.pdi.step.jena.JenaModelField;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +72,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     private static final String ELEM_NAME_GROUP_FIELDS = "groupFields";
     private static final String ELEM_NAME_GROUP_FIELD = "groupField";
     private static final String ELEM_NAME_FIELD_NAME = "fieldName";
+    private static final String ELEM_NAME_ACTION_IF_NO_SUCH_FIELD = "actionIfNoSuchField";
     private static final String ELEM_NAME_ACTION_IF_NULL = "actionIfNull";
     // </editor-fold>
 
@@ -78,37 +82,6 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     private boolean removeSelectedFields;
     private List<String> groupFields;
     private List<JenaModelField> jenaModelFields;
-
-    enum ActionIfNull {
-        IGNORE,
-        WARN,
-        ERROR
-    }
-
-    static class JenaModelField {
-        String fieldName;
-        ActionIfNull actionIfNull;
-
-        public JenaModelField() {
-        }
-
-        public JenaModelField(final String fieldName, final ActionIfNull actionIfNull) {
-            this.fieldName = fieldName;
-            this.actionIfNull = actionIfNull;
-        }
-
-        @Override
-        public Object clone() {
-            return copy();
-        }
-
-        public JenaModelField copy() {
-            final JenaModelField copy = new JenaModelField();
-            copy.fieldName = fieldName;
-            copy.actionIfNull = actionIfNull;
-            return copy;
-        }
-    }
     // </editor-fold>
 
 
@@ -161,6 +134,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
             builder
                     .append(XMLHandler.openTag(ELEM_NAME_JENA_MODEL_FIELD))
                     .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, jenaModelField.fieldName))
+                    .append(XMLHandler.addTagValue(ELEM_NAME_ACTION_IF_NO_SUCH_FIELD, jenaModelField.actionIfNoSuchField.name()))
                     .append(XMLHandler.addTagValue(ELEM_NAME_ACTION_IF_NULL, jenaModelField.actionIfNull.name()))
                     .append(XMLHandler.closeTag(ELEM_NAME_JENA_MODEL_FIELD));
         }
@@ -224,9 +198,11 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
                             continue;
                         }
 
+                        final String xActionIfNoSuchField = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_ACTION_IF_NO_SUCH_FIELD);
+                        final ActionIfNoSuchField actionIfNoSuchFIeld = isNotEmpty(xActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(xActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
                         final String xActionIfNull = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_ACTION_IF_NULL);
                         final ActionIfNull actionIfNull = isNotEmpty(xActionIfNull) ? ActionIfNull.valueOf(xActionIfNull) : ActionIfNull.ERROR;
-                        this.jenaModelFields.add(new JenaModelField(xFieldName, actionIfNull));
+                        this.jenaModelFields.add(new JenaModelField(xFieldName, actionIfNoSuchFIeld, actionIfNull));
                     }
                 }
             }

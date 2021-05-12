@@ -25,6 +25,7 @@ package uk.gov.nationalarchives.pdi.step.jena.model;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 import org.apache.jena.vocabulary.XSD;
+import uk.gov.nationalarchives.pdi.step.jena.ActionIfNull;
 import uk.gov.nationalarchives.pdi.step.jena.Rdf11;
 import uk.gov.nationalarchives.pdi.step.jena.Util;
 import org.pentaho.di.core.annotations.Step;
@@ -101,12 +102,6 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
      * Namespace mapping from prefix->uri
      */
     private Map<String, String> namespaces;
-
-    enum ActionIfNull {
-        IGNORE,
-        WARN,
-        ERROR
-    }
 
     static class DbToJenaMapping implements Cloneable {
         String fieldName;
