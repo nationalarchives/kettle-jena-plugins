@@ -467,31 +467,38 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     public void getFields(final RowMetaInterface rowMeta, final String origin, final RowMetaInterface[] info, final StepMeta nextStep,
                           final VariableSpace space, final Repository repository, final IMetaStore metaStore) throws KettleStepException {
 
-        //TODO(AR) we also need the database fields here?
-
-        try {
-            // add the target field to the output rows
-            if (isNotEmpty(targetFieldName)) {
-                final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(space.environmentSubstitute(targetFieldName), ValueMeta.TYPE_SERIALIZABLE);
-                targetFieldValueMeta.setOrigin(origin);
-                rowMeta.addValueMeta(targetFieldValueMeta);
-            }
-
-        } catch (final KettlePluginException e) {
-            throw new KettleStepException(e);
+        if (isNullOrEmpty(targetFieldName)) {
+            throw new KettleStepException(BaseMessages.getString(PKG, "JenaModelStep.Error.TargetFieldUndefined"));
         }
 
-        if (removeSelectedFields && dbToJenaMappings != null) {
+        /**
+         * 1. Remove any fields that we have mapped to RDF properties when `removeSelectedFields` is checked
+         */
+        if (removeSelectedFields && isNotEmpty(dbToJenaMappings)) {
             for (final DbToJenaMapping mapping : dbToJenaMappings) {
-                try {
-                    rowMeta.removeValueMeta(mapping.fieldName);
-                } catch (final KettleValueException e) {
-                    //TODO(AR) log error or throw?
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
+                if (isNotEmpty(mapping.fieldName)) {
+                    try {
+                        rowMeta.removeValueMeta(mapping.fieldName);
+                    } catch (final KettleValueException e) {
+                        throw new KettleStepException("Unable to remove field: " + mapping.fieldName + ": " + e.getMessage(), e);
+                    }
                 }
             }
         }
+
+        /**
+         * 2. Add the target field to the output rows
+         * NOTE: it is important this is added last, as such
+         * behaviour is relied on in {@link JenaModelStep#prepareForReMap(JenaModelStepMeta, JenaModelStepData)}.
+         */
+        final ValueMetaInterface targetFieldValueMeta;
+        try {
+            targetFieldValueMeta = ValueMetaFactory.createValueMeta(space.environmentSubstitute(targetFieldName), ValueMeta.TYPE_SERIALIZABLE);
+        } catch (final KettlePluginException e) {
+            throw new KettleStepException("Unable to create Value Meta for target field: " + targetFieldName + ", : " + e.getMessage(), e);
+        }
+        targetFieldValueMeta.setOrigin(origin);
+        rowMeta.addValueMeta(targetFieldValueMeta);
     }
 
     @Override
