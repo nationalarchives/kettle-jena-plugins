@@ -260,6 +260,16 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
                         BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.Fieldname"),
                         ColumnInfo.COLUMN_TYPE_TEXT,
                         false
+                ),
+                new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.IfNoSuchField"),
+                        ColumnInfo.COLUMN_TYPE_CCOMBO,
+                        ActionIfNoSuchField.names()
+                ),
+                new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.IfNull"),
+                        ColumnInfo.COLUMN_TYPE_CCOMBO,
+                        ActionIfNull.names()
                 )
         };
 
@@ -459,8 +469,8 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
 
         if (meta.getGroupFields() != null) {
             wGroupFieldsTableView.getTable().removeAll();
-            for (final String groupField : meta.getGroupFields()) {
-                wGroupFieldsTableView.add(new String[] { groupField });
+            for (final ConstrainedField groupField : meta.getGroupFields()) {
+                wGroupFieldsTableView.add(new String[] { groupField.fieldName, groupField.actionIfNoSuchField.name(), groupField.actionIfNull.name() });
             }
         }
 
@@ -504,11 +514,16 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
         meta.setRemoveSelectedFields(wRemoveSelectedCheckbox.getSelection());
 
         final int groupFieldsLen = wGroupFieldsTableView.getItemCount();
-        final List<String> groupFields = new ArrayList<>(groupFieldsLen);
+        final List<ConstrainedField> groupFields = new ArrayList<>(groupFieldsLen);
         for (int i = 0; i < groupFieldsLen; i++) {
             final String fieldName = wGroupFieldsTableView.getItem(i, 1);
             if (!isNullOrEmpty(fieldName)) {
-                groupFields.add(fieldName);
+                final String strActionIfNoSuchField = wGroupFieldsTableView.getItem(i, 2);
+                final ActionIfNoSuchField actionIfNoSuchField = isNotEmpty(strActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(strActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
+                final String strActionIfNull = wGroupFieldsTableView.getItem(i, 3);
+                final ActionIfNull actionIfNull = isNotEmpty(strActionIfNull) ? ActionIfNull.valueOf(strActionIfNull) : ActionIfNull.ERROR;
+
+                groupFields.add(new ConstrainedField(fieldName, actionIfNoSuchField, actionIfNull));
             }
         }
         meta.setGroupFields(groupFields);

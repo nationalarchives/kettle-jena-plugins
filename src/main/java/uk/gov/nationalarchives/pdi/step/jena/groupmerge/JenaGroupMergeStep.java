@@ -280,18 +280,48 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         final LinkedHashMap<String, Object> groupFields = new LinkedHashMap<>(meta.getGroupFields().size());
 
         for (int i = 0; i < meta.getGroupFields().size(); i++) {
-            final String groupField = meta.getGroupFields().get(i);
-            if (isNullOrEmpty(groupField)) {
+            final ConstrainedField groupField = meta.getGroupFields().get(i);
+            if (isNullOrEmpty(groupField.fieldName)) {
                 throw new KettleException("Group field: " + i + " is missing its field name");
             }
 
-            final String groupFieldName = environmentSubstitute(groupField);
+            final String groupFieldName = environmentSubstitute(groupField.fieldName);
             final int idxGroupField = inputRowMeta.indexOfValue(groupFieldName);
             if (idxGroupField == -1) {
-                throw new KettleException("Group field: " + groupFieldName + ", column is absent in row!");
+                switch (groupField.actionIfNoSuchField) {
+                    case IGNORE:
+                        // no-op - just ignore it!
+                        break;
+
+                    case WARN:
+                        // log a warning
+                        logBasic("Group field: {0}, column is absent in row!", groupFieldName);
+                        break;
+
+                    case ERROR:
+                        // throw an exception
+                        throw new KettleException("Group field: " + groupFieldName + ", column is absent in row!");
+                }
             } else {
                 final Object groupFieldValue = row[idxGroupField];
-                groupFields.put(groupFieldName, groupFieldValue);
+                if (groupFieldValue == null) {
+                    switch (groupField.actionIfNull) {
+                        case IGNORE:
+                            // no-op - just ignore it!
+                            break;
+
+                        case WARN:
+                            // log a warning
+                            logBasic("Group field: {0}, column has a null value in row!", groupFieldName);
+                            break;
+
+                        case ERROR:
+                            // throw an exception
+                            throw new KettleException("Group field: " + groupFieldName + ", column has a null value in row!");
+                    }
+                } else {
+                    groupFields.put(groupFieldName, groupFieldValue);
+                }
             }
         }
 

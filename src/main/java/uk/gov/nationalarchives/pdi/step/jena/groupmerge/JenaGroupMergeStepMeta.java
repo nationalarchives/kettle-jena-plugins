@@ -80,7 +80,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     private boolean mutateFirstModel;
     private String targetFieldName;
     private boolean removeSelectedFields;
-    private List<String> groupFields;
+    private List<ConstrainedField> groupFields;
     private List<ConstrainedField> jenaModelFields;
     // </editor-fold>
 
@@ -120,10 +120,12 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
             .append(XMLHandler.addTagValue(ELEM_NAME_REMOVE_SELECTED_FIELDS, removeSelectedFields));
 
         builder.append(XMLHandler.openTag(ELEM_NAME_GROUP_FIELDS));
-        for (final String groupField : groupFields) {
+        for (final ConstrainedField groupField : groupFields) {
             builder
                     .append(XMLHandler.openTag(ELEM_NAME_GROUP_FIELD))
-                    .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, groupField))
+                    .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, groupField.fieldName))
+                    .append(XMLHandler.addTagValue(ELEM_NAME_ACTION_IF_NO_SUCH_FIELD, groupField.actionIfNoSuchField.name()))
+                    .append(XMLHandler.addTagValue(ELEM_NAME_ACTION_IF_NULL, groupField.actionIfNull.name()))
                     .append(XMLHandler.closeTag(ELEM_NAME_GROUP_FIELD));
         }
         builder.append(XMLHandler.closeTag(ELEM_NAME_GROUP_FIELDS));
@@ -173,7 +175,11 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
                             continue;
                         }
 
-                        this.groupFields.add(xFieldName);
+                        final String xActionIfNoSuchField = XMLHandler.getTagValue(groupFieldNode, ELEM_NAME_ACTION_IF_NO_SUCH_FIELD);
+                        final ActionIfNoSuchField actionIfNoSuchField = isNotEmpty(xActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(xActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
+                        final String xActionIfNull = XMLHandler.getTagValue(groupFieldNode, ELEM_NAME_ACTION_IF_NULL);
+                        final ActionIfNull actionIfNull = isNotEmpty(xActionIfNull) ? ActionIfNull.valueOf(xActionIfNull) : ActionIfNull.ERROR;
+                        this.groupFields.add(new ConstrainedField(xFieldName, actionIfNoSuchField, actionIfNull));
                     }
                 }
             }
@@ -198,10 +204,10 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
                         }
 
                         final String xActionIfNoSuchField = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_ACTION_IF_NO_SUCH_FIELD);
-                        final ActionIfNoSuchField actionIfNoSuchFIeld = isNotEmpty(xActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(xActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
+                        final ActionIfNoSuchField actionIfNoSuchField = isNotEmpty(xActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(xActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
                         final String xActionIfNull = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_ACTION_IF_NULL);
                         final ActionIfNull actionIfNull = isNotEmpty(xActionIfNull) ? ActionIfNull.valueOf(xActionIfNull) : ActionIfNull.ERROR;
-                        this.jenaModelFields.add(new ConstrainedField(xFieldName, actionIfNoSuchFIeld, actionIfNull));
+                        this.jenaModelFields.add(new ConstrainedField(xFieldName, actionIfNoSuchField, actionIfNull));
                     }
                 }
             }
@@ -331,11 +337,11 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         this.removeSelectedFields = removeSelectedFields;
     }
 
-    public List<String> getGroupFields() {
+    public List<ConstrainedField> getGroupFields() {
         return groupFields;
     }
 
-    public void setGroupFields(final List<String> groupFields) {
+    public void setGroupFields(final List<ConstrainedField> groupFields) {
         this.groupFields = groupFields;
     }
 
