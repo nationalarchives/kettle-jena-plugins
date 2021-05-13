@@ -72,15 +72,15 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
     private Composite contentComposite;
     private Label wStepNameLabel;
     private Text wStepNameField;
+    private Label wGroupFieldsLabel;
+    private TableView wGroupFieldsTableView;
+    private Button wGetGroupFieldsButton;
     private Label wMutateFirstModelLabel;
     private Button wMutateFirstModelCheckbox;
     private Label wTargetLabel;
     private TextVar wTargetTextField;
     private Label wRemoveSelectedLabel;
     private Button wRemoveSelectedCheckbox;
-    private Label wGroupFieldsLabel;
-    private TableView wGroupFieldsTableView;
-    private Button wGetGroupFieldsButton;
     private Label wMergeFieldsLabel;
     private TableView wMergeFieldsTableView;
     private Button wGetMergeFieldsButton;
@@ -195,12 +195,55 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
         group.setLayoutData(groupLayoutData);
         props.setLook(group);
 
+        // group fields label/table
+        wGroupFieldsLabel = new Label(group, SWT.LEFT);
+        props.setLook(wGroupFieldsLabel);
+        wGroupFieldsLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.GroupFields"));
+        final FormData fdGroupFieldsLabel = new FormDataBuilder().left()
+                .top()
+                .result();
+        wGroupFieldsLabel.setLayoutData(fdGroupFieldsLabel);
+
+        final ColumnInfo[] groupFieldsColumns = new ColumnInfo[] {
+                new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.Fieldname"),
+                        ColumnInfo.COLUMN_TYPE_TEXT,
+                        false
+                ),
+                new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.IfNoSuchField"),
+                        ColumnInfo.COLUMN_TYPE_CCOMBO,
+                        ActionIfNoSuchField.names()
+                ),
+                new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.IfNull"),
+                        ColumnInfo.COLUMN_TYPE_CCOMBO,
+                        ActionIfNull.names()
+                )
+        };
+
+        wGroupFieldsTableView = new TableView(
+                transMeta, group, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, groupFieldsColumns,
+                5, lsGroupFieldsTableModify, props );
+        props.setLook(wGroupFieldsTableView);
+        final FormData fdGroupFieldsTableView = new FormDataBuilder().fullWidth()
+                .top(wGroupFieldsLabel, ELEMENT_SPACING)
+                .result();
+        wGroupFieldsTableView.setLayoutData(fdGroupFieldsTableView);
+
+        wGetGroupFieldsButton = new Button(group, SWT.PUSH);
+        wGetGroupFieldsButton.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.GetFieldsButton"));
+        final FormData fdGetGroupFieldsButton = new FormDataBuilder().right()
+                .top(wGroupFieldsTableView, ELEMENT_SPACING)
+                .result();
+        wGetGroupFieldsButton.setLayoutData(fdGetGroupFieldsButton);
+
         // mutate first model label/checkbox
         wMutateFirstModelLabel = new Label(group, SWT.LEFT);
         props.setLook(wMutateFirstModelLabel);
         wMutateFirstModelLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.CheckboxMutateFirstModel"));
         final FormData fdMutateFirstModelLabel = new FormDataBuilder().left()
-                .top()
+                .top(wGetGroupFieldsButton, ELEMENT_SPACING)
                 .result();
         wMutateFirstModelLabel.setLayoutData(fdMutateFirstModelLabel);
 
@@ -208,7 +251,7 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
         props.setLook(wMutateFirstModelCheckbox);
         wMutateFirstModelCheckbox.setBackground(display.getSystemColor(SWT.COLOR_TRANSPARENT));
         final FormData fdMutateFirstModelCheckbox = new FormDataBuilder().left(wMutateFirstModelLabel, LABEL_SPACING)
-                .top()
+                .top(wGetGroupFieldsButton, ELEMENT_SPACING)
                 .result();
         wMutateFirstModelCheckbox.setLayoutData(fdMutateFirstModelCheckbox);
 
@@ -246,58 +289,15 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
                 .result();
         wRemoveSelectedCheckbox.setLayoutData(fdRemoveSelectedCheckbox);
 
-        wGroupFieldsLabel = new Label(group, SWT.LEFT);
-        props.setLook(wGroupFieldsLabel);
-        wGroupFieldsLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.GroupFields"));
-        final FormData fdGroupFieldsLabel = new FormDataBuilder().left()
-                .top(wRemoveSelectedCheckbox, ELEMENT_SPACING)
-                .result();
-        wGroupFieldsLabel.setLayoutData(fdGroupFieldsLabel);
-
-        // group fields table
-        final ColumnInfo[] groupFieldsColumns = new ColumnInfo[] {
-                new ColumnInfo(
-                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.Fieldname"),
-                        ColumnInfo.COLUMN_TYPE_TEXT,
-                        false
-                ),
-                new ColumnInfo(
-                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.IfNoSuchField"),
-                        ColumnInfo.COLUMN_TYPE_CCOMBO,
-                        ActionIfNoSuchField.names()
-                ),
-                new ColumnInfo(
-                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.IfNull"),
-                        ColumnInfo.COLUMN_TYPE_CCOMBO,
-                        ActionIfNull.names()
-                )
-        };
-
-        wGroupFieldsTableView = new TableView(
-                transMeta, group, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, groupFieldsColumns,
-                5, lsGroupFieldsTableModify, props );
-        props.setLook(wGroupFieldsTableView);
-        final FormData fdGroupFieldsTableView = new FormDataBuilder().fullWidth()
-                .top(wGroupFieldsLabel, ELEMENT_SPACING)
-                .result();
-        wGroupFieldsTableView.setLayoutData(fdGroupFieldsTableView);
-
-        wGetGroupFieldsButton = new Button(group, SWT.PUSH);
-        wGetGroupFieldsButton.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.GetFieldsButton"));
-        final FormData fdGetGroupFieldsButton = new FormDataBuilder().right()
-                .top(wGroupFieldsTableView, ELEMENT_SPACING)
-                .result();
-        wGetGroupFieldsButton.setLayoutData(fdGetGroupFieldsButton);
-
+        // merge fields label/table
         wMergeFieldsLabel = new Label(group, SWT.LEFT);
         props.setLook(wMergeFieldsLabel);
         wMergeFieldsLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.MergeFields"));
         final FormData fdMergeFieldsLabel = new FormDataBuilder().left()
-                .top(wGetGroupFieldsButton, ELEMENT_SPACING)
+                .top(wRemoveSelectedLabel, ELEMENT_SPACING)
                 .result();
         wMergeFieldsLabel.setLayoutData(fdMergeFieldsLabel);
 
-        // merge fields table
         final ColumnInfo[] mergeFieldsColumns = new ColumnInfo[] {
                 new ColumnInfo(
                         BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.Fieldname"),
