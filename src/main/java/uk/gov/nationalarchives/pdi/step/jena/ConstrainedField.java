@@ -22,12 +22,12 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena;
 
-public class JenaModelField {
+public class ConstrainedField {
     public final String fieldName;
     public final ActionIfNoSuchField actionIfNoSuchField;
     public final ActionIfNull actionIfNull;
 
-    public JenaModelField(final String fieldName, final ActionIfNoSuchField actionIfNoSuchField, final ActionIfNull actionIfNull) {
+    public ConstrainedField(final String fieldName, final ActionIfNoSuchField actionIfNoSuchField, final ActionIfNull actionIfNull) {
         this.fieldName = fieldName;
         this.actionIfNoSuchField = actionIfNoSuchField;
         this.actionIfNull = actionIfNull;
@@ -38,7 +38,7 @@ public class JenaModelField {
         return copy();
     }
 
-    public JenaModelField copy() {
-        return new JenaModelField(fieldName, actionIfNoSuchField, actionIfNull);
+    public ConstrainedField copy() {
+        return new ConstrainedField(fieldName, actionIfNoSuchField, actionIfNull);
     }
 }

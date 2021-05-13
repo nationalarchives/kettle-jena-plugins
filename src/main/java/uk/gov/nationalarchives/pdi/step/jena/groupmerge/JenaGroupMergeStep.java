@@ -33,7 +33,7 @@ import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
 import uk.gov.nationalarchives.pdi.step.jena.FieldModel;
-import uk.gov.nationalarchives.pdi.step.jena.JenaModelField;
+import uk.gov.nationalarchives.pdi.step.jena.ConstrainedField;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -307,7 +307,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         final List<FieldModel> models = new ArrayList<>(meta.getJenaModelMergeFields().size());
 
         for (int i = 0; i < meta.getJenaModelMergeFields().size(); i++) {
-            final JenaModelField jenaModelField = meta.getJenaModelMergeFields().get(i);
+            final ConstrainedField jenaModelField = meta.getJenaModelMergeFields().get(i);
             if (isNullOrEmpty(jenaModelField.fieldName)) {
                 throw new KettleException("Jena Model field: " + i + " is missing its field name");
             }

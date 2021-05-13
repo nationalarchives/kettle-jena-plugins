@@ -46,7 +46,7 @@ import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import uk.gov.nationalarchives.pdi.step.jena.ActionIfNoSuchField;
 import uk.gov.nationalarchives.pdi.step.jena.ActionIfNull;
-import uk.gov.nationalarchives.pdi.step.jena.JenaModelField;
+import uk.gov.nationalarchives.pdi.step.jena.ConstrainedField;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -466,7 +466,7 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
 
         if (meta.getJenaModelMergeFields() != null) {
             wMergeFieldsTableView.getTable().removeAll();
-            for (final JenaModelField jenaModelField : meta.getJenaModelMergeFields()) {
+            for (final ConstrainedField jenaModelField : meta.getJenaModelMergeFields()) {
                 wMergeFieldsTableView.add(new String[] { jenaModelField.fieldName, jenaModelField.actionIfNoSuchField.name(), jenaModelField.actionIfNull.name() });
             }
         }
@@ -514,7 +514,7 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
         meta.setGroupFields(groupFields);
 
         final int mergeFieldsLen = wMergeFieldsTableView.getItemCount();
-        final List<JenaModelField> jenaModelFields = new ArrayList<>(mergeFieldsLen);
+        final List<ConstrainedField> jenaModelFields = new ArrayList<>(mergeFieldsLen);
         for (int i = 0; i < mergeFieldsLen; i++) {
             final String fieldName = wMergeFieldsTableView.getItem(i, 1);
             if (!isNullOrEmpty(fieldName)) {
@@ -523,7 +523,7 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
                 final String strActionIfNull = wMergeFieldsTableView.getItem(i, 3);
                 final ActionIfNull actionIfNull = isNotEmpty(strActionIfNull) ? ActionIfNull.valueOf(strActionIfNull) : ActionIfNull.ERROR;
 
-                jenaModelFields.add(new JenaModelField(fieldName, actionIfNoSuchField, actionIfNull));
+                jenaModelFields.add(new ConstrainedField(fieldName, actionIfNoSuchField, actionIfNull));
             }
         }
         meta.setJenaModelFields(jenaModelFields);
