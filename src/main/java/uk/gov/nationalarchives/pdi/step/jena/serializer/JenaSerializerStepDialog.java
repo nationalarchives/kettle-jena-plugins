@@ -70,6 +70,8 @@ public class JenaSerializerStepDialog extends BaseStepDialog implements StepDial
     private Label wModelFieldLabel;
     private ComboVar wModelFieldCombo;
     private Button wGetModelFieldButton;
+    private Label wCloseModelAndRemoveFieldLabel;
+    private Button wCloseModelAndRemoveFieldCheckbox;
     private Label wSerializationFormatLabel;
     private ComboVar wSerializationFormatCombo;
     private Label wFilenameLabel;
@@ -213,12 +215,30 @@ public class JenaSerializerStepDialog extends BaseStepDialog implements StepDial
                 .result();
         wGetModelFieldButton.setLayoutData(fdGetModelField);
 
+        // Close Model and Remove Field label/field/button
+        wCloseModelAndRemoveFieldLabel = new Label(group, SWT.LEFT);
+        props.setLook(wCloseModelAndRemoveFieldLabel);
+        wCloseModelAndRemoveFieldLabel.setText(BaseMessages.getString(PKG, "JenaSerializerStepDialog.CheckboxCloseModelAndRemoveField"));
+        final FormData fdCloseModelAndRemoveFieldLabel = new FormDataBuilder().left()
+                .top(wModelFieldCombo, ELEMENT_SPACING)
+                .result();
+        wCloseModelAndRemoveFieldLabel.setLayoutData(fdCloseModelAndRemoveFieldLabel);
+
+        wCloseModelAndRemoveFieldCheckbox =  new Button(group, SWT.CHECK);
+        props.setLook(wCloseModelAndRemoveFieldCheckbox);
+        wCloseModelAndRemoveFieldCheckbox.setBackground(display.getSystemColor(SWT.COLOR_TRANSPARENT));
+        final FormData fdCloseModelAndRemoveFieldCheckbox = new FormDataBuilder().left(wCloseModelAndRemoveFieldLabel, LABEL_SPACING)
+                .top(wModelFieldCombo, ELEMENT_SPACING)
+                .width(LARGE_FIELD)
+                .result();
+        wCloseModelAndRemoveFieldCheckbox.setLayoutData(fdCloseModelAndRemoveFieldCheckbox);
+
         //serialization format label/field
         wSerializationFormatLabel = new Label(group, SWT.LEFT);
         props.setLook(wSerializationFormatLabel);
         wSerializationFormatLabel.setText(BaseMessages.getString(PKG, "JenaSerializerStepDialog.TextFieldSerializationFormat"));
         FormData fdTransformation1 = new FormDataBuilder().left()
-                .top(wGetModelFieldButton, ELEMENT_SPACING)
+                .top(wCloseModelAndRemoveFieldLabel, ELEMENT_SPACING)
                 .result();
         wSerializationFormatLabel.setLayoutData(fdTransformation1);
 
@@ -458,6 +478,7 @@ public class JenaSerializerStepDialog extends BaseStepDialog implements StepDial
         if (isNotEmpty(jenaModelField)) {
             wModelFieldCombo.setText(jenaModelField);
         }
+        wCloseModelAndRemoveFieldCheckbox.setSelection(meta.isCloseModelAndRemoveField());
 
         wSerializationFormatCombo.removeAll();
         for (final String serializationFormat : Rdf11.SERIALIZATION_FORMATS) {
@@ -502,6 +523,7 @@ public class JenaSerializerStepDialog extends BaseStepDialog implements StepDial
 
         // START save data
         meta.setJenaModelField(wModelFieldCombo.getText());
+        meta.setCloseModelAndRemoveField(wCloseModelAndRemoveFieldCheckbox.getSelection());
         meta.setSerializationFormat(wSerializationFormatCombo.getText());
 
         JenaSerializerStepMeta.FileDetail fileDetail = meta.getFileDetail();

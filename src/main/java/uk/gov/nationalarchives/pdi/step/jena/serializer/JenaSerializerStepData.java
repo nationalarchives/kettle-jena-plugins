@@ -24,21 +24,37 @@ package uk.gov.nationalarchives.pdi.step.jena.serializer;
 
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
 
 public class JenaSerializerStepData extends BaseStepData implements StepDataInterface {
+    private RowMetaInterface outputRowMeta;
 
+    /**
+     * Indexes of fields in the input row
+     * that need to be mapped into the output
+     * row.
+     *
+     * Basically the input fields, less any fields
+     * that are removed by this step.
+     */
+    private int[] remainingInputFieldIndexes;
+
+    // the model we are building for serialization
     private Model model;
 
     public JenaSerializerStepData() {
         super();
     }
 
-
     public void init() {
         this.model = ModelFactory.createDefaultModel();
+    }
+
+    public Model getModel() {
+        return model;
     }
 
     public void dispose() {
@@ -46,7 +62,19 @@ public class JenaSerializerStepData extends BaseStepData implements StepDataInte
         this.model = null;
     }
 
-    public Model getModel() {
-        return model;
+    public RowMetaInterface getOutputRowMeta() {
+        return outputRowMeta;
+    }
+
+    public void setOutputRowMeta(final RowMetaInterface outputRowMeta) {
+        this.outputRowMeta = outputRowMeta;
+    }
+
+    public int[] getRemainingInputFieldIndexes() {
+        return remainingInputFieldIndexes;
+    }
+
+    public void setRemainingInputFieldIndexes(final int[] remainingInputFieldIndexes) {
+        this.remainingInputFieldIndexes = remainingInputFieldIndexes;
     }
 }
