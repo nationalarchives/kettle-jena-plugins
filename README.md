@@ -69,7 +69,7 @@ This can be done by either running:
   $ mvn -Pdeploy-pdi-local -Dpentaho-kettle.plugins.dir=/opt/data-integration/plugins antrun:run@deploy-to-pdi
 ```
 
-or, you can do so manually, e.g. e.g.:
+or, you can do so manually, e.g.:
 ```
   $ cp -r target/kettle-jena-plugins-1.0.0-SNAPSHOT-kettle-plugin/kettle-jena-plugins /opt/data-integration/plugins/
 ```
