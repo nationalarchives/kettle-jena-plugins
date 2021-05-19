@@ -48,6 +48,7 @@ import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import java.util.ArrayList;
 import java.util.List;
 
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
 import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
 
 public class JenaCombineStepDialog extends BaseStepDialog implements StepDialogInterface {
@@ -88,8 +89,8 @@ public class JenaCombineStepDialog extends BaseStepDialog implements StepDialogI
     private boolean changed;
 
 
-    public JenaCombineStepDialog(final Shell parent, final Object in, final TransMeta tr, final String sname) {
-        super(parent, (BaseStepMeta) in, tr, sname);
+    public JenaCombineStepDialog(final Shell parent, final Object in, final TransMeta transMeta, final String stepname) {
+        super(parent, (BaseStepMeta) in, transMeta, stepname);
         meta = (JenaCombineStepMeta) in;
     }
 
@@ -440,7 +441,7 @@ public class JenaCombineStepDialog extends BaseStepDialog implements StepDialogI
             final String fieldName = wFieldsTableView.getItem(i, 1);
             if (!isNullOrEmpty(fieldName)) {
                 final String strActionIfNull = wFieldsTableView.getItem(i, 2);
-                final JenaCombineStepMeta.ActionIfNull actionIfNull = strActionIfNull != null && !strActionIfNull.isEmpty() ? JenaCombineStepMeta.ActionIfNull.valueOf(strActionIfNull) : JenaCombineStepMeta.ActionIfNull.ERROR;
+                final JenaCombineStepMeta.ActionIfNull actionIfNull = isNotEmpty(strActionIfNull) ? JenaCombineStepMeta.ActionIfNull.valueOf(strActionIfNull) : JenaCombineStepMeta.ActionIfNull.ERROR;
                 jenaModelFields.add(new JenaCombineStepMeta.JenaModelField(fieldName, actionIfNull));
             }
         }

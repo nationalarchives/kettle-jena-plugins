@@ -37,6 +37,7 @@ import uk.gov.nationalarchives.pdi.step.jena.FieldModel;
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
 import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
 
 public class JenaGroupMergeStep extends BaseStep implements StepInterface {
@@ -74,7 +75,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
             final RowMetaInterface outputRowMeta = inputRowMeta.clone();
             smi.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
 
-            if (meta.isMutateFirstModel() || meta.getTargetFieldName() != null && !meta.getTargetFieldName().isEmpty()) {
+            if (meta.isMutateFirstModel() || isNotEmpty(meta.getTargetFieldName())) {
 
                 // get all group fields
                 final LinkedHashMap<String, Object> currentGroupFields = getGroupFields(meta, row, inputRowMeta);
@@ -306,7 +307,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
 
         for (int i = 0; i < meta.getJenaModelMergeFields().size(); i++) {
             final JenaGroupMergeStepMeta.JenaModelField jenaModelField = meta.getJenaModelMergeFields().get(i);
-            if (jenaModelField.fieldName == null || jenaModelField.fieldName.isEmpty()) {
+            if (isNullOrEmpty(jenaModelField.fieldName)) {
                 throw new KettleException("Jena Model field: " + i + " is missing its field name");
             }
 

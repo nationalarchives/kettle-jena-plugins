@@ -45,6 +45,8 @@ import org.pentaho.di.ui.core.widget.ComboVar;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
 import static uk.gov.nationalarchives.pdi.step.jena.serializer.JenaSerializerStepMeta.DEFAULT_FILENAME;
 
 public class JenaSerializerStepDialog extends BaseStepDialog implements StepDialogInterface {
@@ -95,8 +97,8 @@ public class JenaSerializerStepDialog extends BaseStepDialog implements StepDial
     private boolean changed;
 
 
-    public JenaSerializerStepDialog(final Shell parent, final Object in, final TransMeta tr, final String sname) {
-        super(parent, (BaseStepMeta) in, tr, sname);
+    public JenaSerializerStepDialog(final Shell parent, final Object in, final TransMeta transMeta, final String stepname) {
+        super(parent, (BaseStepMeta) in, transMeta, stepname);
         meta = (JenaSerializerStepMeta) in;
     }
 
@@ -453,7 +455,7 @@ public class JenaSerializerStepDialog extends BaseStepDialog implements StepDial
 
     private void getData(final JenaSerializerStepMeta meta) {
         final String jenaModelField = meta.getJenaModelField();
-        if (jenaModelField != null && !jenaModelField.isEmpty()) {
+        if (isNotEmpty(jenaModelField)) {
             wModelFieldCombo.setText(jenaModelField);
         }
 
@@ -463,7 +465,7 @@ public class JenaSerializerStepDialog extends BaseStepDialog implements StepDial
         }
         // set selected
         String serializationFormat = meta.getSerializationFormat();
-        if (serializationFormat == null || serializationFormat.isEmpty()) {
+        if (isNullOrEmpty(serializationFormat)) {
             serializationFormat = Rdf11.DEFAULT_SERIALIZATION_FORMAT;
         }
         wSerializationFormatCombo.setText(serializationFormat);

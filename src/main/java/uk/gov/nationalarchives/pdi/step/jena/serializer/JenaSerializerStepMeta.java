@@ -34,7 +34,6 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
@@ -42,6 +41,9 @@ import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
 import java.util.*;
+
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
 
 
 /**
@@ -159,7 +161,7 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
             this.jenaModelField = xJenaModelField;
 
             final String xSerializationFormat = XMLHandler.getTagValue(stepnode, ELEM_NAME_SERIALIZATION_FORMAT);
-            this.serializationFormat = xSerializationFormat != null && !xSerializationFormat.isEmpty() ? xSerializationFormat : Rdf11.DEFAULT_SERIALIZATION_FORMAT;
+            this.serializationFormat = isNotEmpty(xSerializationFormat) ? xSerializationFormat : Rdf11.DEFAULT_SERIALIZATION_FORMAT;
 
             final Node fileNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_FILE);
             if (fileNode == null) {
@@ -168,22 +170,22 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
                 this.fileDetail = new FileDetail();
 
                 final String xFilename = XMLHandler.getTagValue(fileNode, ELEM_NAME_FILENAME);
-                this.fileDetail.filename = xFilename != null && !xFilename.isEmpty() ? xFilename : DEFAULT_FILENAME;
+                this.fileDetail.filename = isNotEmpty(xFilename) ? xFilename : DEFAULT_FILENAME;
 
                 final String xCreateParentFolder = XMLHandler.getTagValue(fileNode, ELEM_NAME_CREATE_PARENT_FOLDER);
-                this.fileDetail.createParentFolder = xCreateParentFolder != null && !xCreateParentFolder.isEmpty() ? Boolean.parseBoolean(xCreateParentFolder) : true;
+                this.fileDetail.createParentFolder = isNotEmpty(xCreateParentFolder) ? Boolean.parseBoolean(xCreateParentFolder) : true;
 
                 final String xIncludeStepNr = XMLHandler.getTagValue(fileNode, ELEM_NAME_INCLUDE_STEP_NR);
-                this.fileDetail.includeStepNr = xIncludeStepNr != null && !xIncludeStepNr.isEmpty() ? Boolean.parseBoolean(xIncludeStepNr) : false;
+                this.fileDetail.includeStepNr = isNotEmpty(xIncludeStepNr) ? Boolean.parseBoolean(xIncludeStepNr) : false;
 
                 final String xIncludePartitionNr = XMLHandler.getTagValue(fileNode, ELEM_NAME_INCLUDE_PARTITION_NR);
-                this.fileDetail.includePartitionNr = xIncludePartitionNr != null && !xIncludePartitionNr.isEmpty() ? Boolean.parseBoolean(xIncludePartitionNr) : false;
+                this.fileDetail.includePartitionNr = isNotEmpty(xIncludePartitionNr) ? Boolean.parseBoolean(xIncludePartitionNr) : false;
 
                 final String xIncludeDate = XMLHandler.getTagValue(fileNode, ELEM_NAME_INCLUDE_DATE);
-                this.fileDetail.includeDate = xIncludeDate != null && !xIncludeDate.isEmpty() ? Boolean.parseBoolean(xIncludeDate) : false;
+                this.fileDetail.includeDate = isNotEmpty(xIncludeDate) ? Boolean.parseBoolean(xIncludeDate) : false;
 
                 final String xIncludeTime = XMLHandler.getTagValue(fileNode, ELEM_NAME_INCLUDE_TIME);
-                this.fileDetail.includeTime = xIncludeTime != null && !xIncludeTime.isEmpty() ? Boolean.parseBoolean(xIncludeTime) : false;
+                this.fileDetail.includeTime = isNotEmpty(xIncludeTime) ? Boolean.parseBoolean(xIncludeTime) : false;
             }
         }
     }
@@ -199,7 +201,7 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
     @Override
     public void readRep(final Repository repo, final IMetaStore metaStore, final ObjectId id_step, final List<DatabaseMeta> databases) throws KettleException {
         final String rep = repo.getStepAttributeString(id_step, "step-xml");
-        if (rep == null || rep.isEmpty()) {
+        if (isNullOrEmpty(rep)) {
             setDefault();
         }
 
@@ -210,32 +212,6 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
     @Override
     public void getFields(final RowMetaInterface rowMeta, final String origin, final RowMetaInterface[] info, final StepMeta nextStep,
                           final VariableSpace space, final Repository repository, final IMetaStore metaStore) throws KettleStepException {
-
-        //TODO(AR) we also need the database fields here?
-
-//        try {
-//            // add the target field to the output rows
-//            if (targetFieldName != null && !targetFieldName.isEmpty()) {
-//                final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(targetFieldName, ValueMeta.TYPE_SERIALIZABLE);
-//                targetFieldValueMeta.setOrigin(origin);
-//                rowMeta.addValueMeta(targetFieldValueMeta);
-//            }
-//
-//        } catch (final KettlePluginException e) {
-//            throw new KettleStepException(e);
-//        }
-//
-//        if (removeSelectedFields && dbToJenaMappings != null) {
-//            for (final DbToJenaMapping mapping : dbToJenaMappings) {
-//                try {
-//                    rowMeta.removeValueMeta(mapping.fieldName);
-//                } catch (final KettleValueException e) {
-//                    //TODO(AR) log error or throw?
-//                    System.out.println(e.getMessage());
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
     }
 
     @Override
@@ -263,18 +239,13 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
     }
 
     @Override
-    public StepInterface getStep(final StepMeta stepMeta, final StepDataInterface stepDataInterface, final int cnr, final TransMeta tr, final Trans trans) {
-        return new JenaSerializerStep(stepMeta, stepDataInterface, cnr, tr, trans);
+    public StepInterface getStep(final StepMeta stepMeta, final StepDataInterface stepDataInterface, final int copyNr, final TransMeta transMeta, final Trans trans) {
+        return new JenaSerializerStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
     @Override
     public StepDataInterface getStepData() {
         return new JenaSerializerStepData();
-    }
-
-    @Override
-    public RepositoryDirectory getRepositoryDirectory() {
-        return super.getRepositoryDirectory();
     }
 
     @Override

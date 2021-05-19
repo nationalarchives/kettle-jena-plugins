@@ -41,7 +41,6 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
@@ -56,8 +55,7 @@ import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
 import java.util.*;
 
-import static uk.gov.nationalarchives.pdi.step.jena.Util.BLANK_NODE_INTERNAL_URI;
-import static uk.gov.nationalarchives.pdi.step.jena.Util.BLANK_NODE_NAME;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.*;
 
 
 /**
@@ -184,17 +182,17 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     @Override
     public Object clone() {
         final JenaModelStepMeta retval = (JenaModelStepMeta) super.clone();
-        if (namespaces != null && !namespaces.isEmpty()) {
+        if (isNotEmpty(namespaces)) {
             retval.namespaces = new LinkedHashMap<>(namespaces);
         } else {
             retval.namespaces = Collections.emptyMap();
         }
-        if (dbToJenaMappings != null && dbToJenaMappings.length > 0) {
+        if (isNotEmpty(dbToJenaMappings)) {
             retval.dbToJenaMappings = JenaModelStepMeta.copy(dbToJenaMappings);
         } else {
             retval.dbToJenaMappings = new DbToJenaMapping[0];
         }
-        if (blankNodeMappings != null && blankNodeMappings.length > 0) {
+        if (isNotEmpty(blankNodeMappings)) {
             retval.blankNodeMappings = JenaModelStepMeta.copy(blankNodeMappings);
         } else {
             retval.blankNodeMappings = new BlankNodeMapping[0];
@@ -242,7 +240,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     private void getDbToJenaMappingsXML(final DbToJenaMapping[] dbToJenaMappings, final StringBuilder builder) {
         builder.append(XMLHandler.openTag(ELEM_NAME_DB_TO_JENA_MAPPINGS));
         for (final DbToJenaMapping dbToJenaMapping : dbToJenaMappings) {
-            if (dbToJenaMapping.fieldName != null && !dbToJenaMapping.fieldName.isEmpty()) {
+            if (isNotEmpty(dbToJenaMapping.fieldName)) {
                 builder
                         .append(XMLHandler.openTag(ELEM_NAME_DB_TO_JENA_MAPPING))
 
@@ -290,7 +288,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
             this.targetFieldName = xTargetFieldName;
 
             final String xRemoveSelectedFields = XMLHandler.getTagValue(stepnode, ELEM_NAME_REMOVE_SELECTED_FIELDS);
-            this.removeSelectedFields = xRemoveSelectedFields != null && !xRemoveSelectedFields.isEmpty() ? Boolean.parseBoolean(xRemoveSelectedFields) : false;
+            this.removeSelectedFields = isNotEmpty(xRemoveSelectedFields) ? Boolean.parseBoolean(xRemoveSelectedFields) : false;
 
             final Node resourceUriNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_RESOURCE_URI);
             if (resourceUriNode == null) {
@@ -305,7 +303,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                 this.namespaces = Collections.emptyMap();
             } else {
                 final List<Node> namespaceNodes = XMLHandler.getNodes(namespacesNode, ELEM_NAME_NAMESPACE);
-                if (namespaceNodes == null || namespaceNodes.isEmpty()) {
+                if (isNullOrEmpty(namespaceNodes)) {
                     this.namespaces = Collections.emptyMap();
                 } else {
                     this.namespaces = new LinkedHashMap<>();
@@ -337,7 +335,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                 this.blankNodeMappings = new BlankNodeMapping[0];
             } else {
                 final List<Node> blankNodeMappingNodes = XMLHandler.getNodes(blankNodeMappingsNode, ELEM_NAME_BLANK_NODE_MAPPING);
-                if (blankNodeMappingNodes == null || blankNodeMappingNodes.isEmpty()) {
+                if (isNullOrEmpty(blankNodeMappingNodes)) {
                     this.blankNodeMappings = new BlankNodeMapping[0];
                 } else {
                     final int len = blankNodeMappingNodes.size();
@@ -380,7 +378,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
             dbToJenaMappings = new DbToJenaMapping[0];
         } else {
             final List<Node> dbToJenaMappingNodes = XMLHandler.getNodes(dbToJenaMappingsNode, ELEM_NAME_DB_TO_JENA_MAPPING);
-            if (dbToJenaMappingNodes == null || dbToJenaMappingNodes.isEmpty()) {
+            if (isNullOrEmpty(dbToJenaMappingNodes)) {
                 dbToJenaMappings = new DbToJenaMapping[0];
             } else {
                 final int len = dbToJenaMappingNodes.size();
@@ -390,7 +388,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                     final Node dbToJenaMappingNode = dbToJenaMappingNodes.get(i);
 
                     final String fieldName = XMLHandler.getTagValue(dbToJenaMappingNode, ELEM_NAME_FIELD_NAME);
-                    if (fieldName == null || fieldName.isEmpty()) {
+                    if (isNullOrEmpty(fieldName)) {
                         continue;
                     }
 
@@ -457,7 +455,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     @Override
     public void readRep(final Repository repo, final IMetaStore metaStore, final ObjectId id_step, final List<DatabaseMeta> databases) throws KettleException {
         final String rep = repo.getStepAttributeString(id_step, "step-xml");
-        if (rep == null || rep.isEmpty()) {
+        if (isNullOrEmpty(rep)) {
             setDefault();
         }
 
@@ -473,7 +471,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
 
         try {
             // add the target field to the output rows
-            if (targetFieldName != null && !targetFieldName.isEmpty()) {
+            if (isNotEmpty(targetFieldName)) {
                 final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(space.environmentSubstitute(targetFieldName), ValueMeta.TYPE_SERIALIZABLE);
                 targetFieldValueMeta.setOrigin(origin);
                 rowMeta.addValueMeta(targetFieldValueMeta);
@@ -521,18 +519,13 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     }
 
     @Override
-    public StepInterface getStep(final StepMeta stepMeta, final StepDataInterface stepDataInterface, final int cnr, final TransMeta tr, final Trans trans) {
-        return new JenaModelStep(stepMeta, stepDataInterface, cnr, tr, trans);
+    public StepInterface getStep(final StepMeta stepMeta, final StepDataInterface stepDataInterface, final int copyNr, final TransMeta transMeta, final Trans trans) {
+        return new JenaModelStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
     @Override
     public StepDataInterface getStepData() {
         return new JenaModelStepData();
-    }
-
-    @Override
-    public RepositoryDirectory getRepositoryDirectory() {
-        return super.getRepositoryDirectory();
     }
 
     @Override

@@ -48,6 +48,7 @@ import org.pentaho.di.ui.trans.step.BaseStepDialog;
 import java.util.ArrayList;
 import java.util.List;
 
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
 import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
 
 public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDialogInterface {
@@ -93,8 +94,8 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
     private boolean changed;
 
 
-    public JenaGroupMergeStepDialog(final Shell parent, final Object in, final TransMeta tr, final String sname) {
-        super(parent, (BaseStepMeta) in, tr, sname);
+    public JenaGroupMergeStepDialog(final Shell parent, final Object in, final TransMeta transMeta, final String stepname) {
+        super(parent, (BaseStepMeta) in, transMeta, stepname);
         meta = (JenaGroupMergeStepMeta) in;
     }
 
@@ -517,7 +518,7 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
             final String fieldName = wMergeFieldsTableView.getItem(i, 1);
             if (!isNullOrEmpty(fieldName)) {
                 final String strActionIfNull = wMergeFieldsTableView.getItem(i, 2);
-                final JenaGroupMergeStepMeta.ActionIfNull actionIfNull = strActionIfNull != null && !strActionIfNull.isEmpty() ? JenaGroupMergeStepMeta.ActionIfNull.valueOf(strActionIfNull) : JenaGroupMergeStepMeta.ActionIfNull.ERROR;
+                final JenaGroupMergeStepMeta.ActionIfNull actionIfNull = isNotEmpty(strActionIfNull) ? JenaGroupMergeStepMeta.ActionIfNull.valueOf(strActionIfNull) : JenaGroupMergeStepMeta.ActionIfNull.ERROR;
                 jenaModelFields.add(new JenaGroupMergeStepMeta.JenaModelField(fieldName, actionIfNull));
             }
         }

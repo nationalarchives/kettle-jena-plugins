@@ -26,7 +26,6 @@ import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.TypeMapper;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.datatypes.xsd.XSDDateTime;
-import org.apache.jena.datatypes.xsd.impl.XSDYearType;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.RDF;
 import org.pentaho.di.core.exception.KettleException;
@@ -94,7 +93,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
             smi.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
 
             //TODO(AR) seems we have to duplicate behaviour of JenaModelStepMeta getFields here but on `r` ???
-            if (meta.getTargetFieldName() != null && !meta.getTargetFieldName().isEmpty()) {
+            if (isNotEmpty(meta.getTargetFieldName())) {
                 // create Jena model
                 final Model model = createModel(meta, inputRowMeta, row);
 
@@ -130,13 +129,21 @@ public class JenaModelStep extends BaseStep implements StepInterface {
     private Model createModel(final JenaModelStepMeta meta, final RowMetaInterface inputRowMeta, final Object[] row) throws KettleException {
         final String resourceUriFieldName = environmentSubstitute(meta.getResourceUriField());
         final int idxResourceUriField = inputRowMeta.indexOfValue(resourceUriFieldName);
+
+        if (idxResourceUriField < 0) {
+            throw new KettleException("Could not find Resource URI field '" + resourceUriFieldName + "', index is: " + idxResourceUriField);
+        } else if (idxResourceUriField >= row.length) {
+            throw new KettleException("Could not find Resource URI field '" + resourceUriFieldName + "', index is beyond the bounds of the row(length=" + row.length + "): " + idxResourceUriField);
+        }
         final Object resourceUriFieldValue =  row[idxResourceUriField];
 
         final String strResourceUriFieldValue;
-        if (resourceUriFieldValue instanceof String) {
+        if (resourceUriFieldValue == null) {
+            throw new KettleException("Resource URI field '" + resourceUriFieldName + "' cannot be null");
+        } else if (resourceUriFieldValue instanceof String) {
             strResourceUriFieldValue = (String) resourceUriFieldValue;
         } else {
-            logBasic("Expecting java.lang.String when processing resourceUriFieldValue, but found {}. Will default to Object#toString()...");
+            logBasic("Expecting java.lang.String when processing resourceUriFieldValue, but found {0}. Will default to Object#toString()...", resourceUriFieldValue.getClass().getName());
             strResourceUriFieldValue = resourceUriFieldValue.toString();
         }
 
@@ -206,7 +213,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
                 final QName qname = mapping.rdfPropertyName;
                 Property property;
-                if (qname.getNamespaceURI() == null || qname.getNamespaceURI().isEmpty()) {
+                if (isNullOrEmpty(qname.getNamespaceURI())) {
                     property = model.getProperty(qname.getLocalPart());
                     if (property == null) {
                         property = model.createProperty(qname.getLocalPart());

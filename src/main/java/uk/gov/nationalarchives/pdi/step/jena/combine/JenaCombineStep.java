@@ -38,6 +38,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static uk.gov.nationalarchives.pdi.step.jena.JenaUtil.closeAndThrow;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
 
 public class JenaCombineStep extends BaseStep implements StepInterface {
     private static Class<?> PKG = JenaCombineStepMeta.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
@@ -66,7 +68,7 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
             final RowMetaInterface outputRowMeta = inputRowMeta.clone();
             smi.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
 
-            if (meta.isMutateFirstModel() || meta.getTargetFieldName() != null && !meta.getTargetFieldName().isEmpty()) {
+            if (meta.isMutateFirstModel() || isNotEmpty(meta.getTargetFieldName())) {
                 // get all Jena models from fields
                 final List<FieldModel> fieldModels = getModels(meta, row, inputRowMeta);
 
@@ -79,7 +81,7 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
                     tailIdx = 1;
 
                     if (headModel.model.isClosed()) {
-                        throw new KettleException("Model is already closed in row: " + getLinesRead() + " for field: " + headModel.fieldName);
+                        throw new KettleException("Head Model (mutateFirstModel=true) is already closed in row: " + getLinesRead() + " for field: " + headModel.fieldName);
                     }
                 } else {
                     // create new model
@@ -99,7 +101,7 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
                         final FieldModel fieldModel = fieldModels.get(i);
 
                         if (fieldModel.model.isClosed()) {
-                            throw new KettleException("Model is already closed in row: " + getLinesRead() + " for field: " + fieldModel.fieldName);
+                            throw new KettleException("Tail Model[" + i + "] (mutateFirstModel=" + meta.isMutateFirstModel() + ") is already closed in row: " + getLinesRead() + " for field: " + fieldModel.fieldName);
                         }
 
                         if (fieldModel.model.supportsTransactions()) {
@@ -130,7 +132,7 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
 
                     if (meta.getTargetFieldName() != null) {
                         row = RowDataUtil.resizeArray(row, inputRowMeta.size() - removeIndexes.length + 1);
-                        row[inputRowMeta.size()] = headModel;
+                        row[inputRowMeta.size()] = headModel.model;
                         // TODO AR how does it know the target field name in the output row?
                     }
 
@@ -170,8 +172,8 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
 
         for (int i = 0; i < meta.getJenaModelFields().size(); i++) {
             final JenaCombineStepMeta.JenaModelField jenaModelField = meta.getJenaModelFields().get(i);
-            if (jenaModelField.fieldName == null || jenaModelField.fieldName.isEmpty()) {
-                throw new KettleException("Jena Model field: " + i + " is missing its field name");
+            if (isNullOrEmpty(jenaModelField.fieldName)) {
+                throw new KettleException("Jena Model row: " + getLinesRead() + ", field: " + i + " is missing its field name");
             }
 
             final String jenaModelFieldName = environmentSubstitute(jenaModelField.fieldName);
@@ -184,12 +186,12 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
 
                     case WARN:
                         // log a warning
-                        logBasic("Could not combine model for row field: {0}, column is absent!", jenaModelField.fieldName);
+                        logBasic("Could not combine model in row: {0}, field: {1}, column is absent!", getLinesRead(), jenaModelField.fieldName);
                         break;
 
                     case ERROR:
                         // throw an exception
-                        throw new KettleException("Could not combine model for row field: " + jenaModelField.fieldName + ", column is absent!");
+                        throw new KettleException("Could not combine model in row: " + getLinesRead() + ", field: " + jenaModelField.fieldName + ", column is absent!");
                 }
             } else {
                 final Object jenaModelFieldValue = row[idxJenaModelField];
@@ -201,18 +203,18 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
 
                         case WARN:
                             // log a warning
-                            logBasic("Could not combine model for row field: {0}, value is null!", jenaModelField.fieldName);
+                            logBasic("Could not combine model in row: {0}, field: {1}, value is null!", getLinesRead(), jenaModelField.fieldName);
                             break;
 
                         case ERROR:
                             // throw an exception
-                            throw new KettleException("Could not combine model for row field: " + jenaModelField.fieldName + ", value is null!");
+                            throw new KettleException("Could not combine model in row: " + getLinesRead() + ", field: " + jenaModelField.fieldName + ", value is null!");
                     }
                 } else {
                     if (jenaModelFieldValue instanceof Model) {
                         models.add(new FieldModel(jenaModelFieldName, (Model) jenaModelFieldValue));
                     } else {
-                        throw new KettleException("Expected field '" + jenaModelFieldName + "' to contain a Jena Model, but found "
+                        throw new KettleException("Expected row: " + getLinesRead() + ", field: " + jenaModelFieldName + " to contain a Jena Model, but found "
                                 + jenaModelFieldValue.getClass());
                     }
                 }

@@ -36,7 +36,6 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.repository.RepositoryDirectory;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
@@ -45,6 +44,9 @@ import org.w3c.dom.Node;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
 
 
 /**
@@ -177,14 +179,14 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
             this.targetFieldName = xTargetFieldName != null ? xTargetFieldName : "";
 
             final String xRemoveSelectedField = XMLHandler.getTagValue(stepnode, ELEM_NAME_MUTATE_FIRST_MODEL);
-            this.removeSelectedFields = xRemoveSelectedField != null && !xRemoveSelectedField.isEmpty() ? xRemoveSelectedField.equals("Y") : false;
+            this.removeSelectedFields = isNotEmpty(xRemoveSelectedField) ? xRemoveSelectedField.equals("Y") : false;
 
             final Node groupFieldsNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_GROUP_FIELDS);
             if (groupFieldsNode == null) {
                 this.groupFields = new ArrayList<>();
             } else {
                 final List<Node> groupFieldsNodes = XMLHandler.getNodes(groupFieldsNode, ELEM_NAME_GROUP_FIELD);
-                if (groupFieldsNodes == null || groupFieldsNodes.isEmpty()) {
+                if (isNullOrEmpty(groupFieldsNodes)) {
                     this.groupFields = new ArrayList<>();
                 } else {
                     this.groupFields = new ArrayList<>();
@@ -194,7 +196,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
                         final Node groupFieldNode = groupFieldsNodes.get(i);
 
                         final String xFieldName = XMLHandler.getTagValue(groupFieldNode, ELEM_NAME_FIELD_NAME);
-                        if (xFieldName == null || xFieldName.isEmpty()) {
+                        if (isNullOrEmpty(xFieldName)) {
                             continue;
                         }
 
@@ -208,7 +210,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
                 this.jenaModelFields = new ArrayList<>();
             } else {
                 final List<Node> jenaModelFieldNodes = XMLHandler.getNodes(jenaModelFieldsNode, ELEM_NAME_JENA_MODEL_FIELD);
-                if (jenaModelFieldNodes == null || jenaModelFieldNodes.isEmpty()) {
+                if (isNullOrEmpty(jenaModelFieldNodes)) {
                     this.jenaModelFields = new ArrayList<>();
                 } else {
                     this.jenaModelFields = new ArrayList<>();
@@ -218,12 +220,12 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
                         final Node jenaModelFieldNode = jenaModelFieldNodes.get(i);
 
                         final String xFieldName = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_FIELD_NAME);
-                        if (xFieldName == null || xFieldName.isEmpty()) {
+                        if (isNullOrEmpty(xFieldName)) {
                             continue;
                         }
 
                         final String xActionIfNull = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_ACTION_IF_NULL);
-                        final ActionIfNull actionIfNull = xActionIfNull != null && !xActionIfNull.isEmpty() ? ActionIfNull.valueOf(xActionIfNull) : ActionIfNull.ERROR;
+                        final ActionIfNull actionIfNull = isNotEmpty(xActionIfNull) ? ActionIfNull.valueOf(xActionIfNull) : ActionIfNull.ERROR;
                         this.jenaModelFields.add(new JenaModelField(xFieldName, actionIfNull));
                     }
                 }
@@ -242,7 +244,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     @Override
     public void readRep(final Repository repo, final IMetaStore metaStore, final ObjectId id_step, final List<DatabaseMeta> databases) throws KettleException {
         final String rep = repo.getStepAttributeString(id_step, "step-xml");
-        if (rep == null || rep.isEmpty()) {
+        if (isNullOrEmpty(rep)) {
             setDefault();
         }
 
@@ -258,7 +260,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
 
         try {
             // add the target field to the output row
-            if (targetFieldName != null && !targetFieldName.isEmpty()) {
+            if (isNotEmpty(targetFieldName)) {
                 final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(space.environmentSubstitute(targetFieldName), ValueMeta.TYPE_SERIALIZABLE);
                 targetFieldValueMeta.setOrigin(origin);
                 rowMeta.addValueMeta(targetFieldValueMeta);
@@ -313,18 +315,13 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     }
 
     @Override
-    public StepInterface getStep(final StepMeta stepMeta, final StepDataInterface stepDataInterface, final int cnr, final TransMeta tr, final Trans trans) {
-        return new JenaGroupMergeStep(stepMeta, stepDataInterface, cnr, tr, trans);
+    public StepInterface getStep(final StepMeta stepMeta, final StepDataInterface stepDataInterface, final int copyNr, final TransMeta transMeta, final Trans trans) {
+        return new JenaGroupMergeStep(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
     @Override
     public StepDataInterface getStepData() {
         return new JenaGroupMergeStepData();
-    }
-
-    @Override
-    public RepositoryDirectory getRepositoryDirectory() {
-        return super.getRepositoryDirectory();
     }
 
     @Override
