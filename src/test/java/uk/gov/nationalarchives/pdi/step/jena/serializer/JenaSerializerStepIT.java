@@ -32,23 +32,23 @@ import org.pentaho.di.core.KettleClientEnvironment;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LoggingObjectInterface;
 import org.pentaho.di.core.row.RowMeta;
-import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaInteger;
 import org.pentaho.di.trans.step.RowHandler;
 import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.steps.mock.StepMockHelper;
+import uk.gov.nationalarchives.pdi.step.TestDataRowHandler;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 public class JenaSerializerStepIT {
+
     @BeforeAll
     public static void setup() throws KettleException {
         KettleClientEnvironment.init();
@@ -59,15 +59,18 @@ public class JenaSerializerStepIT {
         final JenaSerializerStepMeta meta = getMeta();
         final StepDataInterface data = getData();
         final StepMockHelper<JenaSerializerStepMeta, JenaSerializerStepData> helper = mockHelper();
-        final JenaSerializerStep step = mockStep(helper);
+        final TestDataRowHandler testRowHandler = new TestDataRowHandler(getTestInputRows());
+        final JenaSerializerStep step = mockStep(helper, testRowHandler);
 
         step.setVariable("jenaModelFieldVar", "model");
         meta.setJenaModelField("${jenaModelFieldVar}");
 
         final boolean rowProcessed = step.processRow(meta, data);
 
-        // Would throw if var was not resolved
+        // Would have thrown KettleException if var was not resolved
         assertTrue(rowProcessed);
+        assertEquals(1, testRowHandler.getOutputRows().size());
+        assertTrue(testRowHandler.getErrorRows().isEmpty());
     }
 
     @Test
@@ -77,7 +80,8 @@ public class JenaSerializerStepIT {
         final JenaSerializerStepMeta meta = getMeta();
         final StepDataInterface data = getData();
         final StepMockHelper<JenaSerializerStepMeta, JenaSerializerStepData> helper = mockHelper();
-        final JenaSerializerStep step = mockStep(helper);
+        final TestDataRowHandler testRowHandler = new TestDataRowHandler(getTestInputRows());
+        final JenaSerializerStep step = mockStep(helper, testRowHandler);
 
         meta.setJenaModelField("model");
 
@@ -85,14 +89,15 @@ public class JenaSerializerStepIT {
 
         final JenaSerializerStepMeta.FileDetail fileDetail = new JenaSerializerStepMeta.FileDetail();
         fileDetail.filename = "${filenameVar}";
-
         meta.setFileDetail(fileDetail);
 
         // First pass create model, second serialise
-        step.processRow(meta, data);
-        step.processRow(meta, data);
+        assertTrue(step.processRow(meta, data));
+        assertFalse(step.processRow(meta, data));
 
         assertTrue(Files.exists(expectedFile));
+        assertEquals(1, testRowHandler.getOutputRows().size());
+        assertTrue(testRowHandler.getErrorRows().isEmpty());
     }
 
     @Test
@@ -102,7 +107,8 @@ public class JenaSerializerStepIT {
         final JenaSerializerStepMeta meta = getMeta();
         final StepDataInterface data = getData();
         final StepMockHelper<JenaSerializerStepMeta, JenaSerializerStepData> helper = mockHelper();
-        final JenaSerializerStep step = mockStep(helper);
+        final RowHandler testRowHandler = new TestDataRowHandler(getTestInputRows());
+        final JenaSerializerStep step = mockStep(helper, testRowHandler);
 
         meta.setJenaModelField("model");
 
@@ -115,11 +121,10 @@ public class JenaSerializerStepIT {
         meta.setSerializationFormat("${serialisationFormatVar}");
 
         // First pass create model, second serialise
-        step.processRow(meta, data);
-        final boolean rowProcessed = step.processRow(meta, data);
+        assertTrue(step.processRow(meta, data));
+        assertFalse(step.processRow(meta, data));
 
-        // Would throw if var was not resolved
-        assertFalse(rowProcessed);
+        // Would have thrown KettleException if var was not resolved
     }
 
     private StepDataInterface getData() {
@@ -145,16 +150,18 @@ public class JenaSerializerStepIT {
         return helper;
     }
 
-    private JenaSerializerStep mockStep(StepMockHelper<JenaSerializerStepMeta, JenaSerializerStepData> helper) {
+    private Collection<Object[]> getTestInputRows() {
+        return Arrays.<Object[]>asList(
+                new Object[] {
+                        ModelFactory.createDefaultModel()
+                }
+        );
+    }
+
+    private JenaSerializerStep mockStep(final StepMockHelper<JenaSerializerStepMeta, JenaSerializerStepData> helper, final RowHandler rowHandler) {
         final JenaSerializerStep step = Mockito.spy(new JenaSerializerStep(helper.stepMeta, helper.stepDataInterface, 0, helper.transMeta, helper.trans));
 
-        final Collection<Object[]> rows = new ArrayList<>();
-        rows.add(
-                new Object[]{
-                        ModelFactory.createDefaultModel()
-                });
-
-        step.setRowHandler(new StaticDataRowHandler(rows));
+        step.setRowHandler(rowHandler);
 
         final RowMeta inputRowSchema = new RowMeta();
         inputRowSchema.addValueMeta(new ValueMetaInteger("model"));
@@ -164,30 +171,5 @@ public class JenaSerializerStepIT {
         return step;
     }
 
-    private static class StaticDataRowHandler implements RowHandler {
-        private final Deque<Object[]> rows;
 
-        public StaticDataRowHandler(Collection<Object[]> rows) {
-            this.rows = new ArrayDeque<>(rows);
-        }
-
-        @Override
-        public Object[] getRow() {
-            if (rows.isEmpty()) {
-                return null;
-            } else {
-                return rows.remove();
-            }
-        }
-
-        @Override
-        public void putRow(RowMetaInterface rowMetaInterface, Object[] objects) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putError(RowMetaInterface rowMetaInterface, Object[] objects, long l, String s, String s1, String s2) {
-            throw new UnsupportedOperationException();
-        }
-    }
 }

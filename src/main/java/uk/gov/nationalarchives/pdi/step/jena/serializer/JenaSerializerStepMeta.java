@@ -226,10 +226,11 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
          */
         if (closeModelAndRemoveField) {
             if (isNotEmpty(jenaModelField)) {
+                final String expandedJenaModelField = space.environmentSubstitute(jenaModelField);
                 try {
-                    rowMeta.removeValueMeta(jenaModelField);
+                    rowMeta.removeValueMeta(expandedJenaModelField);
                 } catch (final KettleValueException e) {
-                    throw new KettleStepException("Unable to remove field: " + jenaModelField + ": " + e.getMessage(), e);
+                    throw new KettleStepException("Unable to remove field: " + expandedJenaModelField + (jenaModelField.equals(expandedJenaModelField) ? "" : "(" + jenaModelField + ")") + ": " + e.getMessage(), e);
                 }
             }
         }

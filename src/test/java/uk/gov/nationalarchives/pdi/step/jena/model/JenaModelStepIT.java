@@ -42,8 +42,7 @@ import javax.xml.namespace.QName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class JenaModelStepIT {
     @BeforeAll
@@ -119,6 +118,9 @@ public class JenaModelStepIT {
 
         when(helper.logChannelInterfaceFactory.create(any(), any(LoggingObjectInterface.class))).thenReturn(helper.logChannelInterface);
         when(helper.trans.isRunning()).thenReturn(true);
+
+        doCallRealMethod().when(helper.processRowsStepDataInterface).setOutputRowMeta(any(RowMetaInterface.class));
+        when(helper.processRowsStepDataInterface.getOutputRowMeta()).thenCallRealMethod();
 
         return helper;
     }

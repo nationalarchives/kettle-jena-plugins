@@ -129,10 +129,11 @@ public class JenaModelStep extends BaseStep implements StepInterface {
         data.setOutputRowMeta(outputRowMeta);
 
         // must be done on the output row meta!
-        final int targetFieldIndex = outputRowMeta.indexOfValue(meta.getTargetFieldName());
+        final String expandedTargetFieldName = environmentSubstitute(meta.getTargetFieldName());
+        final int targetFieldIndex = outputRowMeta.indexOfValue(expandedTargetFieldName);
         if (targetFieldIndex < 0 ) {
             throw new KettleStepException(BaseMessages.getString(
-                    PKG, "JenaModelStep.Error.TargetFieldNotFoundOutputStream", meta.getTargetFieldName()));
+                    PKG, "JenaModelStep.Error.TargetFieldNotFoundOutputStream", meta.getTargetFieldName() + (meta.getTargetFieldName().equals(expandedTargetFieldName) ? "" : "(" + meta.getTargetFieldName() + ")")));
         }
         data.setTargetFieldIndex(targetFieldIndex);
     }

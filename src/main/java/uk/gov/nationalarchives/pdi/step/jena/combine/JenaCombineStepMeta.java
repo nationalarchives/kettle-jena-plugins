@@ -226,11 +226,12 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
          * behaviour is relied on in {@link JenaCombineStep#prepareForReMap(JenaCombineStepMeta, JenaCombineStepData)}.
          */
         if (!mutateFirstModel) {
+            final String expandedTargetFieldName = space.environmentSubstitute(targetFieldName);
             final ValueMetaInterface targetFieldValueMeta;
             try {
-                targetFieldValueMeta = ValueMetaFactory.createValueMeta(space.environmentSubstitute(targetFieldName), ValueMeta.TYPE_SERIALIZABLE);
+                targetFieldValueMeta = ValueMetaFactory.createValueMeta(expandedTargetFieldName, ValueMeta.TYPE_SERIALIZABLE);
             } catch (final KettlePluginException e) {
-                throw new KettleStepException("Unable to create Value Meta for target field: " + targetFieldName + ", : " + e.getMessage(), e);
+                throw new KettleStepException("Unable to create Value Meta for target field: " + expandedTargetFieldName + (targetFieldName.equals(expandedTargetFieldName) ? "" : "(" + targetFieldName + ")") + ", : " + e.getMessage(), e);
             }
             targetFieldValueMeta.setOrigin(origin);
             rowMeta.addValueMeta(targetFieldValueMeta);
