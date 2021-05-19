@@ -141,23 +141,37 @@ public class Util {
         return a != null && a.length > 0;
     }
 
-    public static String asPrefixString(final QName qname) {
+    /**
+     * Get's a prefixed name from a QName.
+     *
+     * @param qname the qualified name
+     *
+     * @return the prefixed name
+     */
+    public static String asPrefixString(@Nullable final QName qname) {
         if (qname == null) {
             return "";
-        } else if (qname.getPrefix() != null && !qname.getPrefix().isEmpty()) {
+        } else if (!qname.getPrefix().isEmpty()) {
             return qname.getPrefix() + ":" + qname.getLocalPart();
         } else {
             return qname.toString();
         }
     }
 
-    public static boolean isQName(final String qname) {
-        if (emptyIfNull(qname) == null) {
+    /**
+     * Determines if a string representation of a qualified name is a valid qualified name.
+     *
+     * @param qname the qualified name
+     *
+     * @return true if the string is a qualified name, false otherwise.
+     */
+    public static boolean isQName(@Nullable final String qname) {
+        if (nullIfEmpty(qname) == null) {
             return false;
         }
 
         final int idxColon = qname.indexOf(':');
-        if (idxColon > -1 && idxColon < qname.length() - 1) {
+        if (idxColon > 0 && idxColon < qname.length() - 1) {
             return true;
         }
 
@@ -166,28 +180,50 @@ public class Util {
         return (idxOpenBrace > -1 && idxCloseBrace > idxOpenBrace && idxCloseBrace < qname.length() - 1);
     }
 
-    public static QName parseQName(final Map<String, String> namespaces, final String qname) {
-        if (qname == null) {
+    /**
+     * Parse a QName from a string representation.
+     *
+     * @param namespaces Map of prefix to namespace
+     * @param qname the string representation of the qualified name
+     *
+     * @return the qualified name or null
+     *
+     * @throws IllegalArgumentException if a namespace for a prefix cannot be found in the namespace map
+     */
+    public static @Nullable QName parseQName(@Nullable final Map<String, String> namespaces, @Nullable final String qname) {
+        if (nullIfEmpty(qname) == null) {
             return null;
         }
 
         final int idxColon = qname.indexOf(':');
 
-        if (idxColon > -1 && idxColon < qname.length() - 1) {
+        if (idxColon == 0 || idxColon == qname.length() - 1) {
+            throw new IllegalArgumentException("Invalid qualified name: " + qname);
+        }
+
+        if (idxColon > -1) {
             final String prefix = qname.substring(0, idxColon);
             final String localPart = qname.substring(idxColon + 1);
 
             if (namespaces == null) {
-                throw new IllegalStateException("No namespaces for prefix lookup");
+                throw new IllegalArgumentException("No namespaces for prefix lookup");
             }
 
             final String uri = namespaces.get(prefix);
+            if (uri == null) {
+                throw new IllegalArgumentException("No namespace for prefix: " + prefix);
+            }
+
             return new QName(uri, localPart, prefix);
 
         } else {
             final int idxOpenBrace = qname.indexOf('{');
             final int idxCloseBrace = qname.indexOf('}');
-            if (idxOpenBrace > -1 && idxCloseBrace > idxOpenBrace && idxCloseBrace < qname.length() - 1) {
+            if (idxOpenBrace != 0 || idxCloseBrace == qname.length() - 1 || idxCloseBrace < idxOpenBrace || (idxOpenBrace == -1 ^ idxCloseBrace == -1)) {
+                throw new IllegalArgumentException("Invalid qualified name: " + qname);
+            }
+
+            if (idxOpenBrace > -1 && idxCloseBrace > - 1) {
                 final String ns = qname.substring(idxOpenBrace + 1, idxCloseBrace);
                 final String localPart = qname.substring(idxCloseBrace + 1);
 
@@ -201,7 +237,14 @@ public class Util {
         }
     }
 
-    public static QName copy(final QName qname) {
+    /***
+     * Copies a QName.
+     *
+     * @param qname the qualified name
+     *
+     * @return the new qualified name.
+     */
+    public static @Nullable QName copy(@Nullable final QName qname) {
         if (qname == null) {
             return null;
         }
