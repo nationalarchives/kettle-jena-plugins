@@ -61,7 +61,7 @@
   <properties>
     <pentaho-kettle.version>8.3.0.9-719</pentaho-kettle.version>
     <pentaho-kettle.plugins.dir>C:\data-integration9.1\plugins</pentaho-kettle.plugins.dir>
-    <source.encoding>UTF-8</source.encoding>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.source.version>1.8</java.source.version>
     <java.target.version>1.8</java.target.version>
     <jena.version>3.16.0</jena.version>
@@ -183,7 +183,7 @@
         <artifactId>maven-resources-plugin</artifactId>
         <version>3.1.0</version>
         <configuration>
-          <encoding>${source.encoding}</encoding>
+          <encoding>${project.build.sourceEncoding}</encoding>
         </configuration>
       </plugin>
       <plugin>
@@ -212,7 +212,7 @@
             <!-- Ignore inconsistent (Apache) license for step mock helper class from Pentatho source https://github.com/pentaho/pentaho-kettle/blob/master/engine/src/test/java/org/pentaho/di/trans/steps/mock/StepMockHelper.java -->
             <exclude>src/test/java/org/pentaho/di/trans/steps/mock/StepMockHelper.java</exclude>
           </excludes>
-          <encoding>${source.encoding}</encoding>
+          <encoding>${project.build.sourceEncoding}</encoding>
         </configuration>
         <executions>
           <execution>
@@ -229,7 +229,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
         <configuration>
-          <encoding>${source.encoding}</encoding>
+          <encoding>${project.build.sourceEncoding}</encoding>
           <source>${java.source.version}</source>
           <target>${java.target.version}</target>
         </configuration>
@@ -314,7 +314,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M5</version>
         <configuration>
-          <argLine>@{jacocoArgLine} -Dfile.encoding=${source.encoding}</argLine>
+          <argLine>@{jacocoArgLine} -Dfile.encoding=${project.build.sourceEncoding}</argLine>
         </configuration>
       </plugin>
       <plugin>
@@ -322,7 +322,7 @@
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>3.0.0-M5</version>
         <configuration>
-          <argLine>@{jacocoArgLine} -Dfile.encoding=${source.encoding}</argLine>
+          <argLine>@{jacocoArgLine} -Dfile.encoding=${project.build.sourceEncoding}</argLine>
         </configuration>
         <executions>
           <execution>
