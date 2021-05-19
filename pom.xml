@@ -33,6 +33,7 @@
 
   <name>Kettle Jena Plugins</name>
   <description>Apache Jena Plugins for Pentaho Data Integration (KETTLE) for producing RDF</description>
+  <url>https://github.com/nationalarchives/kettle-jena-plugins</url>
 
   <inceptionYear>2020</inceptionYear>
 
@@ -60,7 +61,7 @@
   <properties>
     <pentaho-kettle.version>8.3.0.9-719</pentaho-kettle.version>
     <pentaho-kettle.plugins.dir>C:\data-integration9.1\plugins</pentaho-kettle.plugins.dir>
-    <source.encoding>UTF-8</source.encoding>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.source.version>1.8</java.source.version>
     <java.target.version>1.8</java.target.version>
     <jena.version>3.16.0</jena.version>
@@ -182,7 +183,7 @@
         <artifactId>maven-resources-plugin</artifactId>
         <version>3.1.0</version>
         <configuration>
-          <encoding>${source.encoding}</encoding>
+          <encoding>${project.build.sourceEncoding}</encoding>
         </configuration>
       </plugin>
       <plugin>
@@ -228,7 +229,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
         <configuration>
-          <encoding>${source.encoding}</encoding>
+          <encoding>${project.build.sourceEncoding}</encoding>
           <source>${java.source.version}</source>
           <target>${java.target.version}</target>
         </configuration>
@@ -294,9 +295,43 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.7</version>
+        <configuration>
+          <propertyName>jacocoArgLine</propertyName>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M5</version>
+        <configuration>
+          <argLine>@{jacocoArgLine} -Dfile.encoding=${project.build.sourceEncoding}</argLine>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.0.0-M5</version>
+        <configuration>
+          <argLine>@{jacocoArgLine} -Dfile.encoding=${project.build.sourceEncoding}</argLine>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -319,21 +354,57 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>3.0.0-M5</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>3.9.1</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>3.1.2</version>
       </plugin>
     </plugins>
   </build>
 
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.7</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <!-- select non-aggregate reports -->
+              <report>report</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+    </plugins>
+  </reporting>
+
   <profiles>
+
+    <profile>
+      <id>upload-jacoco-to-coveralls</id>
+      <activation>
+        <!-- enabled in CI environment i.e. GitHub Actions -->
+        <property>
+          <name>env.CI</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.eluder.coveralls</groupId>
+            <artifactId>coveralls-maven-plugin</artifactId>
+            <version>4.3.0</version>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
     <profile>
       <id>deploy-pdi-local</id>
       <build>
@@ -362,6 +433,6 @@
         </plugins>
       </build>
     </profile>
-  </profiles>
 
+  </profiles>
 </project>

@@ -13,14 +13,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        java: [1.8, 9, 11, 15]
+        jdk: [1.8, 9, 11, 15]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
-          java-version: ${{ matrix.java }}
+          java-version: ${{ matrix.jdk }}
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -30,4 +30,7 @@ jobs:
       - name: Maven Build
         run: mvn -V -B -DskipTests=true install
       - name: Maven Test
-        run: mvn -V -B verify
+        run: mvn -B verify
+      - name: Maven Code Coverage
+        if: ${{ matrix.jdk == '1.8' && matrix.os == 'ubuntu-latest' }}
+        run: mvn -B jacoco:report coveralls:report -DrepoToken=${{ secrets.COVERALLS_TOKEN }}
