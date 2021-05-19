@@ -212,32 +212,6 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
     @Override
     public void getFields(final RowMetaInterface rowMeta, final String origin, final RowMetaInterface[] info, final StepMeta nextStep,
                           final VariableSpace space, final Repository repository, final IMetaStore metaStore) throws KettleStepException {
-
-        //TODO(AR) we also need the database fields here?
-
-//        try {
-//            // add the target field to the output rows
-//            if (isNotEmpty(targetFieldName)) {
-//                final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(targetFieldName, ValueMeta.TYPE_SERIALIZABLE);
-//                targetFieldValueMeta.setOrigin(origin);
-//                rowMeta.addValueMeta(targetFieldValueMeta);
-//            }
-//
-//        } catch (final KettlePluginException e) {
-//            throw new KettleStepException(e);
-//        }
-//
-//        if (removeSelectedFields && dbToJenaMappings != null) {
-//            for (final DbToJenaMapping mapping : dbToJenaMappings) {
-//                try {
-//                    rowMeta.removeValueMeta(mapping.fieldName);
-//                } catch (final KettleValueException e) {
-//                    //TODO(AR) log error or throw?
-//                    System.out.println(e.getMessage());
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
     }
 
     @Override
