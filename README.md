@@ -62,7 +62,14 @@ The plugins can be built from Source code by installing the pre-requisites and f
 ## Installing the plugins
 * Tested with Pentaho Data Integration - Community Edition - version: 8.3.0.0-371
 
-You can simply copy the plugins directory `kettle-jena-plugins` (from building above) into the `plugins` sub-directory of your KETTLE installation, e.g.:
+You need to copy the plugins directory `kettle-jena-plugins` (from building above) into the `plugins` sub-directory of your KETTLE installation.
+
+This can be done by either running:
+```
+  $ mvn -Pdeploy-pdi-local -Dpentaho-kettle.plugins.dir=/opt/data-integration/plugins antrun:run@deploy-to-pdi
+```
+
+or, you can do so manually, e.g.:
 ```
   $ cp -r target/kettle-jena-plugins-1.0.0-SNAPSHOT-kettle-plugin/kettle-jena-plugins /opt/data-integration/plugins/
 ```
