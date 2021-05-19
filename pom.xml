@@ -33,6 +33,7 @@
 
   <name>Kettle Jena Plugins</name>
   <description>Apache Jena Plugins for Pentaho Data Integration (KETTLE) for producing RDF</description>
+  <url>https://github.com/nationalarchives/kettle-jena-plugins</url>
 
   <inceptionYear>2020</inceptionYear>
 
@@ -211,7 +212,7 @@
             <!-- Ignore inconsistent (Apache) license for step mock helper class from Pentatho source https://github.com/pentaho/pentaho-kettle/blob/master/engine/src/test/java/org/pentaho/di/trans/steps/mock/StepMockHelper.java -->
             <exclude>src/test/java/org/pentaho/di/trans/steps/mock/StepMockHelper.java</exclude>
           </excludes>
-          <encoding>${project.build.sourceEncoding}</encoding>
+          <encoding>${source.encoding}</encoding>
         </configuration>
         <executions>
           <execution>
@@ -294,9 +295,43 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.7</version>
+        <configuration>
+          <propertyName>jacocoArgLine</propertyName>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M5</version>
+        <configuration>
+          <argLine>@{jacocoArgLine} -Dfile.encoding=${source.encoding}</argLine>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.0.0-M5</version>
+        <configuration>
+          <argLine>@{jacocoArgLine} -Dfile.encoding=${source.encoding}</argLine>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -319,21 +354,57 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>3.0.0-M5</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>3.9.1</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>3.1.2</version>
       </plugin>
     </plugins>
   </build>
 
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.7</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <!-- select non-aggregate reports -->
+              <report>report</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+    </plugins>
+  </reporting>
+
   <profiles>
+
+    <profile>
+      <id>upload-jacoco-to-coveralls</id>
+      <activation>
+        <!-- enabled in CI environment i.e. GitHub Actions -->
+        <property>
+          <name>env.CI</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.eluder.coveralls</groupId>
+            <artifactId>coveralls-maven-plugin</artifactId>
+            <version>4.3.0</version>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
     <profile>
       <id>deploy-pdi-local</id>
       <build>
@@ -362,6 +433,6 @@
         </plugins>
       </build>
     </profile>
-  </profiles>
 
+  </profiles>
 </project>

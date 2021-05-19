@@ -30,4 +30,6 @@ jobs:
       - name: Maven Build
         run: mvn -V -B -DskipTests=true install
       - name: Maven Test
-        run: mvn -V -B verify
+        run: mvn -B verify
+      - name: Maven Code Coverage
+        run: mvn -B jacoco:report coveralls:report -DrepoToken=${{ secrets.COVERALLS_TOKEN }}
