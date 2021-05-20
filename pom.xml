@@ -189,29 +189,32 @@
       <plugin>
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
-        <version>3.0</version>
+        <version>4.1</version>
         <configuration>
-          <header>com/mycila/maven/plugin/license/templates/MIT.txt</header>
+          <licenseSets>
+            <licenseSet>
+              <header>com/mycila/maven/plugin/license/templates/MIT.txt</header>
+              <properties>
+                <owner>${project.organization.name}</owner>
+              </properties>
+              <excludes>
+                <exclude>.github/</exclude>
+                <exclude>.gitignore</exclude>
+                <exclude>.travis.yml</exclude>
+                <exclude>appveyor.yml</exclude>
+                <exclude>README.md</exclude>
+                <exclude>README.md.BAK</exclude>
+                <exclude>LICENSE</exclude>
+                <!-- Ignore inconsistent (Apache) license for step mock helper class from Pentatho source https://github.com/pentaho/pentaho-kettle/blob/master/engine/src/test/java/org/pentaho/di/trans/steps/mock/StepMockHelper.java -->
+                <exclude>src/test/java/org/pentaho/di/trans/steps/mock/StepMockHelper.java</exclude>
+              </excludes>
+            </licenseSet>
+          </licenseSets>
           <failIfMissing>true</failIfMissing>
           <strictCheck>true</strictCheck>
-          <properties>
-            <owner>${project.organization.name}</owner>
-          </properties>
           <mapping>
             <ktr>XML_STYLE</ktr>
           </mapping>
-          <excludes>
-            <exclude>.github/</exclude>
-            <exclude>.gitignore</exclude>
-            <exclude>.travis.yml</exclude>
-            <exclude>appveyor.yml</exclude>
-            <exclude>README.md</exclude>
-            <exclude>README.md.BAK</exclude>
-            <exclude>LICENSE</exclude>
-
-            <!-- Ignore inconsistent (Apache) license for step mock helper class from Pentatho source https://github.com/pentaho/pentaho-kettle/blob/master/engine/src/test/java/org/pentaho/di/trans/steps/mock/StepMockHelper.java -->
-            <exclude>src/test/java/org/pentaho/di/trans/steps/mock/StepMockHelper.java</exclude>
-          </excludes>
           <encoding>${project.build.sourceEncoding}</encoding>
         </configuration>
         <executions>
