@@ -22,38 +22,23 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena;
 
-import org.apache.jena.rdf.model.Model;
-import org.pentaho.di.core.exception.KettleException;
+public class ConstrainedField {
+    public final String fieldName;
+    public final ActionIfNoSuchField actionIfNoSuchField;
+    public final ActionIfNull actionIfNull;
 
-public class JenaUtil {
-
-    /**
-     * Close the model and throw a Kettle Exception.
-     *
-     * @param model The Jena Model
-     * @param message The message for the exception
-     *
-     * @throws KettleException an exception with the message
-     */
-    public static void closeAndThrow(final Model model, final String message) throws KettleException {
-        closeAndThrow(model, new KettleException(message));
+    public ConstrainedField(final String fieldName, final ActionIfNoSuchField actionIfNoSuchField, final ActionIfNull actionIfNull) {
+        this.fieldName = fieldName;
+        this.actionIfNoSuchField = actionIfNoSuchField;
+        this.actionIfNull = actionIfNull;
     }
 
-    /**
-     * Close the model and throw a Kettle Exception.
-     *
-     * @param <E> The type of the exception
-     * @param model The Jena Model
-     * @param e The exception
-     *
-     * @throws E the exception e
-     */
-    public static <E extends Exception> void closeAndThrow(final Model model, final E e) throws E {
-        // abort the transaction on the model
-        if (model.supportsTransactions()) {
-            model.abort();
-        }
-        model.close();
-        throw e;
+    @Override
+    public Object clone() {
+        return copy();
+    }
+
+    public ConstrainedField copy() {
+        return new ConstrainedField(fieldName, actionIfNoSuchField, actionIfNull);
     }
 }

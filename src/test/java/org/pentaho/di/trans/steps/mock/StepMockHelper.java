@@ -54,6 +54,9 @@ import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
 
+/**
+ * Copied from <a href="https://github.com/pentaho/pentaho-kettle/blob/master/engine/src/test/java/org/pentaho/di/trans/steps/mock/StepMockHelper.java">PDI StepMockHelper.java</a>
+ */
 public class StepMockHelper<Meta extends StepMetaInterface, Data extends StepDataInterface> {
     public final StepMeta stepMeta;
     public final Data stepDataInterface;

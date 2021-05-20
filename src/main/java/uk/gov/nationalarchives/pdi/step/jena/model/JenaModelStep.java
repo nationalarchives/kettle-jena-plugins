@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License
  * Copyright © 2020 The National Archives
  *
@@ -29,6 +29,7 @@ import org.apache.jena.datatypes.xsd.XSDDateTime;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.RDF;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
@@ -38,7 +39,6 @@ import org.pentaho.di.trans.step.*;
 
 import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.Map;
@@ -75,58 +75,137 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
     @Override
     public boolean processRow(final StepMetaInterface smi, final StepDataInterface sdi) throws KettleException {
-
-        final JenaModelStepMeta meta = (JenaModelStepMeta)smi;
-
         Object[] row = getRow(); // try and get a row
         if (row == null) {
             // no more rows...
             setOutputDone();
             return false;  // signal that we are DONE
+        }
 
-        } else {
+        // process a row...
+        final RowMetaInterface inputRowMeta = getInputRowMeta();
+        final JenaModelStepMeta meta = (JenaModelStepMeta) smi;
+        final JenaModelStepData data = (JenaModelStepData) sdi;
 
-            // process a row...
+        if (first) {
+            first = false;
 
-            final RowMetaInterface inputRowMeta = getInputRowMeta();
-            final RowMetaInterface outputRowMeta = inputRowMeta.clone();
-            smi.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
+            // create output row meta data
+            createOutputRowMeta(inputRowMeta, meta, data);
 
-            //TODO(AR) seems we have to duplicate behaviour of JenaModelStepMeta getFields here but on `r` ???
-            if (isNotEmpty(meta.getTargetFieldName())) {
-                // create Jena model
-                final Model model = createModel(meta, inputRowMeta, row);
+            // if we are removing fields, we need to map fields from input row to output row
+            // NOTE: this must come after createOutputRowMeta
+            prepareForReMap(inputRowMeta, meta, data);
+        }
 
-                // first, add the new column (for the Jena Model)
-                row = RowDataUtil.resizeArray(row, inputRowMeta.size() + 1);
-                row[inputRowMeta.size()] = model;
+        if (isNullOrEmpty(meta.getTargetFieldName())) {
+            throw new KettleStepException(BaseMessages.getString(
+                    PKG, "JenaModelStep.Error.TargetFieldUndefined"));
+        }
 
-                // second, remove any unneeded columns
-                if (meta.isRemoveSelectedFields() && meta.getDbToJenaMappings() != null) {
-                    final JenaModelStepMeta.DbToJenaMapping[] mappings = meta.getDbToJenaMappings();
-                    final int indexes[] = new int[mappings.length];
-                    int i = 0;
-                    for (final JenaModelStepMeta.DbToJenaMapping mapping : mappings) {
-                        final int index = inputRowMeta.indexOfValue(mapping.fieldName);
-                        indexes[i++] = index;
-                    }
-                    Arrays.sort(indexes);
-                    row = RowDataUtil.removeItems(row, indexes);
+        // Create Jena model
+        final Model model = createModel(inputRowMeta, meta, row);
+
+        // remap any fields that we are keeping from the input row to the output row
+        row = prepareOutputRow(meta, data, row);
+
+        // Set Jena model in target field of the output row
+        row[data.getTargetFieldIndex()] = model;
+
+        // output the row
+        putRow(data.getOutputRowMeta(), row);
+
+        if (checkFeedback(getLinesRead())) {
+            if (log.isBasic())
+                logBasic(BaseMessages.getString(PKG, "JenaModelStep.Log.LineNumber") + getLinesRead());
+        }
+
+        return true;  // signal that we want the next row...
+    }
+
+    private void createOutputRowMeta(final RowMetaInterface inputRowMeta, final JenaModelStepMeta meta, final JenaModelStepData data) throws KettleStepException {
+        final RowMetaInterface outputRowMeta = inputRowMeta.clone();
+        meta.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
+        data.setOutputRowMeta(outputRowMeta);
+
+        // must be done on the output row meta!
+        final String expandedTargetFieldName = environmentSubstitute(meta.getTargetFieldName());
+        final int targetFieldIndex = outputRowMeta.indexOfValue(expandedTargetFieldName);
+        if (targetFieldIndex < 0 ) {
+            throw new KettleStepException(BaseMessages.getString(
+                    PKG, "JenaModelStep.Error.TargetFieldNotFoundOutputStream", meta.getTargetFieldName() + (meta.getTargetFieldName().equals(expandedTargetFieldName) ? "" : "(" + meta.getTargetFieldName() + ")")));
+        }
+        data.setTargetFieldIndex(targetFieldIndex);
+    }
+
+    /**
+     * Stores the indexes of any fields from the input row
+     * that need to be copied into the output row in the data object.
+     *
+     * The remapping itself is performed in {@link #prepareOutputRow(JenaModelStepMeta, JenaModelStepData, Object[])}.
+     *
+     * @param inputRowMeta the input row meta
+     * @param meta the metadata
+     * @param data the data
+     *
+     * @throws KettleException if an error occurs whilst preparing
+     */
+    private void prepareForReMap(final RowMetaInterface inputRowMeta, final JenaModelStepMeta meta, final JenaModelStepData data) throws KettleStepException {
+        // prepare for re-map when removeSelectedFields is checked
+        if (meta.isRemoveSelectedFields() && isNotEmpty(meta.getDbToJenaMappings())) {
+            final int[] remainingInputFieldIndexes = new int[data.getOutputRowMeta().size() - 1]; // NOTE: the `-1` - we don't need the new target field
+
+            // fields present in the outputRowMeta
+            final String[] outputRowFieldName = data.getOutputRowMeta().getFieldNames();
+            // NOTE the `-1` - we don't search the new target field
+            for (int i = 0; i < outputRowFieldName.length - 1; i++) {
+                final int remainingInputFieldIndex = inputRowMeta.indexOfValue(outputRowFieldName[i]);
+                if (remainingInputFieldIndex < 0) {
+                    throw new KettleStepException( BaseMessages.getString( PKG,
+                            "JenaModelStep.Error.RemainingFieldNotFoundInputStream", outputRowFieldName[i]));
                 }
+                remainingInputFieldIndexes[i] = remainingInputFieldIndex;
             }
 
-            putRow(outputRowMeta, row); // copy row to possible alternate rowset(s).
-
-            if (checkFeedback(getLinesRead())) {
-                if (log.isBasic())
-                    logBasic(BaseMessages.getString(PKG, "JenaModelStep.Log.LineNumber") + getLinesRead());
-            }
-
-            return true;  // signal that we want the next row...
+            data.setRemainingInputFieldIndexes(remainingInputFieldIndexes);
         }
     }
 
-    private Model createModel(final JenaModelStepMeta meta, final RowMetaInterface inputRowMeta, final Object[] row) throws KettleException {
+    /**
+     * Reserve room for the target field and re-map the fields
+     * from input row to output row that were stored in
+     * {@link #prepareForReMap(RowMetaInterface, JenaModelStepMeta, JenaModelStepData)}.
+     *
+     * @param meta the metadata
+     * @param data the data
+     * @param row the input row
+     *
+     * @return the output row
+     */
+    private Object[] prepareOutputRow(final JenaModelStepMeta meta, final JenaModelStepData data, final Object[] row) {
+        final Object[] outputRowData;
+
+        if (meta.isRemoveSelectedFields() && isNotEmpty(meta.getDbToJenaMappings())) {
+            // re-map fields from input to output when removeSelectedFields is checked
+
+            // reserve room for the target field
+            outputRowData = new Object[data.getOutputRowMeta().size() + RowDataUtil.OVER_ALLOCATE_SIZE];
+
+            // re-map the fields from input to output
+            final int[] remainingInputFieldIndexes = data.getRemainingInputFieldIndexes();
+            for (int i = 0; i < remainingInputFieldIndexes.length; i++) { // NOTE: this does not include the  new target field (see prepareForReMap)
+                final int remainingInputFieldIndex = remainingInputFieldIndexes[i];
+                outputRowData[i] = row[remainingInputFieldIndex];
+            }
+
+        } else {
+            // reserve room for the target field
+            outputRowData = RowDataUtil.resizeArray(row, data.getOutputRowMeta().size());
+        }
+        return outputRowData;
+    }
+
+    private Model createModel(final RowMetaInterface inputRowMeta, final JenaModelStepMeta meta, final Object[] row) throws KettleException {
         final String resourceUriFieldName = environmentSubstitute(meta.getResourceUriField());
         final int idxResourceUriField = inputRowMeta.indexOfValue(resourceUriFieldName);
 

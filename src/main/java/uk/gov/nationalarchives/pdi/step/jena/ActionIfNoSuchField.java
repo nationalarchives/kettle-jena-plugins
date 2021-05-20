@@ -22,38 +22,22 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena;
 
-import org.apache.jena.rdf.model.Model;
-import org.pentaho.di.core.exception.KettleException;
-
-public class JenaUtil {
-
-    /**
-     * Close the model and throw a Kettle Exception.
-     *
-     * @param model The Jena Model
-     * @param message The message for the exception
-     *
-     * @throws KettleException an exception with the message
-     */
-    public static void closeAndThrow(final Model model, final String message) throws KettleException {
-        closeAndThrow(model, new KettleException(message));
-    }
+public enum ActionIfNoSuchField {
+    IGNORE,
+    WARN,
+    ERROR;
 
     /**
-     * Close the model and throw a Kettle Exception.
+     * Get the String names of the enumerated values.
      *
-     * @param <E> The type of the exception
-     * @param model The Jena Model
-     * @param e The exception
-     *
-     * @throws E the exception e
+     * @return an array of string names.
      */
-    public static <E extends Exception> void closeAndThrow(final Model model, final E e) throws E {
-        // abort the transaction on the model
-        if (model.supportsTransactions()) {
-            model.abort();
+    public static String[] names() {
+        final ActionIfNoSuchField[] values = values();
+        final String[] names = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            names[i] = values[i].name();
         }
-        model.close();
-        throw e;
+        return names;
     }
 }

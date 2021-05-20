@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License
  * Copyright © 2020 The National Archives
  *
@@ -22,6 +22,7 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena.serializer;
 
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
 import uk.gov.nationalarchives.pdi.step.jena.Rdf11;
 import org.apache.jena.rdf.model.Model;
@@ -85,13 +86,11 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
 
     @Override
     public boolean processRow(final StepMetaInterface smi, final StepDataInterface sdi) throws KettleException {
-
         final JenaSerializerStepMeta meta = (JenaSerializerStepMeta) smi;
         final JenaSerializerStepData data = (JenaSerializerStepData) sdi;
 
         Object[] row = getRow(); // try and get a row
         if (row == null) {
-
             // serialize the jena model
             try {
                 serializeModel(meta, data);
@@ -102,41 +101,123 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
             // no more rows...
             setOutputDone();
             return false;  // signal that we are DONE
+        }
 
-        } else {
+        // process a row...
+        final RowMetaInterface inputRowMeta = getInputRowMeta();
 
-            // process a row...
+        if (first) {
+            first = false;
 
-            final RowMetaInterface inputRowMeta = getInputRowMeta();
-            final RowMetaInterface outputRowMeta = inputRowMeta.clone();
-            smi.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
+            // create output row meta data
+            createOutputRowMeta(inputRowMeta, meta, data);
 
-            //TODO(AR) seems we have to duplicate behaviour of JenaModelStepMeta getFields here but on `r` ???
-            if (isNotEmpty(meta.getJenaModelField())) {
-                // get Jena model from row
-                final Model model = getModel(meta, row, inputRowMeta);
+            // if we are removing fields, we need to map fields from input row to output row
+            // NOTE: this must come after createOutputRowMeta
+            prepareForReMap(inputRowMeta, meta, data);
+        }
 
-                try {
-                    // merge this rows model with model for all rows
-                    data.getModel().add(model);
-                } finally {
-                    //TODO(AR) consider adding a 'removeSelectedFields' option to the dialog, if not set, don't close and remove, instead call putRow to pass it on.
+        if (isNotEmpty(meta.getJenaModelField())) {
+            // get Jena model from this row
+            final Model model = getModel(meta, row, inputRowMeta);
+            try {
+                // merge this row's Jena model with our Jena model for serialization
+                data.getModel().add(model);
+            } finally {
+                //TODO(AR) consider adding a 'removeSelectedFields' option to the dialog, if not set, don't close and remove, instead call putRow to pass it on.
 
-                    // we are now finished with the input model from the row, so let's close it to release any resources
+                /*
+                    if closeModelAndRemoveField is selected, we are now
+                    finished with the Jena model from this row, so we
+                    close it to release any resources
+                 */
+                if (meta.isCloseModelAndRemoveField()) {
                     model.close();
-
-                    // model can no longer be used, so remove it from the row
-                    removeModel(meta, row, inputRowMeta);
                 }
             }
+        }
 
-            if (checkFeedback(getLinesRead())) {
-                if (log.isBasic())
-                    logBasic(BaseMessages.getString(PKG, "JenaSerializerStep.Log.LineNumber") + getLinesRead());
+        // remap any fields that we are keeping from the input row to the output row
+        row = prepareOutputRow(meta, data, row);
+
+        // output the row
+        putRow(data.getOutputRowMeta(), row);
+
+        if (checkFeedback(getLinesRead())) {
+            if (log.isBasic())
+                logBasic(BaseMessages.getString(PKG, "JenaSerializerStep.Log.LineNumber") + getLinesRead());
+        }
+
+        return true;  // signal that we want the next row...
+    }
+
+    private void createOutputRowMeta(final RowMetaInterface inputRowMeta, final JenaSerializerStepMeta meta, final JenaSerializerStepData data) throws KettleStepException {
+        final RowMetaInterface outputRowMeta = inputRowMeta.clone();
+        meta.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
+        data.setOutputRowMeta(outputRowMeta);
+    }
+
+    /**
+     * Stores the indexes of any fields from the input row
+     * that need to be copied into the output row in the data object.
+     *
+     * The remapping itself is performed in {@link #prepareOutputRow(JenaSerializerStepMeta, JenaSerializerStepData, Object[])}.
+     *
+     * @param inputRowMeta the input row meta
+     * @param meta the metadata
+     * @param data the data
+     *
+     * @throws KettleException if an error occurs whilst preparing
+     */
+    private void prepareForReMap(final RowMetaInterface inputRowMeta, final JenaSerializerStepMeta meta, final JenaSerializerStepData data) throws KettleStepException {
+        // prepare for re-map when closeModelAndRemoveField
+        if (meta.isCloseModelAndRemoveField()) {
+            final int[] remainingInputFieldIndexes = new int[data.getOutputRowMeta().size()];
+
+            // fields present in the outputRowMeta
+            final String[] outputRowFieldName = data.getOutputRowMeta().getFieldNames();
+            for (int i = 0; i < outputRowFieldName.length; i++) {
+                final int remainingInputFieldIndex = inputRowMeta.indexOfValue(outputRowFieldName[i]);
+                if (remainingInputFieldIndex < 0) {
+                    throw new KettleStepException(BaseMessages.getString(PKG,
+                            "JenaSerializerStep.Error.RemainingFieldNotFoundInputStream", outputRowFieldName[i]));
+                }
+                remainingInputFieldIndexes[i] = remainingInputFieldIndex;
             }
 
-            return true;  // signal that we want the next row...
+            data.setRemainingInputFieldIndexes(remainingInputFieldIndexes);
         }
+    }
+
+    /**
+     * re-map the fields from input row to output row that were stored in
+     * {@link #prepareForReMap(RowMetaInterface, JenaSerializerStepMeta, JenaSerializerStepData)}.
+     *
+     * @param meta the metadata
+     * @param data the data
+     * @param row the input row
+     *
+     * @return the output row
+     */
+    private Object[] prepareOutputRow(final JenaSerializerStepMeta meta, final JenaSerializerStepData data, final Object[] row) {
+        final Object[] outputRowData;
+
+        if (meta.isCloseModelAndRemoveField()) {
+            // re-map fields from input to output when closeModelAndRemoveField is checked
+
+            outputRowData = new Object[data.getOutputRowMeta().size() + RowDataUtil.OVER_ALLOCATE_SIZE];
+
+            // re-map the fields from input to output
+            final int[] remainingInputFieldIndexes = data.getRemainingInputFieldIndexes();
+            for (int i = 0; i < remainingInputFieldIndexes.length; i++) {
+                final int remainingInputFieldIndex = remainingInputFieldIndexes[i];
+                outputRowData[i] = row[remainingInputFieldIndex];
+            }
+
+        } else {
+            outputRowData = RowDataUtil.resizeArray(row, data.getOutputRowMeta().size());
+        }
+        return outputRowData;
     }
 
     private Model getModel(final JenaSerializerStepMeta meta, final Object[] row, final RowMetaInterface inputRowMeta)
@@ -151,13 +232,6 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
             throw new KettleException("Expected field " + jenaModelField + " to contain a Jena Model, but found "
                     + jenaModelFieldValue.getClass());
         }
-    }
-
-    private void removeModel(final JenaSerializerStepMeta meta, Object[] row, final RowMetaInterface inputRowMeta) throws KettleException {
-        final String jenaModelField = environmentSubstitute(meta.getJenaModelField());
-        final int idxJenaModelField = inputRowMeta.indexOfValue(jenaModelField);
-
-        row = RowDataUtil.removeItem(row, idxJenaModelField);
     }
 
     private void serializeModel(final JenaSerializerStepMeta meta, final JenaSerializerStepData data) throws IOException {

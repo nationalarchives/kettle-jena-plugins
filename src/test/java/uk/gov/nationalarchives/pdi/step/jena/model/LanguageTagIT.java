@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License
  * Copyright © 2020 The National Archives
  *
@@ -20,7 +20,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package uk.gov.nationalarchives.pdi.step.jena.model;
 
 import org.apache.jena.datatypes.TypeMapper;

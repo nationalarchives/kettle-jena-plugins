@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License
  * Copyright © 2020 The National Archives
  *
@@ -44,6 +44,9 @@ import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
+import uk.gov.nationalarchives.pdi.step.jena.ActionIfNoSuchField;
+import uk.gov.nationalarchives.pdi.step.jena.ActionIfNull;
+import uk.gov.nationalarchives.pdi.step.jena.ConstrainedField;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -239,13 +242,6 @@ public class JenaCombineStepDialog extends BaseStepDialog implements StepDialogI
                 .result();
         wFieldsLabel.setLayoutData(fdFieldsLabel);
 
-        final JenaCombineStepMeta.ActionIfNull[] actionsIfNull = JenaCombineStepMeta.ActionIfNull.values();
-        final int actionsIfNullLen = actionsIfNull.length;
-        final String[] actionIfNullNames = new String[actionsIfNullLen];
-        for (int i = 0; i < actionsIfNullLen; i++) {
-            actionIfNullNames[i] = actionsIfNull[i].name();
-        }
-
         // fields table
         final ColumnInfo[] fieldsColumns = new ColumnInfo[] {
                 new ColumnInfo(
@@ -254,9 +250,14 @@ public class JenaCombineStepDialog extends BaseStepDialog implements StepDialogI
                         false
                 ),
                 new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaCombineStepDialog.IfNoSuchField"),
+                        ColumnInfo.COLUMN_TYPE_CCOMBO,
+                        ActionIfNoSuchField.names()
+                ),
+                new ColumnInfo(
                         BaseMessages.getString(PKG, "JenaCombineStepDialog.IfNull"),
                         ColumnInfo.COLUMN_TYPE_CCOMBO,
-                        actionIfNullNames
+                        ActionIfNull.names()
                 )
         };
 
@@ -398,8 +399,8 @@ public class JenaCombineStepDialog extends BaseStepDialog implements StepDialogI
 
         if (meta.getJenaModelFields() != null) {
             wFieldsTableView.getTable().removeAll();
-            for (final JenaCombineStepMeta.JenaModelField jenaModelField : meta.getJenaModelFields()) {
-                wFieldsTableView.add(new String[] { jenaModelField.fieldName, jenaModelField.actionIfNull.name() });
+            for (final ConstrainedField jenaModelField : meta.getJenaModelFields()) {
+                wFieldsTableView.add(new String[] { jenaModelField.fieldName, jenaModelField.actionIfNoSuchField.name(), jenaModelField.actionIfNull.name() });
             }
         }
     }
@@ -435,14 +436,16 @@ public class JenaCombineStepDialog extends BaseStepDialog implements StepDialogI
         meta.setTargetFieldName(wTargetTextField.getText());
         meta.setRemoveSelectedFields(wRemoveSelectedCheckbox.getSelection());
 
-        final List<JenaCombineStepMeta.JenaModelField> jenaModelFields = new ArrayList<>();
         final int fieldsLen = wFieldsTableView.getItemCount();
+        final List<ConstrainedField> jenaModelFields = new ArrayList<>(fieldsLen);
         for (int i = 0; i < fieldsLen; i++) {
             final String fieldName = wFieldsTableView.getItem(i, 1);
             if (!isNullOrEmpty(fieldName)) {
-                final String strActionIfNull = wFieldsTableView.getItem(i, 2);
-                final JenaCombineStepMeta.ActionIfNull actionIfNull = isNotEmpty(strActionIfNull) ? JenaCombineStepMeta.ActionIfNull.valueOf(strActionIfNull) : JenaCombineStepMeta.ActionIfNull.ERROR;
-                jenaModelFields.add(new JenaCombineStepMeta.JenaModelField(fieldName, actionIfNull));
+                final String strActionIfNoSuchField = wFieldsTableView.getItem(i, 2);
+                final ActionIfNoSuchField actionIfNoSuchField = isNotEmpty(strActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(strActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
+                final String strActionIfNull = wFieldsTableView.getItem(i, 3);
+                final ActionIfNull actionIfNull = isNotEmpty(strActionIfNull) ? ActionIfNull.valueOf(strActionIfNull) : ActionIfNull.ERROR;
+                jenaModelFields.add(new ConstrainedField(fieldName, actionIfNoSuchField, actionIfNull));
             }
         }
         meta.setJenaModelFields(jenaModelFields);

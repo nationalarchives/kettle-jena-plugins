@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License
  * Copyright © 2020 The National Archives
  *
@@ -44,6 +44,9 @@ import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
+import uk.gov.nationalarchives.pdi.step.jena.ActionIfNoSuchField;
+import uk.gov.nationalarchives.pdi.step.jena.ActionIfNull;
+import uk.gov.nationalarchives.pdi.step.jena.ConstrainedField;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,15 +72,15 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
     private Composite contentComposite;
     private Label wStepNameLabel;
     private Text wStepNameField;
+    private Label wGroupFieldsLabel;
+    private TableView wGroupFieldsTableView;
+    private Button wGetGroupFieldsButton;
     private Label wMutateFirstModelLabel;
     private Button wMutateFirstModelCheckbox;
     private Label wTargetLabel;
     private TextVar wTargetTextField;
     private Label wRemoveSelectedLabel;
     private Button wRemoveSelectedCheckbox;
-    private Label wGroupFieldsLabel;
-    private TableView wGroupFieldsTableView;
-    private Button wGetGroupFieldsButton;
     private Label wMergeFieldsLabel;
     private TableView wMergeFieldsTableView;
     private Button wGetMergeFieldsButton;
@@ -192,12 +195,55 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
         group.setLayoutData(groupLayoutData);
         props.setLook(group);
 
+        // group fields label/table
+        wGroupFieldsLabel = new Label(group, SWT.LEFT);
+        props.setLook(wGroupFieldsLabel);
+        wGroupFieldsLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.GroupFields"));
+        final FormData fdGroupFieldsLabel = new FormDataBuilder().left()
+                .top()
+                .result();
+        wGroupFieldsLabel.setLayoutData(fdGroupFieldsLabel);
+
+        final ColumnInfo[] groupFieldsColumns = new ColumnInfo[] {
+                new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.Fieldname"),
+                        ColumnInfo.COLUMN_TYPE_TEXT,
+                        false
+                ),
+                new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.IfNoSuchField"),
+                        ColumnInfo.COLUMN_TYPE_CCOMBO,
+                        ActionIfNoSuchField.names()
+                ),
+                new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.IfNull"),
+                        ColumnInfo.COLUMN_TYPE_CCOMBO,
+                        ActionIfNull.names()
+                )
+        };
+
+        wGroupFieldsTableView = new TableView(
+                transMeta, group, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, groupFieldsColumns,
+                5, lsGroupFieldsTableModify, props );
+        props.setLook(wGroupFieldsTableView);
+        final FormData fdGroupFieldsTableView = new FormDataBuilder().fullWidth()
+                .top(wGroupFieldsLabel, ELEMENT_SPACING)
+                .result();
+        wGroupFieldsTableView.setLayoutData(fdGroupFieldsTableView);
+
+        wGetGroupFieldsButton = new Button(group, SWT.PUSH);
+        wGetGroupFieldsButton.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.GetFieldsButton"));
+        final FormData fdGetGroupFieldsButton = new FormDataBuilder().right()
+                .top(wGroupFieldsTableView, ELEMENT_SPACING)
+                .result();
+        wGetGroupFieldsButton.setLayoutData(fdGetGroupFieldsButton);
+
         // mutate first model label/checkbox
         wMutateFirstModelLabel = new Label(group, SWT.LEFT);
         props.setLook(wMutateFirstModelLabel);
         wMutateFirstModelLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.CheckboxMutateFirstModel"));
         final FormData fdMutateFirstModelLabel = new FormDataBuilder().left()
-                .top()
+                .top(wGetGroupFieldsButton, ELEMENT_SPACING)
                 .result();
         wMutateFirstModelLabel.setLayoutData(fdMutateFirstModelLabel);
 
@@ -205,7 +251,7 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
         props.setLook(wMutateFirstModelCheckbox);
         wMutateFirstModelCheckbox.setBackground(display.getSystemColor(SWT.COLOR_TRANSPARENT));
         final FormData fdMutateFirstModelCheckbox = new FormDataBuilder().left(wMutateFirstModelLabel, LABEL_SPACING)
-                .top()
+                .top(wGetGroupFieldsButton, ELEMENT_SPACING)
                 .result();
         wMutateFirstModelCheckbox.setLayoutData(fdMutateFirstModelCheckbox);
 
@@ -243,55 +289,15 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
                 .result();
         wRemoveSelectedCheckbox.setLayoutData(fdRemoveSelectedCheckbox);
 
-        wGroupFieldsLabel = new Label(group, SWT.LEFT);
-        props.setLook(wGroupFieldsLabel);
-        wGroupFieldsLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.GroupFields"));
-        final FormData fdGroupFieldsLabel = new FormDataBuilder().left()
-                .top(wRemoveSelectedCheckbox, ELEMENT_SPACING)
-                .result();
-        wGroupFieldsLabel.setLayoutData(fdGroupFieldsLabel);
-
-        // group fields table
-        final ColumnInfo[] groupFieldsColumns = new ColumnInfo[] {
-                new ColumnInfo(
-                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.Fieldname"),
-                        ColumnInfo.COLUMN_TYPE_TEXT,
-                        false
-                )
-        };
-
-        wGroupFieldsTableView = new TableView(
-                transMeta, group, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, groupFieldsColumns,
-                5, lsGroupFieldsTableModify, props );
-        props.setLook(wGroupFieldsTableView);
-        final FormData fdGroupFieldsTableView = new FormDataBuilder().fullWidth()
-                .top(wGroupFieldsLabel, ELEMENT_SPACING)
-                .result();
-        wGroupFieldsTableView.setLayoutData(fdGroupFieldsTableView);
-
-        wGetGroupFieldsButton = new Button(group, SWT.PUSH);
-        wGetGroupFieldsButton.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.GetFieldsButton"));
-        final FormData fdGetGroupFieldsButton = new FormDataBuilder().right()
-                .top(wGroupFieldsTableView, ELEMENT_SPACING)
-                .result();
-        wGetGroupFieldsButton.setLayoutData(fdGetGroupFieldsButton);
-
+        // merge fields label/table
         wMergeFieldsLabel = new Label(group, SWT.LEFT);
         props.setLook(wMergeFieldsLabel);
         wMergeFieldsLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.MergeFields"));
         final FormData fdMergeFieldsLabel = new FormDataBuilder().left()
-                .top(wGetGroupFieldsButton, ELEMENT_SPACING)
+                .top(wRemoveSelectedLabel, ELEMENT_SPACING)
                 .result();
         wMergeFieldsLabel.setLayoutData(fdMergeFieldsLabel);
 
-        final JenaGroupMergeStepMeta.ActionIfNull[] actionsIfNull = JenaGroupMergeStepMeta.ActionIfNull.values();
-        final int actionsIfNullLen = actionsIfNull.length;
-        final String[] actionIfNullNames = new String[actionsIfNullLen];
-        for (int i = 0; i < actionsIfNullLen; i++) {
-            actionIfNullNames[i] = actionsIfNull[i].name();
-        }
-
-        // merge fields table
         final ColumnInfo[] mergeFieldsColumns = new ColumnInfo[] {
                 new ColumnInfo(
                         BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.Fieldname"),
@@ -299,9 +305,14 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
                         false
                 ),
                 new ColumnInfo(
+                        BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.IfNoSuchField"),
+                        ColumnInfo.COLUMN_TYPE_CCOMBO,
+                        ActionIfNoSuchField.names()
+                ),
+                new ColumnInfo(
                         BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.IfNull"),
                         ColumnInfo.COLUMN_TYPE_CCOMBO,
-                        actionIfNullNames
+                        ActionIfNull.names()
                 )
         };
 
@@ -458,15 +469,15 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
 
         if (meta.getGroupFields() != null) {
             wGroupFieldsTableView.getTable().removeAll();
-            for (final String groupField : meta.getGroupFields()) {
-                wGroupFieldsTableView.add(new String[] { groupField });
+            for (final ConstrainedField groupField : meta.getGroupFields()) {
+                wGroupFieldsTableView.add(new String[] { groupField.fieldName, groupField.actionIfNoSuchField.name(), groupField.actionIfNull.name() });
             }
         }
 
         if (meta.getJenaModelMergeFields() != null) {
             wMergeFieldsTableView.getTable().removeAll();
-            for (final JenaGroupMergeStepMeta.JenaModelField jenaModelField : meta.getJenaModelMergeFields()) {
-                wMergeFieldsTableView.add(new String[] { jenaModelField.fieldName, jenaModelField.actionIfNull.name() });
+            for (final ConstrainedField jenaModelField : meta.getJenaModelMergeFields()) {
+                wMergeFieldsTableView.add(new String[] { jenaModelField.fieldName, jenaModelField.actionIfNoSuchField.name(), jenaModelField.actionIfNull.name() });
             }
         }
     }
@@ -503,23 +514,31 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
         meta.setRemoveSelectedFields(wRemoveSelectedCheckbox.getSelection());
 
         final int groupFieldsLen = wGroupFieldsTableView.getItemCount();
-        final List<String> groupFields = new ArrayList<>(groupFieldsLen);
+        final List<ConstrainedField> groupFields = new ArrayList<>(groupFieldsLen);
         for (int i = 0; i < groupFieldsLen; i++) {
             final String fieldName = wGroupFieldsTableView.getItem(i, 1);
             if (!isNullOrEmpty(fieldName)) {
-                groupFields.add(fieldName);
+                final String strActionIfNoSuchField = wGroupFieldsTableView.getItem(i, 2);
+                final ActionIfNoSuchField actionIfNoSuchField = isNotEmpty(strActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(strActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
+                final String strActionIfNull = wGroupFieldsTableView.getItem(i, 3);
+                final ActionIfNull actionIfNull = isNotEmpty(strActionIfNull) ? ActionIfNull.valueOf(strActionIfNull) : ActionIfNull.ERROR;
+
+                groupFields.add(new ConstrainedField(fieldName, actionIfNoSuchField, actionIfNull));
             }
         }
         meta.setGroupFields(groupFields);
 
         final int mergeFieldsLen = wMergeFieldsTableView.getItemCount();
-        final List<JenaGroupMergeStepMeta.JenaModelField> jenaModelFields = new ArrayList<>(mergeFieldsLen);
+        final List<ConstrainedField> jenaModelFields = new ArrayList<>(mergeFieldsLen);
         for (int i = 0; i < mergeFieldsLen; i++) {
             final String fieldName = wMergeFieldsTableView.getItem(i, 1);
             if (!isNullOrEmpty(fieldName)) {
-                final String strActionIfNull = wMergeFieldsTableView.getItem(i, 2);
-                final JenaGroupMergeStepMeta.ActionIfNull actionIfNull = isNotEmpty(strActionIfNull) ? JenaGroupMergeStepMeta.ActionIfNull.valueOf(strActionIfNull) : JenaGroupMergeStepMeta.ActionIfNull.ERROR;
-                jenaModelFields.add(new JenaGroupMergeStepMeta.JenaModelField(fieldName, actionIfNull));
+                final String strActionIfNoSuchField = wMergeFieldsTableView.getItem(i, 2);
+                final ActionIfNoSuchField actionIfNoSuchField = isNotEmpty(strActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(strActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
+                final String strActionIfNull = wMergeFieldsTableView.getItem(i, 3);
+                final ActionIfNull actionIfNull = isNotEmpty(strActionIfNull) ? ActionIfNull.valueOf(strActionIfNull) : ActionIfNull.ERROR;
+
+                jenaModelFields.add(new ConstrainedField(fieldName, actionIfNoSuchField, actionIfNull));
             }
         }
         meta.setJenaModelFields(jenaModelFields);

@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License
  * Copyright © 2020 The National Archives
  *
@@ -20,7 +20,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package uk.gov.nationalarchives.pdi.step.jena.model;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -42,8 +41,7 @@ import javax.xml.namespace.QName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class JenaModelStepIT {
     @BeforeAll
@@ -119,6 +117,9 @@ public class JenaModelStepIT {
 
         when(helper.logChannelInterfaceFactory.create(any(), any(LoggingObjectInterface.class))).thenReturn(helper.logChannelInterface);
         when(helper.trans.isRunning()).thenReturn(true);
+
+        doCallRealMethod().when(helper.processRowsStepDataInterface).setOutputRowMeta(any(RowMetaInterface.class));
+        when(helper.processRowsStepDataInterface.getOutputRowMeta()).thenCallRealMethod();
 
         return helper;
     }

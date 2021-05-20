@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License
  * Copyright © 2020 The National Archives
  *
@@ -59,6 +59,7 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
 
     // <editor-fold desc="settings XML element names">
     private static final String ELEM_NAME_JENA_MODEL_FIELD = "jenaModelField";
+    private static final String ATTR_NAME_CLOSE_AND_REMOVE = "closeAndRemove";
     private static final String ELEM_NAME_SERIALIZATION_FORMAT = "serializationFormat";
     private static final String ELEM_NAME_FILE = "file";
     private static final String ELEM_NAME_FILENAME = "filename";
@@ -73,6 +74,7 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
 
     // <editor-fold desc="settings">
     private String jenaModelField;
+    private boolean closeModelAndRemoveField;
     private String serializationFormat;
     static class FileDetail implements Cloneable {
         String filename;
@@ -109,6 +111,7 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
     @Override
     public void setDefault() {
         jenaModelField = "";
+        closeModelAndRemoveField = true;
         serializationFormat = Rdf11.DEFAULT_SERIALIZATION_FORMAT;
         fileDetail = newDefaultFileDetail();
     }
@@ -128,6 +131,7 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
     public Object clone() {
         final JenaSerializerStepMeta retval = (JenaSerializerStepMeta) super.clone();
         retval.jenaModelField = jenaModelField;
+        retval.closeModelAndRemoveField = closeModelAndRemoveField;
         retval.serializationFormat = serializationFormat;
         retval.fileDetail = fileDetail == null ? null : fileDetail.copy();
         return retval;
@@ -137,7 +141,7 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
     public String getXML() throws KettleException {
         final StringBuilder builder = new StringBuilder();
         builder
-            .append(XMLHandler.addTagValue(ELEM_NAME_JENA_MODEL_FIELD, jenaModelField))
+            .append(XMLHandler.addTagValue(ELEM_NAME_JENA_MODEL_FIELD, jenaModelField, true, ATTR_NAME_CLOSE_AND_REMOVE, Boolean.toString(closeModelAndRemoveField)))
             .append(XMLHandler.addTagValue(ELEM_NAME_SERIALIZATION_FORMAT, serializationFormat));
 
         if (fileDetail != null) {
@@ -159,6 +163,10 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
         final String xJenaModelField = XMLHandler.getTagValue(stepnode, ELEM_NAME_JENA_MODEL_FIELD);
         if (xJenaModelField != null) {
             this.jenaModelField = xJenaModelField;
+
+            final Node node = XMLHandler.getSubNode(stepnode, ELEM_NAME_JENA_MODEL_FIELD);
+            final String xCloseModelAndRemoveField = XMLHandler.getTagAttribute(node, ATTR_NAME_CLOSE_AND_REMOVE);
+            this.closeModelAndRemoveField = isNullOrEmpty(xCloseModelAndRemoveField) ? true : Boolean.valueOf(xCloseModelAndRemoveField);
 
             final String xSerializationFormat = XMLHandler.getTagValue(stepnode, ELEM_NAME_SERIALIZATION_FORMAT);
             this.serializationFormat = isNotEmpty(xSerializationFormat) ? xSerializationFormat : Rdf11.DEFAULT_SERIALIZATION_FORMAT;
@@ -212,6 +220,20 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
     @Override
     public void getFields(final RowMetaInterface rowMeta, final String origin, final RowMetaInterface[] info, final StepMeta nextStep,
                           final VariableSpace space, final Repository repository, final IMetaStore metaStore) throws KettleStepException {
+
+        /**
+         * 1. if we should close and remove the model field, then remove it from the rowMeta
+         */
+        if (closeModelAndRemoveField) {
+            if (isNotEmpty(jenaModelField)) {
+                final String expandedJenaModelField = space.environmentSubstitute(jenaModelField);
+                try {
+                    rowMeta.removeValueMeta(expandedJenaModelField);
+                } catch (final KettleValueException e) {
+                    throw new KettleStepException("Unable to remove field: " + expandedJenaModelField + (jenaModelField.equals(expandedJenaModelField) ? "" : "(" + jenaModelField + ")") + ": " + e.getMessage(), e);
+                }
+            }
+        }
     }
 
     @Override
@@ -262,6 +284,14 @@ public class JenaSerializerStepMeta extends BaseStepMeta implements StepMetaInte
 
     public void setJenaModelField(final String jenaModelField) {
         this.jenaModelField = jenaModelField;
+    }
+
+    public boolean isCloseModelAndRemoveField() {
+        return closeModelAndRemoveField;
+    }
+
+    public void setCloseModelAndRemoveField(final boolean closeModelAndRemoveField) {
+        this.closeModelAndRemoveField = closeModelAndRemoveField;
     }
 
     public String getSerializationFormat() {

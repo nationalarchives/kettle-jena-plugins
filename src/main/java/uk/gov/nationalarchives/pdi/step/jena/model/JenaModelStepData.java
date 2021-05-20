@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License
  * Copyright © 2020 The National Archives
  *
@@ -22,13 +22,55 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena.model;
 
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
 
 public class JenaModelStepData extends BaseStepData implements StepDataInterface {
 
+    private RowMetaInterface outputRowMeta;
+    private int targetFieldIndex;
+
+    /**
+     * Indexes of fields in the input row
+     * that need to be mapped into the output
+     * row.
+     *
+     * Basically the input fields, less any fields
+     * that are removed by this step.
+     *
+     * NOTE: This does not include {@link #targetFieldIndex}.
+     */
+    private int[] remainingInputFieldIndexes;
+
     public JenaModelStepData() {
         super();
     }
+
+    // <editor-fold desc="get/set properties">
+    public RowMetaInterface getOutputRowMeta() {
+        return outputRowMeta;
+    }
+
+    public void setOutputRowMeta(final RowMetaInterface outputRowMeta) {
+        this.outputRowMeta = outputRowMeta;
+    }
+
+    public int getTargetFieldIndex() {
+        return targetFieldIndex;
+    }
+
+    public void setTargetFieldIndex(final int targetFieldIndex) {
+        this.targetFieldIndex = targetFieldIndex;
+    }
+
+    public int[] getRemainingInputFieldIndexes() {
+        return remainingInputFieldIndexes;
+    }
+
+    public void setRemainingInputFieldIndexes(final int[] remainingInputFieldIndexes) {
+        this.remainingInputFieldIndexes = remainingInputFieldIndexes;
+    }
+    // </editor-fold>
 }
