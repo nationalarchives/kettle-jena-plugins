@@ -102,6 +102,8 @@ public class Util {
      *
      * @param l a List
      *
+     * @param <T> the type of the objects within the list {@code l}
+     *
      * @return true if the List is null or empty, false otherwise.
      */
     public static <T> boolean isNullOrEmpty(@Nullable final List<T> l) {
@@ -112,6 +114,9 @@ public class Util {
      * Returns true if the Map is not-empty (or null).
      *
      * @param m a Map
+     *
+     * @param <K> the type of the keys within the map {@code m}
+     * @param <V> the type of the values within the map {@code m}
      *
      * @return true if the Map is not null and not empty, false otherwise.
      */
@@ -124,6 +129,8 @@ public class Util {
      *
      * @param l a List
      *
+     * @param <T> the type of the objects within the list {@code l}
+     *
      * @return true if the List is not null and not empty, false otherwise.
      */
     public static <T> boolean isNotEmpty(@Nullable final List<T> l) {
@@ -134,6 +141,8 @@ public class Util {
      * Returns true if the Array is not-empty (or null).
      *
      * @param a an Array
+     *
+     * @param <T> the type of the objects within the array {@code a}
      *
      * @return true if the Array is not null and not empty, false otherwise.
      */

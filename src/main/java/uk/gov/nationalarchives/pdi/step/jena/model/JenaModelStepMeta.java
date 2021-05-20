@@ -570,7 +570,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     /**
      * Set the namespaces.
      *
-     * @param namespaces (prefix->uri)
+     * @param namespaces (prefix-&gt;uri)
      */
     public void setNamespaces(final Map<String, String> namespaces) {
         this.namespaces = namespaces;
