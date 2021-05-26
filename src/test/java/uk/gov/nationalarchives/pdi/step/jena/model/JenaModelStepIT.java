@@ -22,6 +22,7 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena.model;
 
+import org.apache.jena.vocabulary.RDF;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -35,6 +36,7 @@ import org.pentaho.di.core.row.value.ValueMetaInteger;
 import org.pentaho.di.core.row.value.ValueMetaString;
 import org.pentaho.di.trans.step.RowHandler;
 import org.pentaho.di.trans.steps.mock.StepMockHelper;
+import uk.gov.nationalarchives.pdi.step.jena.Rdf11;
 
 import javax.xml.namespace.QName;
 
@@ -42,6 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.Entry;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.Map;
 
 public class JenaModelStepIT {
     @BeforeAll
@@ -102,7 +106,7 @@ public class JenaModelStepIT {
 
         final JenaModelStepMeta.DbToJenaMapping mapping = new JenaModelStepMeta.DbToJenaMapping();
         mapping.fieldName = "field1";
-        mapping.rdfPropertyName = new QName("rdf:predicate");
+        mapping.rdfPropertyNameSource = JenaModelStepMeta.RdfPropertyNameSource.fromString(Map(Entry(Rdf11.RDF_PREFIX, RDF.uri)), "rdf:predicate");
         mapping.rdfType = new QName("xsd:int");
 
         meta.setDbToJenaMappings(new JenaModelStepMeta.DbToJenaMapping[]{

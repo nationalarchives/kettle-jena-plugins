@@ -32,10 +32,12 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
+import uk.gov.nationalarchives.pdi.step.jena.Util;
 
 import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
@@ -244,11 +246,13 @@ public class JenaModelStep extends BaseStep implements StepInterface {
 
             // add the resource properties
             addResourceProperties(
+                    inputRowMeta,
+                    row,
                     fieldName -> valueLookup(inputRowMeta, row, fieldName),
                     strResourceUriFieldValue,
                     model,
                     resource,
-                    meta.getNamespaces(),
+                    namespaces,
                     meta.getDbToJenaMappings(),
                     meta.getBlankNodeMappings());
 
@@ -279,7 +283,8 @@ public class JenaModelStep extends BaseStep implements StepInterface {
         return fieldValue;
     }
 
-    private void addResourceProperties(final Function<String, Object> valueLookup, final String rootResourceUri,
+    private void addResourceProperties(final RowMetaInterface inputRowMeta, final Object[] row,
+           final Function<String, Object> valueLookup, final String rootResourceUri,
             final Model model, final Resource resource, final Map<String, String> namespaces,
             final JenaModelStepMeta.DbToJenaMapping[] dbToJenaMappings,
             final JenaModelStepMeta.BlankNodeMapping[] blankNodeMappings) throws KettleException {
@@ -290,7 +295,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                     continue;
                 }
 
-                final QName qname = mapping.rdfPropertyName;
+                final QName qname = resolve(inputRowMeta, row, namespaces, mapping.rdfPropertyNameSource);
                 Property property;
                 if (isNullOrEmpty(qname.getNamespaceURI())) {
                     property = model.getProperty(qname.getLocalPart());
@@ -364,7 +369,7 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                             final Resource blankNode = model.createResource();
 
                             // call this function recursively but passing in the blank node as the resource
-                            addResourceProperties(valueLookup, rootResourceUri, model, blankNode, namespaces, blankNodeMapping.dbToJenaMappings, blankNodeMappings);
+                            addResourceProperties(inputRowMeta, row, valueLookup, rootResourceUri, model, blankNode, namespaces, blankNodeMapping.dbToJenaMappings, blankNodeMappings);
 
                             // add the property to the resource
                             resource.addProperty(property, blankNode);
@@ -387,6 +392,47 @@ public class JenaModelStep extends BaseStep implements StepInterface {
                     }
                 }
             }
+        }
+    }
+
+    private @Nullable QName resolve(final RowMetaInterface inputRowMeta, final Object[] row, @Nullable final Map<String, String> namespaces, @Nullable final JenaModelStepMeta.RdfPropertyNameSource rdfPropertyNameSource) throws KettleException {
+        if (rdfPropertyNameSource == null) {
+            return null;
+
+        } else if (rdfPropertyNameSource instanceof JenaModelStepMeta.RdfPropertyNameLiteralSource) {
+            return ((JenaModelStepMeta.RdfPropertyNameLiteralSource) rdfPropertyNameSource).getSource();
+
+        } else if (rdfPropertyNameSource instanceof JenaModelStepMeta.RdfPropertyNameFieldSource) {
+            final String fieldName = ((JenaModelStepMeta.RdfPropertyNameFieldSource) rdfPropertyNameSource).getFieldName();
+
+            final int idxFieldName = inputRowMeta.indexOfValue(fieldName);
+
+            if (idxFieldName < 0) {
+                throw new KettleException("Could not find RDF PropertyName source from field '" + fieldName + "', index is: " + idxFieldName);
+            } else if (idxFieldName >= row.length) {
+                throw new KettleException("Could not find RDF PropertyName source from field '" + fieldName + "', index is beyond the bounds of the row(length=" + row.length + "): " + idxFieldName);
+            }
+            final Object fieldValue =  row[idxFieldName];
+
+            final String strFieldValue;
+            if (fieldValue == null) {
+                throw new KettleException("RDF PropertyName source from field '" + fieldName + "' cannot be null");
+            } else if (fieldValue instanceof String) {
+                strFieldValue = (String) fieldValue;
+            } else {
+                logBasic("Expecting java.lang.String when processing RDF PropertyName source from field '{0}', but found {1}. Will default to Object#toString()...", fieldName, fieldValue.getClass().getName());
+                strFieldValue = fieldValue.toString();
+            }
+
+            return Util.parseQName(namespaces, strFieldValue);
+
+        } else if (rdfPropertyNameSource instanceof JenaModelStepMeta.RdfPropertyNameVariableSource) {
+            final String variable = ((JenaModelStepMeta.RdfPropertyNameVariableSource) rdfPropertyNameSource).getSource();
+            final String expanded = environmentSubstitute(variable);
+            return Util.parseQName(namespaces, expanded);
+
+        } else {
+            throw new IllegalArgumentException("Unknown Source Type: " + rdfPropertyNameSource.getSourceType());
         }
     }
 

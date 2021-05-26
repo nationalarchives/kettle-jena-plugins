@@ -55,6 +55,7 @@ import org.w3c.dom.Node;
 import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static uk.gov.nationalarchives.pdi.step.jena.Util.*;
 
@@ -84,6 +85,9 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
     private static final String ELEM_NAME_DB_TO_JENA_MAPPING = "dbToJenaMapping";
     private static final String ELEM_NAME_FIELD_NAME = "fieldName";
     private static final String ELEM_NAME_PROPERTY_NAME = "rdfPropertyName";
+    private static final String ATTR_NAME_SOURCE_TYPE = "sourceType";
+    private static final String ELEM_NAME_FIELD = "field";
+    private static final String ELEM_NAME_VARIABLE = "variable";
     private static final String ELEM_NAME_RDF_TYPE = "rdfType";
     private static final String ELEM_NAME_SKIP = "skip";
     private static final String ELEM_NAME_LANGUAGE = "language";
@@ -105,7 +109,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
 
     static class DbToJenaMapping implements Cloneable {
         String fieldName;
-        QName rdfPropertyName;
+        RdfPropertyNameSource rdfPropertyNameSource;
         @Nullable
         QName rdfType;
         boolean skip;
@@ -121,12 +125,116 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         public DbToJenaMapping copy() {
             final DbToJenaMapping copy = new DbToJenaMapping();
             copy.fieldName = fieldName;
-            copy.rdfPropertyName = Util.copy(rdfPropertyName);
+            copy.rdfPropertyNameSource = rdfPropertyNameSource.copy();
             copy.rdfType = Util.copy(rdfType);
             copy.skip = skip;
             copy.language = language;
             copy.actionIfNull = actionIfNull;
             return copy;
+        }
+    }
+
+    enum SourceType {
+        LITERAL,
+        FIELD,
+        VARIABLE;
+    }
+
+    static abstract class RdfPropertyNameSource<T> {
+        protected final SourceType sourceType;
+        protected final T source;
+
+        protected RdfPropertyNameSource(final SourceType sourceType, final T source) {
+            this.sourceType = sourceType;
+            this.source = source;
+        }
+
+        public SourceType getSourceType() {
+            return sourceType;
+        }
+
+        public T getSource() {
+            return source;
+        }
+
+        public abstract RdfPropertyNameSource<T> copy();
+
+        @Override
+        public abstract String toString();
+
+        private static final Pattern FIELD_PATTERN = Pattern.compile("#\\{[^}]*\\}");
+        private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\$\\{[^}]*\\}");
+
+        public static @Nullable RdfPropertyNameSource<?> fromString(final Map<String, String> namespaces, @Nullable final String s) {
+            if (nullIfEmpty(s) == null) {
+                return null;
+            }
+
+            if (FIELD_PATTERN.matcher(s).matches()) {
+                return new RdfPropertyNameFieldSource(s);
+
+            } else if (VARIABLE_PATTERN.matcher(s).matches()) {
+                return new RdfPropertyNameVariableSource(s);
+
+            } else {
+               return new RdfPropertyNameLiteralSource(Util.parseQName(namespaces, s));
+            }
+        }
+    }
+
+    static class RdfPropertyNameLiteralSource extends RdfPropertyNameSource<QName> {
+        public RdfPropertyNameLiteralSource(final QName literal) {
+            super(SourceType.LITERAL, literal);
+        }
+
+        @Override
+        public RdfPropertyNameSource copy() {
+            return new RdfPropertyNameLiteralSource(Util.copy(source));
+        }
+
+        @Override
+        public String toString() {
+            return Util.asPrefixString(source);
+        }
+    }
+
+    static class RdfPropertyNameFieldSource extends RdfPropertyNameSource<String> {
+        public RdfPropertyNameFieldSource(final String fieldSource) {
+            super(SourceType.FIELD, fieldSource);
+        }
+
+        @Override
+        public RdfPropertyNameSource<String> copy() {
+            return new RdfPropertyNameFieldSource(source);
+        }
+
+        public String getFieldName() {
+            return source.substring(2, source.length() - 1);
+        }
+
+        @Override
+        public String toString() {
+            return source;
+        }
+    }
+
+    static class RdfPropertyNameVariableSource extends RdfPropertyNameSource<String> {
+        protected RdfPropertyNameVariableSource(final String variableSource) {
+            super(SourceType.VARIABLE, variableSource);
+        }
+
+        @Override
+        public RdfPropertyNameSource<String> copy() {
+            return new RdfPropertyNameVariableSource(source);
+        }
+
+        public String getVariableName() {
+            return source.substring(2, source.length() - 1);
+        }
+
+        @Override
+        public String toString() {
+            return source;
         }
     }
 
@@ -222,7 +330,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
             builder.append(XMLHandler.openTag(ELEM_NAME_BLANK_NODE_MAPPING));
                 builder.append(XMLHandler.openTag(ELEM_NAME_ID));
                     final QName idQName = new QName(BLANK_NODE_INTERNAL_URI, String.valueOf(blankNodeMapping.id), BLANK_NODE_NAME);
-                    builder.append(addQNameValue(idQName));
+                    addQNameValue(builder, idQName);
                 builder.append(XMLHandler.closeTag(ELEM_NAME_ID));
                 getDbToJenaMappingsXML(blankNodeMapping.dbToJenaMappings, builder);
             builder.append(XMLHandler.closeTag(ELEM_NAME_BLANK_NODE_MAPPING));
@@ -239,15 +347,13 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                 builder
                         .append(XMLHandler.openTag(ELEM_NAME_DB_TO_JENA_MAPPING))
 
-                            .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, dbToJenaMapping.fieldName))
+                            .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, dbToJenaMapping.fieldName));
 
-                            .append(XMLHandler.openTag(ELEM_NAME_PROPERTY_NAME))
-                                .append(addQNameValue(dbToJenaMapping.rdfPropertyName))
-                            .append(XMLHandler.closeTag(ELEM_NAME_PROPERTY_NAME))
+                            appendPropertyName(builder, dbToJenaMapping.rdfPropertyNameSource)
 
                             .append(XMLHandler.openTag(ELEM_NAME_RDF_TYPE));
                                 if (dbToJenaMapping.rdfType != null) {
-                                    builder.append(addQNameValue(dbToJenaMapping.rdfType));
+                                    addQNameValue(builder, dbToJenaMapping.rdfType);
                                 }
                             builder.append(XMLHandler.closeTag(ELEM_NAME_RDF_TYPE))
 
@@ -263,8 +369,29 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         builder.append(XMLHandler.closeTag(ELEM_NAME_DB_TO_JENA_MAPPINGS));
     }
 
-    private String addQNameValue(final QName qname) {
-        final StringBuilder builder = new StringBuilder();
+
+    private StringBuilder appendPropertyName(final StringBuilder builder, final RdfPropertyNameSource<?> rdfPropertyNameSource) {
+        XMLHandler.openTag(builder, ELEM_NAME_PROPERTY_NAME, Map(Entry(ATTR_NAME_SOURCE_TYPE, rdfPropertyNameSource.getSourceType().name())));
+
+        if (rdfPropertyNameSource instanceof RdfPropertyNameLiteralSource) {
+            addQNameValue(builder, ((RdfPropertyNameLiteralSource) rdfPropertyNameSource).getSource());
+
+        } else if (rdfPropertyNameSource instanceof RdfPropertyNameFieldSource) {
+            builder.append(XMLHandler.addTagValue(ELEM_NAME_FIELD, ((RdfPropertyNameFieldSource) rdfPropertyNameSource).getSource()));
+
+        } else if (rdfPropertyNameSource instanceof RdfPropertyNameVariableSource) {
+            builder.append(XMLHandler.addTagValue(ELEM_NAME_VARIABLE, ((RdfPropertyNameVariableSource) rdfPropertyNameSource).getSource()));
+
+        } else {
+            throw new IllegalArgumentException("Unknown Source Type: " + rdfPropertyNameSource.getSourceType());
+        }
+
+        builder.append(XMLHandler.closeTag(ELEM_NAME_PROPERTY_NAME));
+
+        return builder;
+    }
+
+    private StringBuilder addQNameValue(final StringBuilder builder, final QName qname) {
         if (qname.getPrefix() != null) {
             builder.append(XMLHandler.addTagValue(ELEM_NAME_PREFIX, qname.getPrefix()));
         }
@@ -273,7 +400,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         }
         builder.append(XMLHandler.addTagValue(ELEM_NAME_LOCAL_PART, qname.getLocalPart()));
 
-        return builder.toString();
+        return builder;
     }
 
     @Override
@@ -391,7 +518,23 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
                     dbToJenaMapping.fieldName = fieldName;
 
                     final Node propertyNameNode = XMLHandler.getSubNode(dbToJenaMappingNode, ELEM_NAME_PROPERTY_NAME);
-                    dbToJenaMapping.rdfPropertyName = getQNameValue(propertyNameNode);
+                    final String xSourceType = XMLHandler.getTagAttribute(propertyNameNode, ATTR_NAME_SOURCE_TYPE);
+                    final SourceType propertyNameSourceType;
+                    if (xSourceType == null) {
+                        // for backwards compatibility
+                        propertyNameSourceType = SourceType.LITERAL;
+                    } else {
+                        propertyNameSourceType = SourceType.valueOf(xSourceType);
+                    }
+                    if (propertyNameSourceType == SourceType.LITERAL) {
+                        dbToJenaMapping.rdfPropertyNameSource = new RdfPropertyNameLiteralSource(getQNameValue(propertyNameNode));
+                    } else if (propertyNameSourceType == SourceType.FIELD) {
+                        dbToJenaMapping.rdfPropertyNameSource = new RdfPropertyNameFieldSource(XMLHandler.getTagValue(propertyNameNode, ELEM_NAME_FIELD));
+                    } else if (propertyNameSourceType == SourceType.VARIABLE) {
+                        dbToJenaMapping.rdfPropertyNameSource = new RdfPropertyNameFieldSource(XMLHandler.getTagValue(propertyNameNode, ELEM_NAME_VARIABLE));
+                    } else {
+                        dbToJenaMapping.rdfPropertyNameSource = null;
+                    }
 
                     final Node rdfTypeNode = XMLHandler.getSubNode(dbToJenaMappingNode, ELEM_NAME_RDF_TYPE);
                     dbToJenaMapping.rdfType = getQNameValue(rdfTypeNode);

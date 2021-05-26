@@ -489,7 +489,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             for (final JenaModelStepMeta.DbToJenaMapping dbToJenaMapping : dbToJenaMappings) {
                 tableView.add(new String[] {
                         dbToJenaMapping.fieldName,
-                        Util.asPrefixString(dbToJenaMapping.rdfPropertyName),
+                        dbToJenaMapping.rdfPropertyNameSource.toString(),
                         Util.asPrefixString(dbToJenaMapping.rdfType),
                         dbToJenaMapping.skip ?
                                 BaseMessages.getString(PKG, "JenaModelStepDialog.SkipYes") :
@@ -955,7 +955,7 @@ public class JenaModelStepDialog extends BaseStepDialog implements StepDialogInt
             final JenaModelStepMeta.DbToJenaMapping dbToJenaMapping = new JenaModelStepMeta.DbToJenaMapping();
             dbToJenaMapping.fieldName = fieldName;
             final String propertyName = tableView.getItem(i, 2);
-            dbToJenaMapping.rdfPropertyName = Util.parseQName(namespaces, propertyName);
+            dbToJenaMapping.rdfPropertyNameSource = JenaModelStepMeta.RdfPropertyNameSource.fromString(namespaces, propertyName);
             final String rdfType = Util.nullIfEmpty(tableView.getItem(i, 3));
             dbToJenaMapping.rdfType = Util.parseQName(namespaces, rdfType);
             dbToJenaMapping.skip = tableView.getItem(i, 4).equals(BaseMessages.getString(PKG, "JenaModelStepDialog.SkipYes"));
