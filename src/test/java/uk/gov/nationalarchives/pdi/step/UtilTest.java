@@ -160,6 +160,7 @@ public class UtilTest {
         assertEquals(new QName("ns", "local-name"),  Util.parseQName(null, "{ns}local-name"));
         assertEquals(new QName("ns", "local-name"),  Util.parseQName(Collections.emptyMap(), "{ns}local-name"));
         assertEquals(new QName("ns", "local-name"),  Util.parseQName(Map(Entry("prefix", "http://p1")), "{ns}local-name"));
+        assertEquals(new QName("local-part"), Util.parseQName(null, "local-part"));
     }
 
     @Test

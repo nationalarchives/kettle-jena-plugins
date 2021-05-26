@@ -228,11 +228,16 @@ public class Util {
         } else {
             final int idxOpenBrace = qname.indexOf('{');
             final int idxCloseBrace = qname.indexOf('}');
-            if (idxOpenBrace != 0 || idxCloseBrace == qname.length() - 1 || idxCloseBrace < idxOpenBrace || (idxOpenBrace == -1 ^ idxCloseBrace == -1)) {
-                throw new IllegalArgumentException("Invalid qualified name: " + qname);
-            }
 
-            if (idxOpenBrace > -1 && idxCloseBrace > - 1) {
+            if (idxOpenBrace == -1 ^ idxCloseBrace == -1) {
+                throw new IllegalArgumentException("Invalid qualified name: " + qname);
+
+            } else if (idxOpenBrace > -1 && idxCloseBrace > - 1) {
+                if (idxOpenBrace != 0 || idxCloseBrace == qname.length() - 1 || idxCloseBrace < idxOpenBrace) {
+                    throw new IllegalArgumentException("Invalid qualified name: " + qname);
+                }
+
+
                 final String ns = qname.substring(idxOpenBrace + 1, idxCloseBrace);
                 final String localPart = qname.substring(idxCloseBrace + 1);
 
