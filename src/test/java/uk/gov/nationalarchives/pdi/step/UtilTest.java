@@ -29,6 +29,8 @@ import javax.xml.namespace.QName;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.Entry;
+import static uk.gov.nationalarchives.pdi.step.jena.Util.Map;
 
 public class UtilTest {
 
@@ -172,27 +174,26 @@ public class UtilTest {
         assertEquals(new QName("ns", "local-part", "prefix"), new QName("ns", "local-part", "prefix"));
     }
 
-    private static <K, V> Map<K,V> Map(final Entry<K, V>... entries) {
-        final Map<K, V> map = new HashMap<>();
-        if (entries != null) {
-            for (final Entry<K, V> entry : entries) {
-                map.put(entry.key, entry.value);
-            }
-        }
-        return map;
+    @Test
+    public void map() {
+        assertEquals(Collections.emptyMap(), Map(null));
+        assertEquals(Collections.emptyMap(), Map());
+
+        final Map<String, String> expected1 = new HashMap<>();
+        expected1.put("k1", "v1");
+        assertEquals(expected1, Map(Entry("k1", "v1")));
+
+        final Map<String, String> expected2 = new HashMap<>();
+        expected2.put("k1", "v1");
+        expected2.put("k2", "v2");
+        expected2.put("k3", "v3");
+        assertEquals(expected2, Map(Entry("k1", "v1"), Entry("k2", "v2"), Entry("k3", "v3")));
+
+        final Map<Integer, Float> expected3 = new HashMap<>();
+        expected3.put(1, 0.1f);
+        expected3.put(2, 0.2f);
+        expected3.put(3, 0.3f);
+        assertEquals(expected3, Map(Entry(1, 0.1f), Entry(2, 0.2f), Entry(3, 0.3f)));
     }
 
-    private static <K, V> Entry<K,V> Entry(final K key, final V value) {
-        return new Entry(key, value);
-    }
-
-    private static class Entry<K, V> {
-        final K key;
-        final V value;
-
-        private Entry(final K key, final V value) {
-            this.key = key;
-            this.value = value;
-        }
-    }
 }

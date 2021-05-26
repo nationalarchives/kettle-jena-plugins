@@ -27,6 +27,7 @@ import uk.gov.nationalarchives.pdi.step.jena.model.JenaModelStepMeta;
 
 import javax.annotation.Nullable;
 import javax.xml.namespace.QName;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -263,5 +264,48 @@ public class Util {
             return null;
         }
         return new QName(qname.getNamespaceURI(), qname.getLocalPart(), qname.getPrefix());
+    }
+
+    /**
+     * Simple fluent API for constructing a Map.
+     *
+     * @param entries the entries for the map
+     * @param <K> the type of the keys in the map
+     * @param <V> the type of the values in the map
+     *
+     * @return The Map
+     */
+    public static <K, V> Map<K,V> Map(final Entry<K, V>... entries) {
+        final Map<K, V> map = new HashMap<>();
+        if (entries != null) {
+            for (final Entry<K, V> entry : entries) {
+                map.put(entry.key, entry.value);
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Simple fluent API for constructing an entry for a Map.
+     *
+     * @param key the key for the entry
+     * @param value the value for the entry
+     * @param <K> the type of the keys in the map
+     * @param <V> the type of the values in the map
+     *
+     * @return The Map entry
+     */
+    public static <K, V> Entry<K,V> Entry(final K key, final V value) {
+        return new Entry(key, value);
+    }
+
+    public static class Entry<K, V> {
+        final K key;
+        final V value;
+
+        private Entry(final K key, final V value) {
+            this.key = key;
+            this.value = value;
+        }
     }
 }
