@@ -1,0 +1,56 @@
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+odrl:PolicyShape
+    a sh:NodeShape ;
+    sh:targetClass odrl:Policy ;
+    sh:nodeKind sh:IRI ;
+    
+    # there must always be one prohibition
+    sh:property [
+        sh:path odrl:prohibition ;
+        sh:minCount 1 ;
+    ] ;
+    
+    # rules (permissions and prohibitions) must have a single target 
+    sh:property [
+        sh:path [ 
+            sh:alternativePath ( odrl:permission odrl:prohibition ) 
+        ] ;
+        sh:node odrl:targetCardShape ;
+    ] ;
+    
+    # the policy must have a single conflict strategy
+    sh:property [
+        sh:path odrl:conflict ;
+        #sh:class odrl:ConflictTerm ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] .
+
+	odrl:targetCardShape 
+    a sh:NodeShape ;
+    sh:property [
+        sh:path odrl:target ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] .
+
+# every rule in an offer must have exactly one assigner
+odrl:OfferShape
+    a sh:NodeShape ;
+    sh:targetClass odrl:Offer ;
+    sh:property [
+        sh:path [ 
+            sh:alternativePath ( odrl:permission odrl:prohibition ) 
+        ] ;
+        sh:node odrl:assignerMinShape ;
+    ] .
+
+odrl:assignerMinShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path odrl:assigner ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] .

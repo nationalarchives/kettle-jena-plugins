@@ -1,0 +1,21 @@
+@prefix :      <http://cat.nationalarchives.gov.uk/> .
+@prefix nat:   <http://www.nationalarchives.gov.uk/> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix od:    <http://purl.org/twc/vocab/opendap#> .
+@prefix xml:   <http://www.w3.org/XML/1998/namespace/> .
+@prefix cat:   <http://cat.nationalarchives.gov.uk/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix odrl:  <http://www.w3.org/ns/odrl/2/> .
+
+cat:FO_371_190180_1-policy
+        rdf:type          odrl:Offer , odrl:Policy ;
+        odrl:conflict     odrl:perm ;
+        odrl:profile      nat:odrl-profile ;
+        odrl:prohibition  [ rdf:type       odrl:Prohibition , owl:NamedIndividual ;
+                            rdfs:label     "Reading prohibited" ;
+                            odrl:action    odrl:read ;
+                            odrl:assigner  cat:The_National_Archives ;
+                            odrl:target    cat:FO_371_190180_1
+                          ] .
