@@ -32,17 +32,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-public class Util {
+public interface Util {
 
-    public static final String BLANK_NODE_NAME =
+    String BLANK_NODE_NAME =
             BaseMessages.getString(JenaModelStepMeta.class, "JenaModelStepDialog.TabBNode");
 
-    public static final String BLANK_NODE_INTERNAL_URI = "tag:nationalarchives.gov.uk,2020-07-16:kettle-jena-plugins#bNode";
+    String BLANK_NODE_INTERNAL_URI = "tag:nationalarchives.gov.uk,2020-07-16:kettle-jena-plugins#bNode";
 
-    public static final Pattern BLANK_NODE_ID_PATTERN =
+    Pattern BLANK_NODE_ID_PATTERN =
             Pattern.compile(BLANK_NODE_NAME + ":([0-9]+)");
 
-    public static final String BLANK_NODE_FIELD_NAME = "<N/A: " + BLANK_NODE_NAME + ">";
+    String BLANK_NODE_FIELD_NAME = "<N/A: " + BLANK_NODE_NAME + ">";
 
     /**
      * Given a String, returns null if the String is empty, or
@@ -52,7 +52,7 @@ public class Util {
      *
      * @return a non-empty String, else null
      */
-    public static @Nullable String nullIfEmpty(@Nullable final String s) {
+    static @Nullable String nullIfEmpty(@Nullable final String s) {
         if (s != null && !s.isEmpty()) {
             return s;
         } else {
@@ -68,7 +68,7 @@ public class Util {
      *
      * @return an empty String if {@code s == null}, else a string.
      */
-    public static String emptyIfNull(@Nullable final String s) {
+    static String emptyIfNull(@Nullable final String s) {
         if (s == null) {
             return "";
         } else {
@@ -83,7 +83,7 @@ public class Util {
      *
      * @return true if the String is null or empty, false otherwise.
      */
-    public static boolean isNullOrEmpty(@Nullable final String s) {
+    static boolean isNullOrEmpty(@Nullable final String s) {
         return s == null || s.isEmpty();
     }
 
@@ -94,7 +94,7 @@ public class Util {
      *
      * @return true if the String is not null and not empty, false otherwise.
      */
-    public static boolean isNotEmpty(@Nullable final String s) {
+    static boolean isNotEmpty(@Nullable final String s) {
         return s != null && !s.isEmpty();
     }
 
@@ -107,7 +107,7 @@ public class Util {
      *
      * @return true if the List is null or empty, false otherwise.
      */
-    public static <T> boolean isNullOrEmpty(@Nullable final List<T> l) {
+    static <T> boolean isNullOrEmpty(@Nullable final List<T> l) {
         return l == null || l.isEmpty();
     }
 
@@ -121,7 +121,7 @@ public class Util {
      *
      * @return true if the Map is not null and not empty, false otherwise.
      */
-    public static <K,V> boolean isNotEmpty(@Nullable final Map<K, V> m) {
+    static <K,V> boolean isNotEmpty(@Nullable final Map<K, V> m) {
         return m != null && !m.isEmpty();
     }
 
@@ -134,7 +134,7 @@ public class Util {
      *
      * @return true if the List is not null and not empty, false otherwise.
      */
-    public static <T> boolean isNotEmpty(@Nullable final List<T> l) {
+    static <T> boolean isNotEmpty(@Nullable final List<T> l) {
         return l != null && !l.isEmpty();
     }
 
@@ -147,7 +147,7 @@ public class Util {
      *
      * @return true if the Array is not null and not empty, false otherwise.
      */
-    public static <T> boolean isNotEmpty(@Nullable final T[] a) {
+    static <T> boolean isNotEmpty(@Nullable final T[] a) {
         return a != null && a.length > 0;
     }
 
@@ -158,7 +158,7 @@ public class Util {
      *
      * @return the prefixed name
      */
-    public static String asPrefixString(@Nullable final QName qname) {
+    static String asPrefixString(@Nullable final QName qname) {
         if (qname == null) {
             return "";
         } else if (!qname.getPrefix().isEmpty()) {
@@ -175,7 +175,7 @@ public class Util {
      *
      * @return true if the string is a qualified name, false otherwise.
      */
-    public static boolean isQName(@Nullable final String qname) {
+    static boolean isQName(@Nullable final String qname) {
         if (nullIfEmpty(qname) == null) {
             return false;
         }
@@ -200,7 +200,7 @@ public class Util {
      *
      * @throws IllegalArgumentException if a namespace for a prefix cannot be found in the namespace map
      */
-    public static @Nullable QName parseQName(@Nullable final Map<String, String> namespaces, @Nullable final String qname) {
+    static @Nullable QName parseQName(@Nullable final Map<String, String> namespaces, @Nullable final String qname) {
         if (nullIfEmpty(qname) == null) {
             return null;
         }
@@ -259,7 +259,7 @@ public class Util {
      *
      * @return the new qualified name.
      */
-    public static @Nullable QName copy(@Nullable final QName qname) {
+    static @Nullable QName copy(@Nullable final QName qname) {
         if (qname == null) {
             return null;
         }
@@ -275,7 +275,7 @@ public class Util {
      *
      * @return The Map
      */
-    public static <K, V> Map<K,V> Map(final Entry<K, V>... entries) {
+    static <K, V> Map<K,V> Map(final Entry<K, V>... entries) {
         final Map<K, V> map = new HashMap<>();
         if (entries != null) {
             for (final Entry<K, V> entry : entries) {
@@ -295,11 +295,11 @@ public class Util {
      *
      * @return The Map entry
      */
-    public static <K, V> Entry<K,V> Entry(final K key, final V value) {
-        return new Entry(key, value);
+    static <K, V> Entry<K,V> Entry(final K key, final V value) {
+        return new Entry<>(key, value);
     }
 
-    public static class Entry<K, V> {
+    class Entry<K, V> {
         final K key;
         final V value;
 
