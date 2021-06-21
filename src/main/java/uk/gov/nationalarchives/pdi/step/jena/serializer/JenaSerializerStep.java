@@ -93,7 +93,13 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
         if (row == null) {
             // serialize the jena model
             try {
+                final long start = System.currentTimeMillis();
+                logBasic("Starting serialization for: {0}", getStepname());
+
                 serializeModel(meta, data);
+
+                final long end = System.currentTimeMillis();
+                logBasic("Completed serialization for: {0} in: {1} ms", getStepname(), Long.toString(end - start));
             } catch (final IOException e) {
                 throw new KettleException(e.getMessage(), e);
             }
