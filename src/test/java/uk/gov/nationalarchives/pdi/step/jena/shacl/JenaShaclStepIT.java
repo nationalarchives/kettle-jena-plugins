@@ -46,9 +46,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class JenaShaclStepTest {
+public class JenaShaclStepIT {
 
-    static final String STEP_NAME = "Test Jena SHACL Step";
+    static final String STEP_NAME = "Integration test for Jena SHACL step";
 
     @BeforeAll
     public static void setUpBeforeClass() throws KettleException {
