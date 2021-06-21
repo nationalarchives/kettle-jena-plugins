@@ -74,15 +74,15 @@ public class JenaShaclDialog extends BaseStepDialog implements StepDialogInterfa
     @Override
     public String open() {
         //Set up window
-        Shell parent = getParent();
-        Display display = parent.getDisplay();
+        final Shell parent = getParent();
+        final Display display = parent.getDisplay();
 
         shell = new Shell(parent, SWT.DIALOG_TRIM | SWT.RESIZE | SWT.MIN | SWT.MAX);
         shell.setMinimumSize(450, 335);
         props.setLook(shell);
         setShellImage(shell, meta);
 
-        ModifyListener lsMod = new ModifyListener() {
+        final ModifyListener lsMod = new ModifyListener() {
             @Override
             public void modifyText(ModifyEvent e) {
                 meta.setChanged();
@@ -91,28 +91,28 @@ public class JenaShaclDialog extends BaseStepDialog implements StepDialogInterfa
         changed = meta.hasChanged();
 
         //15 pixel margins
-        FormLayout formLayout = new FormLayout();
+        final FormLayout formLayout = new FormLayout();
         formLayout.marginLeft = MARGIN_SIZE;
         formLayout.marginHeight = MARGIN_SIZE;
         shell.setLayout(formLayout);
         shell.setText(BaseMessages.getString(PKG, "JenaShaclStep.Shell.Title"));
 
         //Build a scrolling composite and a composite for holding all content
-        ScrolledComposite scrolledComposite = new ScrolledComposite(shell, SWT.V_SCROLL);
-        Composite contentComposite = new Composite(scrolledComposite, SWT.NONE);
-        FormLayout contentLayout = new FormLayout();
+        final ScrolledComposite scrolledComposite = new ScrolledComposite(shell, SWT.V_SCROLL);
+        final Composite contentComposite = new Composite(scrolledComposite, SWT.NONE);
+        final FormLayout contentLayout = new FormLayout();
         contentLayout.marginRight = MARGIN_SIZE;
         contentComposite.setLayout(contentLayout);
-        FormData compositeLayoutData = new FormDataBuilder().fullSize()
+        final FormData compositeLayoutData = new FormDataBuilder().fullSize()
                 .result();
         contentComposite.setLayoutData(compositeLayoutData);
         props.setLook(contentComposite);
 
         //Step name label and text field
-        Label wStepNameLabel = new Label(contentComposite, SWT.RIGHT);
+        final Label wStepNameLabel = new Label(contentComposite, SWT.RIGHT);
         wStepNameLabel.setText(BaseMessages.getString(PKG, "JenaShaclStep.Stepname.Label"));
         props.setLook(wStepNameLabel);
-        FormData fdStepNameLabel = new FormDataBuilder().left()
+        final FormData fdStepNameLabel = new FormDataBuilder().left()
                 .top()
                 .result();
         wStepNameLabel.setLayoutData(fdStepNameLabel);
@@ -121,16 +121,16 @@ public class JenaShaclDialog extends BaseStepDialog implements StepDialogInterfa
         wStepNameField.setText(stepname);
         props.setLook(wStepNameField);
         wStepNameField.addModifyListener(lsMod);
-        FormData fdStepName = new FormDataBuilder().left()
+        final FormData fdStepName = new FormDataBuilder().left()
                 .top(wStepNameLabel, LABEL_SPACING)
                 .width(MEDIUM_FIELD)
                 .result();
         wStepNameField.setLayoutData(fdStepName);
 
         //Job icon, centered vertically between the top of the label and the bottom of the field.
-        Label wicon = new Label(contentComposite, SWT.CENTER);
+        final Label wicon = new Label(contentComposite, SWT.CENTER);
         wicon.setImage(getImage());
-        FormData fdIcon = new FormDataBuilder().right()
+        final FormData fdIcon = new FormDataBuilder().right()
                 .top(0, 4)
                 .bottom(new FormAttachment(wStepNameField, 0, SWT.BOTTOM))
                 .result();
@@ -138,69 +138,69 @@ public class JenaShaclDialog extends BaseStepDialog implements StepDialogInterfa
         props.setLook(wicon);
 
         //Spacer between entry info and content
-        Label topSpacer = new Label(contentComposite, SWT.HORIZONTAL | SWT.SEPARATOR);
-        FormData fdSpacer = new FormDataBuilder().fullWidth()
+        final Label topSpacer = new Label(contentComposite, SWT.HORIZONTAL | SWT.SEPARATOR);
+        final FormData fdSpacer = new FormDataBuilder().fullWidth()
                 .top(wStepNameField, MARGIN_SIZE)
                 .result();
         topSpacer.setLayoutData(fdSpacer);
 
         //Groups for first type of content
-        Group group = new Group(contentComposite, SWT.SHADOW_ETCHED_IN);
+        final Group group = new Group(contentComposite, SWT.SHADOW_ETCHED_IN);
         group.setText(BaseMessages.getString(PKG, "JenaShaclStep.GroupText"));
-        FormLayout groupLayout = new FormLayout();
+        final FormLayout groupLayout = new FormLayout();
         groupLayout.marginWidth = MARGIN_SIZE;
         groupLayout.marginHeight = MARGIN_SIZE;
         group.setLayout(groupLayout);
-        FormData groupLayoutData = new FormDataBuilder().fullWidth()
+        final FormData groupLayoutData = new FormDataBuilder().fullWidth()
                 .top(topSpacer, MARGIN_SIZE)
                 .result();
         group.setLayoutData(groupLayoutData);
         props.setLook(group);
 
         //Model Field label/field/button
-        Label wModelFieldLabel = new Label(group, SWT.LEFT);
+        final Label wModelFieldLabel = new Label(group, SWT.LEFT);
         props.setLook(wModelFieldLabel);
         wModelFieldLabel.setText(BaseMessages.getString(PKG, "JenaShaclStep.TextFieldModelField"));
-        FormData fdTransformation0 = new FormDataBuilder().left()
+        final FormData fdTransformation0 = new FormDataBuilder().left()
                 .top()
                 .result();
         wModelFieldLabel.setLayoutData(fdTransformation0);
 
         wModelFieldCombo = new ComboVar(transMeta, group,  SWT.SINGLE | SWT.LEFT | SWT.BORDER);
         props.setLook(wModelFieldCombo);
-        FormData fdlTransformation0 = new FormDataBuilder().left()
+        final FormData fdlTransformation0 = new FormDataBuilder().left()
                 .top(wModelFieldLabel, LABEL_SPACING)
                 .width(LARGE_FIELD)
                 .result();
         wModelFieldCombo.setLayoutData(fdlTransformation0);
 
-        Button wGetModelFieldButton = new Button(group, SWT.PUSH);
+        final Button wGetModelFieldButton = new Button(group, SWT.PUSH);
         wGetModelFieldButton.setText(BaseMessages.getString(PKG, "JenaShaclStep.GetFieldsButton"));
-        FormData fdGetModelField = new FormDataBuilder().left(wModelFieldCombo, LABEL_SPACING)
+        final FormData fdGetModelField = new FormDataBuilder().left(wModelFieldCombo, LABEL_SPACING)
                 .top(wModelFieldLabel, LABEL_SPACING)
                 .result();
         wGetModelFieldButton.setLayoutData(fdGetModelField);
 
         //filename label/field/button
-        Label wFilenameLabel = new Label(group, SWT.LEFT);
+        final Label wFilenameLabel = new Label(group, SWT.LEFT);
         props.setLook(wFilenameLabel);
         wFilenameLabel.setText(BaseMessages.getString(PKG, "JenaShaclStep.TextFieldFilename"));
-        FormData fdTransformation2 = new FormDataBuilder().left()
+        final FormData fdTransformation2 = new FormDataBuilder().left()
                 .top(wModelFieldCombo, ELEMENT_SPACING)
                 .result();
         wFilenameLabel.setLayoutData(fdTransformation2);
 
         wShapeFileTextField = new TextVar(transMeta, group, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
         props.setLook(wShapeFileTextField);
-        FormData fdlTransformation2 = new FormDataBuilder().left()
+        final FormData fdlTransformation2 = new FormDataBuilder().left()
                 .top(wFilenameLabel, LABEL_SPACING)
                 .width(LARGE_FIELD)
                 .result();
         wShapeFileTextField.setLayoutData(fdlTransformation2);
 
-        Button wShapeFileBrowseButton = new Button(group, SWT.PUSH);
+        final Button wShapeFileBrowseButton = new Button(group, SWT.PUSH);
         wShapeFileBrowseButton.setText(BaseMessages.getString(PKG, "JenaShaclStep.ButtonBrowse"));
-        FormData fdBrowse = new FormDataBuilder().left(wShapeFileTextField, LABEL_SPACING)
+        final FormData fdBrowse = new FormDataBuilder().left(wShapeFileTextField, LABEL_SPACING)
                 .top(wFilenameLabel, LABEL_SPACING)
                 .result();
         wShapeFileBrowseButton.setLayoutData(fdBrowse);
@@ -218,23 +218,23 @@ public class JenaShaclDialog extends BaseStepDialog implements StepDialogInterfa
         wBrowseFileDialog.setFileName(DEFAULT_FILENAME);
 
         //Cancel, action and OK buttons for the bottom of the window.
-        Button wCancel = new Button(shell, SWT.PUSH);
+        final Button wCancel = new Button(shell, SWT.PUSH);
         wCancel.setText(BaseMessages.getString(PKG, "System.Button.Cancel"));
-        FormData fdCancel = new FormDataBuilder().right(100, -MARGIN_SIZE)
+        final FormData fdCancel = new FormDataBuilder().right(100, -MARGIN_SIZE)
                 .bottom()
                 .result();
         wCancel.setLayoutData(fdCancel);
 
-        Button wOK = new Button(shell, SWT.PUSH);
+        final Button wOK = new Button(shell, SWT.PUSH);
         wOK.setText(BaseMessages.getString(PKG, "System.Button.OK"));
-        FormData fdOk = new FormDataBuilder().right(wCancel, -LABEL_SPACING)
+        final FormData fdOk = new FormDataBuilder().right(wCancel, -LABEL_SPACING)
                 .bottom()
                 .result();
         wOK.setLayoutData(fdOk);
 
         //Space between bottom buttons and the table, final layout for table
-        Label bottomSpacer = new Label(shell, SWT.HORIZONTAL | SWT.SEPARATOR);
-        FormData fdhSpacer = new FormDataBuilder().left()
+        final Label bottomSpacer = new Label(shell, SWT.HORIZONTAL | SWT.SEPARATOR);
+        final FormData fdhSpacer = new FormDataBuilder().left()
                 .right(100, -MARGIN_SIZE)
                 .bottom(wCancel, -MARGIN_SIZE)
                 .result();
@@ -247,7 +247,7 @@ public class JenaShaclDialog extends BaseStepDialog implements StepDialogInterfa
         scrolledComposite.setMinSize(contentComposite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 
         scrolledComposite.setLayout(new FormLayout());
-        FormData fdScrolledComposite = new FormDataBuilder().fullWidth()
+        final FormData fdScrolledComposite = new FormDataBuilder().fullWidth()
                 .top()
                 .bottom(bottomSpacer, -MARGIN_SIZE)
                 .result();
@@ -255,26 +255,26 @@ public class JenaShaclDialog extends BaseStepDialog implements StepDialogInterfa
         props.setLook(scrolledComposite);
 
         //Listeners
-        Listener lsGetField = new Listener() {
+        final Listener lsGetField = new Listener() {
             @Override
             public void handleEvent(final Event e) {
                 getFieldsFromPrevious(wModelFieldCombo, transMeta, stepMeta);
                 wModelFieldCombo.select(0);
             }
         };
-        Listener lsBrowseFilename = new Listener() {
+        final Listener lsBrowseFilename = new Listener() {
             @Override
             public void handleEvent(final Event e) {
                 wShapeFileTextField.setText(wBrowseFileDialog.open());
             }
         };
-        Listener lsCancel = new Listener() {
+        final Listener lsCancel = new Listener() {
             @Override
             public void handleEvent(final Event e) {
                 cancel();
             }
         };
-        Listener lsOK = new Listener() {
+        final Listener lsOK = new Listener() {
             @Override
             public void handleEvent(final Event e) {
                 ok();
@@ -286,7 +286,7 @@ public class JenaShaclDialog extends BaseStepDialog implements StepDialogInterfa
         wOK.addListener(SWT.Selection, lsOK);
         wCancel.addListener(SWT.Selection, lsCancel);
 
-        SelectionAdapter lsDef = new SelectionAdapter() {
+        final SelectionAdapter lsDef = new SelectionAdapter() {
             public void widgetDefaultSelected(SelectionEvent e) {
                 ok();
             }

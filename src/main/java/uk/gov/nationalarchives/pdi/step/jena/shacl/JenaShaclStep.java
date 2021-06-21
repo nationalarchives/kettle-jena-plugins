@@ -57,16 +57,19 @@ public class JenaShaclStep extends BaseStep implements StepInterface {
         }
 
         if(first) {
-            first = false;
+            try{
+                data.setShapesGraph(RDFDataMgr.loadGraph(meta.getShapesFilePath()));
+            } catch (Exception ex) {
+                throw new KettleException("Unable to load SHACL shape file due to " + ex.getMessage(), ex);
+            }
             data.setValidator(ShaclValidator.get());
-            data.setShapesGraph(RDFDataMgr.loadGraph(meta.getShapesFilePath()));
             data.setOutputRowMeta(getInputRowMeta().clone());
+            final RowMetaInterface inputRowMeta = getInputRowMeta();
+            data.setJenaModelFieldIdx(inputRowMeta.indexOfValue(meta.getJenaModelField()));
+            meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, null, null, null);
+            first = false;
         }
-
-        final RowMetaInterface inputRowMeta = getInputRowMeta();
-        meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, null, null, null);
-        final int jenaModelFieldIdx = inputRowMeta.indexOfValue(meta.getJenaModelField());
-        final Object jenaModelFieldValue = row[jenaModelFieldIdx];
+        final Object jenaModelFieldValue = row[data.getJenaModelFieldIdx()];
         if (jenaModelFieldValue instanceof Model) {
             final ValidationResult result = validate((Model) jenaModelFieldValue,data);
             if (!result.hasErrors()) {

@@ -26,6 +26,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.RowMetaAndData;
 import org.pentaho.di.core.exception.KettleException;
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class JenaShaclStepTest {
 
@@ -69,6 +71,15 @@ public class JenaShaclStepTest {
         assertEquals(1, result.get(STEP_NAME).getRowsError().size());
     }
 
+    @Test
+    public void shapeFilePathNotValid() {
+        final TransMeta tm = TransTestFactory.generateTestTransformationError(new Variables(), getInvalidTestMeta(), STEP_NAME);
+        assertThrows(KettleException.class, () -> {
+            TransTestFactory.executeTestTransformationError(tm, TransTestFactory.INJECTOR_STEPNAME,
+                    STEP_NAME, TransTestFactory.DUMMY_STEPNAME, TransTestFactory.ERROR_STEPNAME, generateInputData("FO_371_190180_1-policy.ttl"));
+        });
+    }
+
     private List<RowMetaAndData> generateInputData(final String filename) {
         final List<RowMetaAndData> retval = new ArrayList<>();
         final RowMetaInterface rowMeta = new RowMeta();
@@ -88,6 +99,13 @@ public class JenaShaclStepTest {
     private JenaShaclStepMeta getTestMeta() {
         final JenaShaclStepMeta meta = new JenaShaclStepMeta();
         meta.setShapesFilePath("ODRL-shape.ttl");
+        meta.setJenaModelField("jena_model");
+        return meta;
+    }
+
+    private JenaShaclStepMeta getInvalidTestMeta() {
+        final JenaShaclStepMeta meta = new JenaShaclStepMeta();
+        meta.setShapesFilePath("missing-shape.ttl");
         meta.setJenaModelField("jena_model");
         return meta;
     }

@@ -33,6 +33,7 @@ public class JenaShaclStepData extends BaseStepData implements StepDataInterface
     private RowMetaInterface outputRowMeta;
     private ShaclValidator shaclValidator;
     private Graph shapesGraph;
+    private int jenaModelFieldIdx;
 
     public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
         this.outputRowMeta = outputRowMeta;
@@ -58,8 +59,18 @@ public class JenaShaclStepData extends BaseStepData implements StepDataInterface
         return shapesGraph;
     }
 
+    public void setJenaModelFieldIdx(int jenaModelFieldIdx) {
+        this.jenaModelFieldIdx = jenaModelFieldIdx;
+    }
+
+    public int getJenaModelFieldIdx() {
+        return jenaModelFieldIdx;
+    }
+
     public void dispose() {
-        this.shapesGraph.close();
+        if(this.shapesGraph != null){
+            this.shapesGraph.close();
+        }
         this.shapesGraph = null;
     }
 
