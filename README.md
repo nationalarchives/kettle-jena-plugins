@@ -9,6 +9,7 @@ This project contains plugins for [Pentaho Data Integration](https://github.com/
 that add functionality via [Apache Jena](https://jena.apache.org/) for producing RDF.
 
 The plugins provided are:
+
 1. Create Jena Model
    
     <img alt="Create Jena Model Icon" src="https://raw.githubusercontent.com/nationalarchives/kettle-jena-plugins/main/src/main/resources/JenaModelStep.svg" width="32"/>
@@ -30,8 +31,13 @@ The plugins provided are:
     
     <img alt="Serialize Jena Model Icon" src="https://raw.githubusercontent.com/nationalarchives/kettle-jena-plugins/main/src/main/resources/JenaSerializerStep.svg" width="32"/>
     This output plugin takes the output of the Create Jena Model plugin, and serializes it to an RDF file on disk. Supports Turtle, N3, N-Triples, and RDF/XML output formats.
+    
+5. SHACL Validation
+    
+   <img alt="Jena SHACL Validation Icon" src="https://raw.githubusercontent.com/nationalarchives/kettle-jena-plugins/main/src/main/resources/JenaShaclStep.svg" width="32"/>
+    This validation plugin supports validation of a Jena Model object created by the Create Jena Model plugin against a [SHACL](https://www.w3.org/TR/shacl/) shape file loaded from the file system. 
 
-This project was developed by [Evolved Binary](https://evolvedbinary.com) as part of Project OMEGA for the [National Archives](https://nationalarchives.gov.uk).
+This project was developed by [Evolved Binary](https://evolvedbinary.com) and [DeveXe](https://devexe.co.uk) as part of Project OMEGA for the [National Archives](https://nationalarchives.gov.uk).
 
 ## Getting the Plugins
 
