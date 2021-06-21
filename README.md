@@ -35,7 +35,7 @@ The plugins provided are:
 5. SHACL Validation
     
    <img alt="Jena SHACL Validation Icon" src="https://raw.githubusercontent.com/nationalarchives/kettle-jena-plugins/main/src/main/resources/JenaShaclStep.svg" width="32"/>
-    This validation plugin supports validation of a Jena Model object created by the Create Jena Model plugin against a [SHACL](https://www.w3.org/TR/shacl/) shape file loaded from the file system. 
+    This validation plugin supports validation of a Jena Model object created by the Create Jena Model plugin against a <a href="https://www.w3.org/TR/shacl/">SHACL</a> shape file loaded from the file system. 
 
 This project was developed by [Evolved Binary](https://evolvedbinary.com) and [DeveXe](https://devexe.co.uk) as part of Project OMEGA for the [National Archives](https://nationalarchives.gov.uk).
 
