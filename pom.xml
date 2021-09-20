@@ -64,7 +64,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.source.version>1.8</java.source.version>
     <java.target.version>1.8</java.target.version>
-    <jena.version>3.17.0</jena.version>
+    <jena.version>4.2.0</jena.version>
   </properties>
 
   <dependencies>
