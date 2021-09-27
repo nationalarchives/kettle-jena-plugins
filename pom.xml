@@ -64,6 +64,19 @@
     </repository>
   </repositories>
 
+  <distributionManagement>
+    <snapshotRepository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>Nexus Snapshots Repository</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+    </snapshotRepository>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <name>Nexus Release Repository</name>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <properties>
     <pentaho-kettle.version>9.1.0.0-324</pentaho-kettle.version>
     <pentaho-kettle.plugins.dir>C:\data-integration9.1\plugins</pentaho-kettle.plugins.dir>
