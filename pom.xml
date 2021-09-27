@@ -50,6 +50,12 @@
     </license>
   </licenses>
 
+  <scm>
+    <connection>scm:git:https://github.com/nationalarchives/kettle-jena-plugins.git</connection>
+    <developerConnection>scm:git:https://github.com/nationalarchives/kettle-jena-plugins.git</developerConnection>
+    <url>scm:git:https://github.com/nationalarchives/kettle-jena-plugins.git</url>
+  </scm>
+
   <repositories>
     <repository>
       <id>pentaho-nexus</id>
