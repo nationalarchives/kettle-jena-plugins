@@ -28,9 +28,9 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Maven Build
-        run: mvn -V -B -DskipTests=true install
+        run: mvn -V -B -DskipTests=true "-Dgpg.skip=true" install
       - name: Maven Test
-        run: mvn -B verify
+        run: mvn -B "-Dgpg.skip=true" verify
       - name: Maven Code Coverage
         if: ${{ github.ref == 'refs/heads/main' && matrix.jdk == '1.8' && matrix.os == 'ubuntu-latest' }}
         run: mvn -B jacoco:report coveralls:report -DrepoToken=${{ secrets.COVERALLS_TOKEN }}
