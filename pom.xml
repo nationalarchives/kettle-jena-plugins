@@ -376,6 +376,71 @@
         </configuration>
       </plugin>
       <plugin>
+        <!-- Attach source jar -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>3.2.1</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+            <manifestEntries>
+              <Build-Tag>${build-tag}</Build-Tag>
+              <Git-Commit>${build-commit}</Git-Commit>
+              <Git-Commit-Abbrev>${build-commit-abbrev}</Git-Commit-Abbrev>
+              <Build-Version>${build-version}</Build-Version>
+              <Build-Timestamp>${build-tstamp}</Build-Timestamp>
+              <Source-Repository>${project.scm.connection}</Source-Repository>
+              <Description>${project.description}</Description>
+              <Implementation-URL>${project.url}</Implementation-URL>
+            </manifestEntries>
+          </archive>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <!-- Attach javadoc jar -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.3.1</version>
+        <configuration>
+          <source>${project.build.source}</source>
+          <archive>
+            <manifest>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+            <manifestEntries>
+              <Build-Tag>${build-tag}</Build-Tag>
+              <Git-Commit>${build-commit}</Git-Commit>
+              <Git-Commit-Abbrev>${build-commit-abbrev}</Git-Commit-Abbrev>
+              <Build-Version>${build-version}</Build-Version>
+              <Build-Timestamp>${build-tstamp}</Build-Timestamp>
+              <Source-Repository>${project.scm.connection}</Source-Repository>
+              <Description>${project.description}</Description>
+              <Implementation-URL>${project.url}</Implementation-URL>
+            </manifestEntries>
+          </archive>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.8.7</version>
