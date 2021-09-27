@@ -50,6 +50,27 @@
     </license>
   </licenses>
 
+  <developers>
+    <developer>
+      <name>Adam Retter</name>
+      <organization>Evolved Binary</organization>
+      <email>adam@evolvedbinary.com</email>
+      <organizationUrl>https://www.evolvedbinary.com</organizationUrl>
+    </developer>
+    <developer>
+      <name>Rob Walpole</name>
+      <organization>DeveXe</organization>
+      <email>rob.walpole@devexe.co.uk </email>
+      <organizationUrl>https://www.devexe.co.uk</organizationUrl>
+    </developer>
+  </developers>
+
+  <contributors>
+    <contributor>
+      <name>Samu Lang</name>
+    </contributor>
+  </contributors>
+
   <scm>
     <connection>scm:git:https://github.com/nationalarchives/kettle-jena-plugins.git</connection>
     <developerConnection>scm:git:https://github.com/nationalarchives/kettle-jena-plugins.git</developerConnection>
