@@ -58,7 +58,7 @@ public class JenaShaclStep extends BaseStep implements StepInterface {
 
         if(first) {
             try{
-                data.setShapesGraph(RDFDataMgr.loadGraph(meta.getShapesFilePath()));
+                data.setShapesGraph(RDFDataMgr.loadGraph(environmentSubstitute(meta.getShapesFilePath())));
             } catch (Exception ex) {
                 throw new KettleException("Unable to load SHACL shape file due to " + ex.getMessage(), ex);
             }
