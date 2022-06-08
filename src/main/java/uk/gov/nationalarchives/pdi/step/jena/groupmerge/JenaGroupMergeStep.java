@@ -236,13 +236,15 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
 
         // Do we want to copy the meta (JenaGroupMergeStepMeta) into this method to get the groupFields
         // and jenaModelFields de-referencing the indexes from the meta instead of using the counter for this??
-        int i = 0;
         for (final Map.Entry<String, Object> previousGroupField : previousGroupFields.entrySet()) {
-            previousGroupRow[i++] = previousGroupField.getValue();
+            final int columnIndex = data.getPreviousGroupOutputRowMeta().indexOfValue(previousGroupField.getKey());
+            previousGroupRow[columnIndex] = previousGroupField.getValue();
         }
         for (final Map.Entry<String, Model> previousGroupModel : previousGroupModels.entrySet()) {
-            previousGroupRow[i++] = previousGroupModel.getValue();
+            final int columnIndex = data.getPreviousGroupOutputRowMeta().indexOfValue(previousGroupModel.getKey());
+            previousGroupRow[columnIndex] = previousGroupModel.getValue();
         }
+
 
         putRow(data.getPreviousGroupOutputRowMeta(), previousGroupRow);
 
