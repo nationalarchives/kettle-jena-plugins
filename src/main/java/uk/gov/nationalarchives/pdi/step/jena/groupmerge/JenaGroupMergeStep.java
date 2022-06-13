@@ -234,13 +234,15 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         // TODO(AR) don't forget about the target field
         // TODO(AR) don't forget about the remove selected field
 
-        int i = 0;
         for (final Map.Entry<String, Object> previousGroupField : previousGroupFields.entrySet()) {
-            previousGroupRow[i++] = previousGroupField.getValue();
+            final int columnIndex = data.getPreviousGroupOutputRowMeta().indexOfValue(previousGroupField.getKey());
+            previousGroupRow[columnIndex] = previousGroupField.getValue();
         }
         for (final Map.Entry<String, Model> previousGroupModel : previousGroupModels.entrySet()) {
-            previousGroupRow[i++] = previousGroupModel.getValue();
+            final int columnIndex = data.getPreviousGroupOutputRowMeta().indexOfValue(previousGroupModel.getKey());
+            previousGroupRow[columnIndex] = previousGroupModel.getValue();
         }
+
 
         putRow(data.getPreviousGroupOutputRowMeta(), previousGroupRow);
 
@@ -304,6 +306,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                 }
             } else {
                 final Object groupFieldValue = row[idxGroupField];
+                groupFields.put(groupFieldName, groupFieldValue);
                 if (groupFieldValue == null) {
                     switch (groupField.actionIfNull) {
                         case IGNORE:
@@ -319,8 +322,6 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                             // throw an exception
                             throw new KettleException("Group field: " + groupFieldName + ", column has a null value in row!");
                     }
-                } else {
-                    groupFields.put(groupFieldName, groupFieldValue);
                 }
             }
         }
