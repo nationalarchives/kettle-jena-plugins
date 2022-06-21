@@ -35,6 +35,8 @@ import java.util.Objects;
 public class JenaGroupMergeStepData extends BaseStepData implements StepDataInterface {
 
     @Nullable private LinkedHashMap<String, Object> previousGroupFields;
+
+    @Nullable private LinkedHashMap<String, Object> allFields;
     @Nullable private LinkedHashMap<String, Model> previousGroupModels;
     @Nullable private RowMetaInterface previousGroupOutputRowMeta;
 
@@ -46,10 +48,20 @@ public class JenaGroupMergeStepData extends BaseStepData implements StepDataInte
         return previousGroupFields;
     }
 
+    public @Nullable LinkedHashMap<String, Object> getAllFields() {
+        return allFields;
+    }
+
     public void setPreviousGroupFields(final LinkedHashMap<String, Object> previousGroupFields) {
         Objects.requireNonNull(previousGroupFields);
         this.previousGroupFields = previousGroupFields;
     }
+
+    public void setAllFields(final LinkedHashMap<String, Object> allFields) {
+        Objects.requireNonNull(allFields);
+        this.allFields = allFields;
+    }
+
 
     public @Nullable LinkedHashMap<String, Model> getPreviousGroupModels() {
         return previousGroupModels;

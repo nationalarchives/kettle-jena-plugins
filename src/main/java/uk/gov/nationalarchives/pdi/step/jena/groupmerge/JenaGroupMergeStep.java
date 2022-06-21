@@ -28,6 +28,7 @@ import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -60,7 +61,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
 
             // output the last group
             if (data.getPreviousGroupFields() != null) {
-                outputGroup(data);
+                outputGroup(meta, data);
             }
 
             // no more rows...
@@ -101,7 +102,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                             yes, there was a previous group,
                             so we must output it and clear the previous data
                          */
-                        outputGroup(data);
+                        outputGroup(meta, data);
                     }
 
                     // persist the values of the 1st row of this group, so on the next call to processRow we can compare it
@@ -112,6 +113,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
 //                        copyOfCurrentGroupFields.put(currentGroupField.getKey(), valueCopy);
 //                    }
                     data.setPreviousGroupFields(currentGroupFields);
+                    data.setAllFields(getAllFields(row,inputRowMeta));
 
                     final List<FieldModel> currentRowModels = getModels(meta, row, inputRowMeta);
                     final LinkedHashMap<String, Model> currentGroupModels = new LinkedHashMap<>(currentRowModels.size());
@@ -225,10 +227,11 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         return null;
     }
 
-    private void outputGroup(final JenaGroupMergeStepData data) throws KettleStepException {
+    private void outputGroup(final JenaGroupMergeStepMeta meta, JenaGroupMergeStepData data) throws KettleStepException {
         final LinkedHashMap<String, Object> previousGroupFields = data.getPreviousGroupFields();
+        final LinkedHashMap<String, Object> allFields = data.getAllFields();
         final LinkedHashMap<String, Model> previousGroupModels = data.getPreviousGroupModels();
-        final int rowSize = previousGroupFields.size() + previousGroupModels.size();
+        final int rowSize = (meta.isPreserveAllFields()) ? allFields.size() : previousGroupFields.size() + previousGroupModels.size();
         final Object[] previousGroupRow = RowDataUtil.allocateRowData(rowSize);
 
         // TODO(AR) don't forget about the target field
@@ -238,11 +241,21 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
             final int columnIndex = data.getPreviousGroupOutputRowMeta().indexOfValue(previousGroupField.getKey());
             previousGroupRow[columnIndex] = previousGroupField.getValue();
         }
+
         for (final Map.Entry<String, Model> previousGroupModel : previousGroupModels.entrySet()) {
             final int columnIndex = data.getPreviousGroupOutputRowMeta().indexOfValue(previousGroupModel.getKey());
             previousGroupRow[columnIndex] = previousGroupModel.getValue();
         }
 
+        // add the other fields back
+        if (meta.isPreserveAllFields()) {
+            for (final Map.Entry<String, Object> field : allFields.entrySet()) {
+                final int columnIndex = data.getPreviousGroupOutputRowMeta().indexOfValue(field.getKey());
+                if (previousGroupRow[columnIndex] == null) {
+                    previousGroupRow[columnIndex] = field.getValue();
+                }
+            }
+        }
 
         putRow(data.getPreviousGroupOutputRowMeta(), previousGroupRow);
 
@@ -327,6 +340,16 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         }
 
         return groupFields;
+    }
+
+    private LinkedHashMap<String, Object> getAllFields(final Object[] row, final RowMetaInterface inputRowMeta) {
+        final LinkedHashMap<String, Object> allFields = new LinkedHashMap<>();
+        for (final ValueMetaInterface metaInterface : inputRowMeta.getValueMetaList()) {
+            final String name = metaInterface.getName();
+            final int pos = inputRowMeta.indexOfValue(name);
+            allFields.put(name, row[pos]);
+        }
+        return allFields;
     }
 
     private List<FieldModel> getModels(final JenaGroupMergeStepMeta meta, final Object[] row, final RowMetaInterface inputRowMeta)

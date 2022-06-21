@@ -82,6 +82,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     private boolean removeSelectedFields;
     private List<ConstrainedField> groupFields;
     private List<ConstrainedField> jenaModelFields;
+    private boolean preserveAllFields = true;
     // </editor-fold>
 
     public JenaGroupMergeStepMeta() {
@@ -95,6 +96,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         removeSelectedFields = false;
         groupFields = new ArrayList<>();
         jenaModelFields = new ArrayList<>();
+        preserveAllFields = true;
     }
 
     @Override
@@ -105,6 +107,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         retval.removeSelectedFields = removeSelectedFields;
         retval.groupFields = new ArrayList<>(groupFields);
         retval.jenaModelFields = new ArrayList<>();
+        retval.preserveAllFields = preserveAllFields;
         for (final ConstrainedField jenaModelField : jenaModelFields) {
             retval.jenaModelFields.add(jenaModelField.copy());
         }
@@ -352,5 +355,14 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     public void setJenaModelFields(final List<ConstrainedField> jenaModelFields) {
         this.jenaModelFields = jenaModelFields;
     }
+
+    public boolean isPreserveAllFields() {
+        return preserveAllFields;
+    }
+
+    public void setPreserveAllFields(final boolean preserveAllFields) {
+        this.preserveAllFields = preserveAllFields;
+    }
+
     // </editor-fold>
 }
