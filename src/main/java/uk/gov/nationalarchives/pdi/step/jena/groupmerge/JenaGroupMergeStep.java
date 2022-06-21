@@ -231,7 +231,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         final LinkedHashMap<String, Object> previousGroupFields = data.getPreviousGroupFields();
         final LinkedHashMap<String, Object> allFields = data.getAllFields();
         final LinkedHashMap<String, Model> previousGroupModels = data.getPreviousGroupModels();
-        final int rowSize = (meta.isPreserveAllFields()) ? allFields.size() : previousGroupFields.size() + previousGroupModels.size();
+        final int rowSize = (meta.getOtherFieldAction() == OtherFieldAction.USE_FIRST) ? allFields.size() : previousGroupFields.size() + previousGroupModels.size();
         final Object[] previousGroupRow = RowDataUtil.allocateRowData(rowSize);
 
         // TODO(AR) don't forget about the target field
@@ -248,7 +248,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         }
 
         // add the other fields back
-        if (meta.isPreserveAllFields()) {
+        if (meta.getOtherFieldAction() == OtherFieldAction.USE_FIRST) {
             for (final Map.Entry<String, Object> field : allFields.entrySet()) {
                 final int columnIndex = data.getPreviousGroupOutputRowMeta().indexOfValue(field.getKey());
                 if (previousGroupRow[columnIndex] == null) {

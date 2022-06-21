@@ -74,6 +74,8 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     private static final String ELEM_NAME_FIELD_NAME = "fieldName";
     private static final String ELEM_NAME_ACTION_IF_NO_SUCH_FIELD = "actionIfNoSuchField";
     private static final String ELEM_NAME_ACTION_IF_NULL = "actionIfNull";
+
+    private static final String ELEM_NAME_OTHER_FIELD_ACTION = "otherFieldAction";
     // </editor-fold>
 
     // <editor-fold desc="settings">
@@ -82,7 +84,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     private boolean removeSelectedFields;
     private List<ConstrainedField> groupFields;
     private List<ConstrainedField> jenaModelFields;
-    private boolean preserveAllFields = true;
+    private OtherFieldAction otherFieldAction;
     // </editor-fold>
 
     public JenaGroupMergeStepMeta() {
@@ -96,7 +98,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         removeSelectedFields = false;
         groupFields = new ArrayList<>();
         jenaModelFields = new ArrayList<>();
-        preserveAllFields = true;
+        otherFieldAction = OtherFieldAction.DROP;
     }
 
     @Override
@@ -107,10 +109,10 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         retval.removeSelectedFields = removeSelectedFields;
         retval.groupFields = new ArrayList<>(groupFields);
         retval.jenaModelFields = new ArrayList<>();
-        retval.preserveAllFields = preserveAllFields;
         for (final ConstrainedField jenaModelField : jenaModelFields) {
             retval.jenaModelFields.add(jenaModelField.copy());
         }
+        retval.otherFieldAction = otherFieldAction;
         return retval;
     }
 
@@ -143,6 +145,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
                     .append(XMLHandler.closeTag(ELEM_NAME_JENA_MODEL_FIELD));
         }
         builder.append(XMLHandler.closeTag(ELEM_NAME_JENA_MODEL_FIELDS));
+        builder.append(XMLHandler.addTagValue(ELEM_NAME_OTHER_FIELD_ACTION, otherFieldAction.name()));
 
         return builder.toString();
     }
@@ -213,6 +216,11 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
                         this.jenaModelFields.add(new ConstrainedField(xFieldName, actionIfNoSuchField, actionIfNull));
                     }
                 }
+            }
+
+            final String xOtherFieldAction = XMLHandler.getTagValue(stepnode, ELEM_NAME_OTHER_FIELD_ACTION);
+            if (isNotEmpty(xOtherFieldAction)) {
+                this.otherFieldAction = OtherFieldAction.valueOf(xOtherFieldAction);
             }
         }
     }
@@ -356,12 +364,12 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         this.jenaModelFields = jenaModelFields;
     }
 
-    public boolean isPreserveAllFields() {
-        return preserveAllFields;
+    public OtherFieldAction getOtherFieldAction() {
+        return otherFieldAction;
     }
 
-    public void setPreserveAllFields(final boolean preserveAllFields) {
-        this.preserveAllFields = preserveAllFields;
+    public void setOtherFieldAction(final OtherFieldAction otherFieldAction) {
+        this.otherFieldAction = otherFieldAction;
     }
 
     // </editor-fold>

@@ -84,6 +84,8 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
     private Label wMergeFieldsLabel;
     private TableView wMergeFieldsTableView;
     private Button wGetMergeFieldsButton;
+    private Label wOtherFieldsLabel;
+    private Combo wOtherFieldsCombo;
     private Button wCancel;
     private Button wOK;
     private Listener lsModifyFirstModel;
@@ -333,6 +335,23 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
                 .result();
         wGetMergeFieldsButton.setLayoutData(fdGetMergeFieldsButton);
 
+        // Other fields
+        wOtherFieldsLabel = new Label(group, SWT.LEFT);
+        props.setLook(wOtherFieldsLabel);
+        wOtherFieldsLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.TextFieldOtherFields"));
+        final FormData fdOtherFieldsLabel = new FormDataBuilder().left()
+                .top(wGetMergeFieldsButton, ELEMENT_SPACING)
+                .result();
+        wOtherFieldsLabel.setLayoutData(fdOtherFieldsLabel);
+
+        wOtherFieldsCombo = new Combo(group, SWT.SINGLE | SWT.LEFT | SWT.BORDER | SWT.READ_ONLY);
+        props.setLook(wOtherFieldsCombo);
+        final FormData fdOtherFieldsCombo = new FormDataBuilder().left()
+                .top(wOtherFieldsLabel, LABEL_SPACING)
+                .width(MEDIUM_FIELD)
+                .result();
+        wOtherFieldsCombo.setLayoutData(fdOtherFieldsCombo);
+
         //Cancel and OK buttons for the bottom of the window.
         wCancel = new Button(shell, SWT.PUSH);
         wCancel.setText(BaseMessages.getString(PKG, "System.Button.Cancel"));
@@ -480,6 +499,17 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
                 wMergeFieldsTableView.add(new String[] { jenaModelField.fieldName, jenaModelField.actionIfNoSuchField.name(), jenaModelField.actionIfNull.name() });
             }
         }
+
+        wOtherFieldsCombo.removeAll();
+        for (final String serializationFormat : OtherFieldAction.labels()) {
+            wOtherFieldsCombo.add(serializationFormat);
+        }
+        // set selected
+        OtherFieldAction otherFieldAction = meta.getOtherFieldAction();
+        if (otherFieldAction == null) {
+            otherFieldAction = OtherFieldAction.DROP;
+        }
+        wOtherFieldsCombo.setText(otherFieldAction.getLabel());
     }
 
     private Image getImage() {
@@ -542,5 +572,8 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
             }
         }
         meta.setJenaModelFields(jenaModelFields);
+
+        final OtherFieldAction otherFieldAction = OtherFieldAction.fromLabel(wOtherFieldsCombo.getText());
+        meta.setOtherFieldAction(otherFieldAction);
     }
 }
