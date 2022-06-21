@@ -360,7 +360,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         return preserveAllFields;
     }
 
-    public void setPreserveAllFields(boolean preserveAllFields) {
+    public void setPreserveAllFields(final boolean preserveAllFields) {
         this.preserveAllFields = preserveAllFields;
     }
 
