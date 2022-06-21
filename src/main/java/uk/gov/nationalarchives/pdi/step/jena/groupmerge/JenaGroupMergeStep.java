@@ -139,7 +139,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                                the user chose to remove it from the available
                                output fields... so close it!
                              */
-                            if (meta.isRemoveSelectedFields()) {
+                            if (meta.isCloseMergedModels()) {
                                 currentRowModel.model.close();
                             }
                         }
@@ -193,7 +193,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                            the user chose to remove it from the available
                            output fields... so close it!
                          */
-                        if (meta.isRemoveSelectedFields()) {
+                        if (meta.isCloseMergedModels()) {
                             currentRowFieldModel.close();
                         }
                     }
@@ -210,7 +210,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                        the user chose to remove it from the available
                        output fields... so close it!
                      */
-                    if (meta.isRemoveSelectedFields()) {
+                    if (meta.isCloseMergedModels()) {
                         currentRowFieldModel.close();
                     }
                 }

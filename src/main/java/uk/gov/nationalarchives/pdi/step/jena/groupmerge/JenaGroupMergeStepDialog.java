@@ -79,8 +79,8 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
     private Button wMutateFirstModelCheckbox;
     private Label wTargetLabel;
     private TextVar wTargetTextField;
-    private Label wRemoveSelectedLabel;
-    private Button wRemoveSelectedCheckbox;
+    private Label wCloseMergedModelsLabel;
+    private Button wCloseMergedModelsCheckbox;
     private Label wMergeFieldsLabel;
     private TableView wMergeFieldsTableView;
     private Button wGetMergeFieldsButton;
@@ -274,29 +274,12 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
                 .result();
         wTargetTextField.setLayoutData(fdTransformation0);
 
-        // remove selected label/checkbox
-        wRemoveSelectedLabel = new Label(group, SWT.LEFT);
-        props.setLook(wRemoveSelectedLabel);
-        wRemoveSelectedLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.CheckboxRemoveSelected"));
-        final FormData fdRemoveSelectedLabel = new FormDataBuilder().left()
-                .top(wTargetTextField, ELEMENT_SPACING)
-                .result();
-        wRemoveSelectedLabel.setLayoutData(fdRemoveSelectedLabel);
-
-        wRemoveSelectedCheckbox = new Button(group, SWT.CHECK);
-        props.setLook(wRemoveSelectedCheckbox);
-        wRemoveSelectedCheckbox.setBackground(display.getSystemColor(SWT.COLOR_TRANSPARENT));
-        final FormData fdRemoveSelectedCheckbox = new FormDataBuilder().left(wRemoveSelectedLabel, LABEL_SPACING)
-                .top(wTargetTextField, ELEMENT_SPACING)
-                .result();
-        wRemoveSelectedCheckbox.setLayoutData(fdRemoveSelectedCheckbox);
-
         // merge fields label/table
         wMergeFieldsLabel = new Label(group, SWT.LEFT);
         props.setLook(wMergeFieldsLabel);
         wMergeFieldsLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.MergeFields"));
         final FormData fdMergeFieldsLabel = new FormDataBuilder().left()
-                .top(wRemoveSelectedLabel, ELEMENT_SPACING)
+                .top(wTargetLabel, ELEMENT_SPACING)
                 .result();
         wMergeFieldsLabel.setLayoutData(fdMergeFieldsLabel);
 
@@ -335,12 +318,29 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
                 .result();
         wGetMergeFieldsButton.setLayoutData(fdGetMergeFieldsButton);
 
+        // remove selected label/checkbox
+        wCloseMergedModelsLabel = new Label(group, SWT.LEFT);
+        props.setLook(wCloseMergedModelsLabel);
+        wCloseMergedModelsLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.CheckboxCloseMergedModels"));
+        final FormData fdCloseMergedModelsLabel = new FormDataBuilder().left()
+                .top(wGetMergeFieldsButton, ELEMENT_SPACING)
+                .result();
+        wCloseMergedModelsLabel.setLayoutData(fdCloseMergedModelsLabel);
+
+        wCloseMergedModelsCheckbox = new Button(group, SWT.CHECK);
+        props.setLook(wCloseMergedModelsCheckbox);
+        wCloseMergedModelsCheckbox.setBackground(display.getSystemColor(SWT.COLOR_TRANSPARENT));
+        final FormData fdMergeClosedModelsCheckbox = new FormDataBuilder().left(wCloseMergedModelsLabel, LABEL_SPACING)
+                .top(wGetMergeFieldsButton, ELEMENT_SPACING)
+                .result();
+        wCloseMergedModelsCheckbox.setLayoutData(fdMergeClosedModelsCheckbox);
+
         // Other fields
         wOtherFieldsLabel = new Label(group, SWT.LEFT);
         props.setLook(wOtherFieldsLabel);
         wOtherFieldsLabel.setText(BaseMessages.getString(PKG, "JenaGroupMergeStepDialog.TextFieldOtherFields"));
         final FormData fdOtherFieldsLabel = new FormDataBuilder().left()
-                .top(wGetMergeFieldsButton, ELEMENT_SPACING)
+                .top(wCloseMergedModelsLabel, ELEMENT_SPACING)
                 .result();
         wOtherFieldsLabel.setLayoutData(fdOtherFieldsLabel);
 
@@ -484,7 +484,7 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
             wTargetTextField.setEnabled(true);
         }
 
-        wRemoveSelectedCheckbox.setSelection(meta.isRemoveSelectedFields());
+        wCloseMergedModelsCheckbox.setSelection(meta.isCloseMergedModels());
 
         if (meta.getGroupFields() != null) {
             wGroupFieldsTableView.getTable().removeAll();
@@ -541,7 +541,7 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
     private void saveData() {
         meta.setMutateFirstModel(wMutateFirstModelCheckbox.getSelection());
         meta.setTargetFieldName(wTargetTextField.getText());
-        meta.setRemoveSelectedFields(wRemoveSelectedCheckbox.getSelection());
+        meta.setCloseMergedModels(wCloseMergedModelsCheckbox.getSelection());
 
         final int groupFieldsLen = wGroupFieldsTableView.getItemCount();
         final List<ConstrainedField> groupFields = new ArrayList<>(groupFieldsLen);

@@ -66,7 +66,14 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     // <editor-fold desc="settings XML element names">
     private static final String ELEM_NAME_MUTATE_FIRST_MODEL = "mutateFirstModel";
     private static final String ELEM_NAME_TARGET_FIELD_NAME = "targetFieldName";
+
+    /**
+     * Replaced by {@link #ELEM_NAME_CLOSE_MERGED_MODELS}.
+     */
+    @Deprecated
     private static final String ELEM_NAME_REMOVE_SELECTED_FIELDS = "removeSelectedFields";
+
+    private static final String ELEM_NAME_CLOSE_MERGED_MODELS = "closeMergedModels";
     private static final String ELEM_NAME_JENA_MODEL_FIELDS = "jenaModelFields";
     private static final String ELEM_NAME_JENA_MODEL_FIELD = "jenaModelField";
     private static final String ELEM_NAME_GROUP_FIELDS = "groupFields";
@@ -81,7 +88,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     // <editor-fold desc="settings">
     private boolean mutateFirstModel;
     private String targetFieldName;
-    private boolean removeSelectedFields;
+    private boolean closeMergedModels;
     private List<ConstrainedField> groupFields;
     private List<ConstrainedField> jenaModelFields;
     private OtherFieldAction otherFieldAction;
@@ -95,7 +102,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     public void setDefault() {
         mutateFirstModel = true;
         targetFieldName = "";
-        removeSelectedFields = false;
+        closeMergedModels = false;
         groupFields = new ArrayList<>();
         jenaModelFields = new ArrayList<>();
         otherFieldAction = OtherFieldAction.DROP;
@@ -106,7 +113,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         final JenaGroupMergeStepMeta retval = (JenaGroupMergeStepMeta) super.clone();
         retval.mutateFirstModel = mutateFirstModel;
         retval.targetFieldName = targetFieldName;
-        retval.removeSelectedFields = removeSelectedFields;
+        retval.closeMergedModels = closeMergedModels;
         retval.groupFields = new ArrayList<>(groupFields);
         retval.jenaModelFields = new ArrayList<>();
         for (final ConstrainedField jenaModelField : jenaModelFields) {
@@ -122,7 +129,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         builder
             .append(XMLHandler.addTagValue(ELEM_NAME_MUTATE_FIRST_MODEL, mutateFirstModel))
             .append(XMLHandler.addTagValue(ELEM_NAME_TARGET_FIELD_NAME, targetFieldName))
-            .append(XMLHandler.addTagValue(ELEM_NAME_REMOVE_SELECTED_FIELDS, removeSelectedFields));
+            .append(XMLHandler.addTagValue(ELEM_NAME_CLOSE_MERGED_MODELS, closeMergedModels));
 
         builder.append(XMLHandler.openTag(ELEM_NAME_GROUP_FIELDS));
         for (final ConstrainedField groupField : groupFields) {
@@ -159,8 +166,14 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
             final String xTargetFieldName = XMLHandler.getTagValue(stepnode, ELEM_NAME_TARGET_FIELD_NAME);
             this.targetFieldName = xTargetFieldName != null ? xTargetFieldName : "";
 
-            final String xRemoveSelectedField = XMLHandler.getTagValue(stepnode, ELEM_NAME_REMOVE_SELECTED_FIELDS);
-            this.removeSelectedFields = isNotEmpty(xRemoveSelectedField) ? xRemoveSelectedField.equals("Y") : false;
+            final String xCloseMergedModels = XMLHandler.getTagValue(stepnode, ELEM_NAME_CLOSE_MERGED_MODELS);
+            if (isNotEmpty(xCloseMergedModels)) {
+                this.closeMergedModels = isNotEmpty(xCloseMergedModels) ? xCloseMergedModels.equals("Y") : false;
+            } else {
+                // load legacy value (if present)
+                final String xRemoveSelectedField = XMLHandler.getTagValue(stepnode, ELEM_NAME_REMOVE_SELECTED_FIELDS);
+                this.closeMergedModels = isNotEmpty(xRemoveSelectedField) ? xRemoveSelectedField.equals("Y") : false;
+            }
 
             final Node groupFieldsNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_GROUP_FIELDS);
             if (groupFieldsNode == null) {
@@ -262,7 +275,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
             throw new KettleStepException(e);
         }
 
-        if (removeSelectedFields) {
+        if (closeMergedModels) {
 
             // if we are mutating the first model, we must not remove it from the output row
             boolean skipFirst = mutateFirstModel;
@@ -340,12 +353,12 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         this.targetFieldName = targetFieldName;
     }
 
-    public boolean isRemoveSelectedFields() {
-        return removeSelectedFields;
+    public boolean isCloseMergedModels() {
+        return closeMergedModels;
     }
 
-    public void setRemoveSelectedFields(final boolean removeSelectedFields) {
-        this.removeSelectedFields = removeSelectedFields;
+    public void setCloseMergedModels(final boolean closeMergedModels) {
+        this.closeMergedModels = closeMergedModels;
     }
 
     public List<ConstrainedField> getGroupFields() {
