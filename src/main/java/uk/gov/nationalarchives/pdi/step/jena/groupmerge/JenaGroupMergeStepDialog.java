@@ -469,9 +469,9 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
             }
         }
 
-        if (meta.getJenaModelMergeFields() != null) {
+        if (meta.getMergeFields() != null) {
             wMergeFieldsTableView.getTable().removeAll();
-            for (final ModelMergeConstrainedField jenaModelField : meta.getJenaModelMergeFields()) {
+            for (final ModelMergeConstrainedField jenaModelField : meta.getMergeFields()) {
                 wMergeFieldsTableView.add(new String[] {
                         jenaModelField.fieldName,
                         jenaModelField.actionIfNoSuchField.name(),
@@ -562,7 +562,7 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
                 jenaModelFields.add(new ModelMergeConstrainedField(fieldName, actionIfNoSuchField, actionIfNull, mutateFirstModel, targetField));
             }
         }
-        meta.setJenaModelFields(jenaModelFields);
+        meta.setMergeFields(jenaModelFields);
 
         final OtherFieldAction otherFieldAction = OtherFieldAction.fromLabel(wOtherFieldsCombo.getText());
         meta.setOtherFieldAction(otherFieldAction);

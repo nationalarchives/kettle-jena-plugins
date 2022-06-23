@@ -33,20 +33,22 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.*;
-import uk.gov.nationalarchives.pdi.step.jena.FieldModel;
 import uk.gov.nationalarchives.pdi.step.jena.ConstrainedField;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
-import static uk.gov.nationalarchives.pdi.step.jena.Util.isNotEmpty;
 import static uk.gov.nationalarchives.pdi.step.jena.Util.isNullOrEmpty;
 
+//TODO(AR) make sure we are using environmentSubstitute on all fieldNames and targetFieldNames where appropriate
+
 public class JenaGroupMergeStep extends BaseStep implements StepInterface {
-    private static Class<?> PKG = JenaGroupMergeStepMeta.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
+    private static final Class<?> PKG = JenaGroupMergeStepMeta.class; // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
 
     public JenaGroupMergeStep(final StepMeta stepMeta, final StepDataInterface stepDataInterface, final int copyNr,
-                              final TransMeta transMeta, final Trans trans) {
+            final TransMeta transMeta, final Trans trans) {
         super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
@@ -56,220 +58,355 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         final JenaGroupMergeStepMeta meta = (JenaGroupMergeStepMeta) smi;
         final JenaGroupMergeStepData data = (JenaGroupMergeStepData) sdi;
 
-        Object[] row = getRow(); // try and get a row
-        if (row == null) {
+        Object[] inputRowData = getRow(); // try and get a row
+        if (inputRowData == null) {
 
             // output the last group
-            if (data.getPreviousGroupFields() != null) {
-                outputGroup(meta, data);
+            if (data.getGroupMergedRow() != null) {
+                outputGroup(data);
             }
 
             // no more rows...
             setOutputDone();
-
             return false;  // signal that we are DONE
+        }
+
+        // process a row...
+        final RowMetaInterface inputRowMeta = getInputRowMeta();
+
+        // get the group fields from the input row
+        final LinkedHashMap<String, Object> inputRowGroupFields = getGroupFields(meta, inputRowData, inputRowMeta, this::logBasic);
+
+        // check for the merge fields
+        checkForMergeFields(meta, inputRowData, inputRowMeta, this::logBasic);
+
+        // is this the first row this step has seen?
+        if (first) {
+            first = false;
+
+            // create output row meta data
+            createOutputRowMeta(inputRowMeta, meta, data);
+
+            // if we are removing fields, we need to map fields from input row to output row
+            // NOTE: this must come after createOutputRowMeta
+            prepareForReMap(inputRowMeta, data);
+
+            // process the first row
+            processFirstRowForGroup(meta, data, inputRowData);
+
+            // continue onto the next row
+            return true;
+        }
+
+        final RowMetaInterface outputRowMeta = data.getOutputRowMeta();
+
+        // get the group fields from the groupMergedRow
+        final Object[] groupMergedRow = data.getGroupMergedRow();
+        final LinkedHashMap<String, Object> groupMergedRowGroupFields = getGroupFields(meta, groupMergedRow, outputRowMeta, this::logBasic);
+
+        // does the input row continue an existing group, or should it start a new group?
+        if (isContinuation(groupMergedRowGroupFields, inputRowGroupFields)) {
+
+            // the input row is a continuation of the groupMergedRow
+
+            // merge the models from the input row with the models from the groupMergedRow
+            mergeRowIntoGroup(meta, data, inputRowData);
 
         } else {
 
-            // process a row...
+            // the input row is the first row within a new group
 
-            final RowMetaInterface inputRowMeta = getInputRowMeta();
-            final RowMetaInterface outputRowMeta = inputRowMeta.clone();
-            smi.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
+            // was there a previous group?
+            if (groupMergedRow != null) {
+                /*
+                    yes, there was a previous group,
+                    so we must output it and clear the previous data
+                 */
+                outputGroup(data);
+            }
 
-
-                // get all group fields
-                final LinkedHashMap<String, Object> currentGroupFields = getGroupFields(meta, row, inputRowMeta);
-
-                // is this the first row in a group or a continuation of an existing group?
-                final LinkedHashMap<String, Object> previousGroupFields = data.getPreviousGroupFields();
-                if (isContinuation(previousGroupFields, currentGroupFields)) {
-
-                    // this is a continuation row within a group
-
-                    // merge the models from this row with the models from the previous row
-                    final List<FieldModel> currentRowModels = getModels(meta, row, inputRowMeta);
-                    mergeModels(meta, data, currentRowModels);
-
-                } else {
-
-                    // this is the first row within a group
-
-                    // was there a previous group?
-                    if (previousGroupFields != null) {
-                        /*
-                            yes, there was a previous group,
-                            so we must output it and clear the previous data
-                         */
-                        outputGroup(meta, data);
-                    }
-
-                    // persist the values of the 1st row of this group, so on the next call to processRow we can compare it
-                    //TODO(AR) do we need to make a copy?
-    //                    final LinkedHashMap<String, Object> copyOfCurrentGroupFields = new LinkedHashMap<>(currentGroupFields.size());
-    //                    for (final Map.Entry<String, Object> currentGroupField : currentGroupFields.entrySet()) {
-    //                        final Object valueCopy = currentGroupField.getValue().clone();
-    //                        copyOfCurrentGroupFields.put(currentGroupField.getKey(), valueCopy);
-    //                    }
-                    data.setPreviousGroupFields(currentGroupFields);
-                    data.setAllFields(getAllFields(row,inputRowMeta));
-
-                    final List<FieldModel> currentRowModels = getModels(meta, row, inputRowMeta);
-                    final LinkedHashMap<String, Model> currentGroupModels = new LinkedHashMap<>(currentRowModels.size());
-
-                    // should we mutate the first model in the group of rows, or create a new model and copy it in?
-                    for (final FieldModel currentRowModel : currentRowModels) {
-                        final Model model;
-                        if(currentRowModel.model == null) {
-                            // may be created later in mergeModels
-                            model = null;
-
-                        } else if (isMutateFirstModel(meta, currentRowModel.fieldName)) {
-                            // mutate the first model
-                            model = currentRowModel.model;
-
-                        } else {
-                            // create a new model
-                            model = ModelFactory.createDefaultModel();
-                            model.add(currentRowModel.model);
-
-                            /*
-                               Model can no longer be used if
-                               the user chose to remove it from the available
-                               output fields... so close it!
-                             */
-                            if (meta.isCloseMergedModels()) {
-                                currentRowModel.model.close();
-                            }
-                        }
-
-                        currentGroupModels.put(currentRowModel.fieldName, model);
-                    }
-
-                    data.setPreviousGroupModels(currentGroupModels);
-
-                    final RowMetaInterface previousGroupOutputRowMeta = outputRowMeta.clone();
-                    // TODO(AR) do we need to adjust the previousGroupOutputRowMeta to name the fields etc?
-                    // TODO(AR) don't forget about the target field
-                    // TODO(AR) don't forget about the remove selected field
-                    data.setPreviousGroupOutputRowMeta(previousGroupOutputRowMeta);
-                }
-
-                if (checkFeedback(getLinesRead())) {
-                    if (log.isBasic())
-                        logBasic(BaseMessages.getString(PKG, "JenaGroupMergeStep.Log.LineNumber") + getLinesRead());
-                }
-
-                return true;
+            processFirstRowForGroup(meta, data, inputRowData);
         }
+
+        // report progress
+        if (checkFeedback(getLinesRead())) {
+            if (log.isBasic()) {
+                logBasic(BaseMessages.getString(PKG, "JenaGroupMergeStep.Log.LineNumber") + getLinesRead());
+            }
+        }
+
+        // continue onto the next row
+        return true;
     }
 
-    private void mergeModels(final JenaGroupMergeStepMeta meta, final JenaGroupMergeStepData data, final List<FieldModel> currentRowModels) {
-        final LinkedHashMap<String, Model> previousGroupModels = data.getPreviousGroupModels();
+    /**
+     * Create the Meta for the Output Row.
+     *
+     * @param inputRowMeta the input row meta.
+     * @param meta this steps meta.
+     * @param data this steps data.
+     */
+    private void createOutputRowMeta(final RowMetaInterface inputRowMeta, final JenaGroupMergeStepMeta meta,
+            final JenaGroupMergeStepData data) throws KettleStepException {
 
-        for (final Map.Entry<String, Model> previousGroupModel : previousGroupModels.entrySet()) {
-            final Model currentRowFieldModel = getFieldModel(currentRowModels, previousGroupModel.getKey());
-            if (currentRowFieldModel != null) {
+        final RowMetaInterface outputRowMeta = inputRowMeta.clone();
+        meta.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
+        data.setOutputRowMeta(outputRowMeta);
+    }
 
-                final Model model;
-                if (previousGroupModel.getValue() == null) {
-                    // no previous model, store this model as the previous model
-                    if (isMutateFirstModel(meta, previousGroupModel.getKey())) {
-                        // mutate this model
-                        model = currentRowFieldModel;
+    /**
+     * Stores the indexes of any fields from the input row
+     * that need to be copied into the output row in the data object.
+     *
+     * The remapping itself is performed in {@link #prepareOutputRow(JenaGroupMergeStepMeta, JenaGroupMergeStepData, Object[])}.
+     *
+     * @param inputRowMeta the input row meta
+     * @param data this steps data.
+     */
+    private void prepareForReMap(final RowMetaInterface inputRowMeta, final JenaGroupMergeStepData data) {
+        final LinkedHashMap<String, Integer> remainingInputFieldIndexes = new LinkedHashMap<>();
+        final String[] outputRowFieldNames = data.getOutputRowMeta().getFieldNames();
+        for (final String outputRowFieldName : outputRowFieldNames) {
+            final int remainingInputFieldIndex = inputRowMeta.indexOfValue(outputRowFieldName);
+            if (remainingInputFieldIndex > -1) {
+                remainingInputFieldIndexes.put(outputRowFieldName, remainingInputFieldIndex);
+            }
+        }
+        data.setRemainingInputFieldIndexes(remainingInputFieldIndexes);
+    }
+
+    /**
+     * Process an input row as the first row for a group.
+     *
+     * @param meta this steps meta.
+     * @param data this steps data.
+     * @param inputRowData the input row.
+     */
+    static void processFirstRowForGroup(final JenaGroupMergeStepMeta meta, final JenaGroupMergeStepData data, final Object[] inputRowData) {
+        final RowMetaInterface outputRowMeta = data.getOutputRowMeta();
+        final Object[] outputRowData = RowDataUtil.allocateRowData(outputRowMeta.size());
+
+        // this accumulates any targetFields that we have already set, so we don't override them if they already exist after the merge field in the input row
+        Set<String> skipTargetFields = null;
+
+        // iterate over the required output row fields (NOTE: the OutputRowMeta contains all columns, i.e. input columns to preserve and new targetField columns to create)
+        for (final ValueMetaInterface outputRowMetaValue : outputRowMeta.getValueMetaList()) {
+            final String outputRowFieldName = outputRowMetaValue.getName();
+
+            // is there a corresponding field from the output row in the input row?
+            @Nullable final Integer inputRowFieldIndex = data.getRemainingInputFieldIndexes().get(outputRowFieldName);
+
+            // if there is no corresponding field in the input row, or we have already created the targetField, we can skip setting the output field
+            boolean skipSetOutputField = inputRowFieldIndex == null || (skipTargetFields != null && skipTargetFields.contains(outputRowFieldName));
+
+            // is the output field a "merge field" which sets a targetField?
+            @Nullable final ModelMergeConstrainedField mergeField = meta.getMergeField(outputRowFieldName);
+            if (mergeField != null && mergeField.mutateFirstModel == MutateFirstModel.NO) {
+
+                // does the targetField already exist in the input row
+                @Nullable final Integer inputRowTargetFieldIndex = data.getRemainingInputFieldIndexes().get(mergeField.targetFieldName);
+                if (inputRowTargetFieldIndex != null) {
+                    final Object existingInputRowValue = inputRowData[inputRowTargetFieldIndex];
+                    if (existingInputRowValue != null && existingInputRowValue instanceof Model && meta.isCloseMergedModels()) {
+                        // targetField exists in the input row, and already contains a Jena Model... this is strange.. but let's close the existing Jena Model to avoid a memory leak
+                        ((Model) existingInputRowValue).close();
+                    }
+                }
+
+                // get the index in the output row for the targetField
+                final int outputRowTargetFieldIndex = outputRowMeta.indexOfValue(mergeField.targetFieldName);
+
+                // create a new model, add the input row model, and place it in the targetField
+                final Model outputRowTargetFieldModel = ModelFactory.createDefaultModel();
+
+                // find the input model in the input row
+                final Model inputRowFieldModel = (Model) inputRowData[inputRowFieldIndex];
+
+                outputRowTargetFieldModel.add(inputRowFieldModel);
+
+                // close the original input row model if the user set that option in the dialog
+                if (meta.isCloseMergedModels()) {
+                    inputRowFieldModel.close();
+                }
+
+                // place the model into the targetField of the output row
+                outputRowData[outputRowTargetFieldIndex] = outputRowTargetFieldModel;
+
+                // remember that we have set the targetField
+                if (skipTargetFields == null) {
+                    skipTargetFields = new HashSet<>();
+                }
+                skipTargetFields.add(mergeField.targetFieldName);
+            }
+
+
+            // if we should not skip setting the output field
+            if (!skipSetOutputField) {
+
+                // find the corresponding field in the input row
+                final Object inputRowFieldValue = inputRowData[inputRowFieldIndex];
+
+                // is the output field a "group field"
+                @Nullable final ConstrainedField groupField = meta.getGroupField(outputRowFieldName);
+
+                // copy the input row field to the output row
+                final int outputRowFieldIndex = outputRowMeta.indexOfValue(outputRowFieldName);
+                if (mergeField == null && groupField == null) {
+                    if (meta.getOtherFieldAction() == OtherFieldAction.SET_NULL) {
+                        outputRowData[outputRowFieldIndex] = null;
                     } else {
-                        // create a new model
-                        model = ModelFactory.createDefaultModel();
-                        model.add(currentRowFieldModel);
+                        outputRowData[outputRowFieldIndex] = inputRowFieldValue;
+                    }
+                } else {
+                    outputRowData[outputRowFieldIndex] = inputRowFieldValue;
+                }
+            }
+        }
 
-                        /*
-                           Model can no longer be used if
-                           the user chose to remove it from the available
-                           output fields... so close it!
-                         */
-                        if (meta.isCloseMergedModels()) {
-                            currentRowFieldModel.close();
+        data.setGroupMergedRow(outputRowData);
+    }
+
+    static void mergeRowIntoGroup(final JenaGroupMergeStepMeta meta, final JenaGroupMergeStepData data, final Object[] inputRowData) {
+        final RowMetaInterface outputRowMeta = data.getOutputRowMeta();
+        final Object[] outputRowData = data.getGroupMergedRow(); // TODO(AR) different from processFirstRowForGroup
+
+        // this accumulates any targetFields that we have already set, so we don't override them if they already exist after the merge field in the input row
+        Set<String> skipTargetFields = null;
+
+        // iterate over the required output row fields (NOTE: the OutputRowMeta contains all columns, i.e. input columns to preserve and new targetField columns to create)
+        for (final ValueMetaInterface outputRowMetaValue : outputRowMeta.getValueMetaList()) {
+            final String outputRowFieldName = outputRowMetaValue.getName();
+
+            // is there a corresponding field from the output row in the input row?
+            @Nullable final Integer inputRowFieldIndex = data.getRemainingInputFieldIndexes().get(outputRowFieldName);
+
+            // if there is no corresponding field in the input row, or we have already created the targetField, we can skip setting the output field
+            boolean skipSetOutputField = inputRowFieldIndex == null || (skipTargetFields != null && skipTargetFields.contains(outputRowFieldName));
+
+            // is the output field a "merge field" which sets a targetField?
+            @Nullable final ModelMergeConstrainedField mergeField = meta.getMergeField(outputRowFieldName);
+            if (mergeField != null && mergeField.mutateFirstModel == MutateFirstModel.NO) {
+
+                // does the targetField already exist in the input row
+                @Nullable final Integer inputRowTargetFieldIndex = data.getRemainingInputFieldIndexes().get(mergeField.targetFieldName);
+                if (inputRowTargetFieldIndex != null) {
+                    final Object existingInputRowValue = inputRowData[inputRowTargetFieldIndex];
+                    if (existingInputRowValue != null && existingInputRowValue instanceof Model && meta.isCloseMergedModels()) {
+                        // targetField exists in the input row, and already contains a Jena Model... this is strange.. but let's close the existing Jena Model to avoid a memory leak
+                        ((Model) existingInputRowValue).close();
+                    }
+                }
+
+                // get the index in the output row for the targetField
+                final int outputRowTargetFieldIndex = outputRowMeta.indexOfValue(mergeField.targetFieldName);
+
+//TODO(AR) START changed part compared to processFirstRowForGroup
+
+                // find the input model in the input row
+                final Model inputRowFieldModel = (Model) inputRowData[inputRowFieldIndex];
+
+                // merged the input row model into the targetField model in the output row
+                final Model outputRowTargetFieldModel = (Model) outputRowData[outputRowTargetFieldIndex];
+                outputRowTargetFieldModel.add(inputRowFieldModel);
+
+                // close the original input row model if the user set that option in the dialog
+                if (meta.isCloseMergedModels()) {
+                    inputRowFieldModel.close();
+                }
+
+//TODO(AR) END changed part compared to processFirstRowForGroup
+
+                // remember that we have set the targetField
+                if (skipTargetFields == null) {
+                    skipTargetFields = new HashSet<>();
+                }
+                skipTargetFields.add(mergeField.targetFieldName);
+            }
+
+
+            // if we should not skip setting the output field
+            if (!skipSetOutputField) {
+
+                // find the corresponding field in the input row
+                final Object inputRowFieldValue = inputRowData[inputRowFieldIndex];
+
+                // is the output field a "group field"
+                @Nullable final ConstrainedField groupField = meta.getGroupField(outputRowFieldName);
+
+                // copy the input row field to the output row
+                final int outputRowFieldIndex = outputRowMeta.indexOfValue(outputRowFieldName);
+                if (mergeField == null && groupField == null) {
+                    //TODO(AR) START changed part compared to processFirstRowForGroup
+                    if (meta.getOtherFieldAction() == OtherFieldAction.USE_FIRST) {
+                        // no-op - it is already the first value of the group
+                    } else if (meta.getOtherFieldAction() == OtherFieldAction.USE_LAST) {
+                        outputRowData[outputRowFieldIndex] = inputRowFieldValue;
+                    } else if (meta.getOtherFieldAction() == OtherFieldAction.SET_NULL) {
+                        outputRowData[outputRowFieldIndex] = null;
+                    } else {
+                        // OtherFieldAction.NULL_IF_DIFFERENT
+                        if (!outputRowData[outputRowFieldIndex].equals(inputRowFieldValue)) {
+                            outputRowData[outputRowFieldIndex] = null;
                         }
                     }
-
-                    // persist the model, so on the next call to processRow we can compare it
-                    previousGroupModels.put(previousGroupModel.getKey(), model);
-
+                    //TODO(AR) END changed part compared to processFirstRowForGroup
                 } else {
-                    // merge this model with previous model
-                    previousGroupModel.getValue().add(currentRowFieldModel);
+                    //TODO(AR) START changed part compared to processFirstRowForGroup
+                    if (mergeField != null && mergeField.mutateFirstModel == MutateFirstModel.YES) {
+                        final Model inputRowFieldModel = (Model) inputRowFieldValue;
+                        final Model outputRowFieldModel = (Model) outputRowData[outputRowFieldIndex];
 
-                    /*
-                       Model can no longer be used if
-                       the user chose to remove it from the available
-                       output fields... so close it!
-                     */
-                    if (meta.isCloseMergedModels()) {
-                        currentRowFieldModel.close();
+                        // merged the input row model into the model in the output row
+                        outputRowFieldModel.add(inputRowFieldModel);
+
+                        // close the original input row model if the user set that option in the dialog
+                        if (meta.isCloseMergedModels()) {
+                            inputRowFieldModel.close();
+                        }
+
+                    } else {
+                        outputRowData[outputRowFieldIndex] = inputRowFieldValue;  // copy merge or group field
                     }
-                }
-            }
-        }
-    }
-
-    private static @Nullable Model getFieldModel(final List<FieldModel> fieldModels, final String fieldName) {
-        for (final FieldModel fieldModel : fieldModels) {
-            if (fieldModel.fieldName.equals(fieldName)) {
-                return fieldModel.model;
-            }
-        }
-        return null;
-    }
-
-    private void outputGroup(final JenaGroupMergeStepMeta meta, JenaGroupMergeStepData data) throws KettleStepException {
-        final LinkedHashMap<String, Object> previousGroupFields = data.getPreviousGroupFields();
-        final LinkedHashMap<String, Object> allFields = data.getAllFields();
-        final LinkedHashMap<String, Model> previousGroupModels = data.getPreviousGroupModels();
-        final int rowSize = (meta.getOtherFieldAction() == OtherFieldAction.USE_FIRST) ? allFields.size() : previousGroupFields.size() + previousGroupModels.size();
-        final Object[] previousGroupRow = RowDataUtil.allocateRowData(rowSize);
-
-        // TODO(AR) don't forget about the target field
-        // TODO(AR) don't forget about the remove selected field
-
-        for (final Map.Entry<String, Object> previousGroupField : previousGroupFields.entrySet()) {
-            final int columnIndex = data.getPreviousGroupOutputRowMeta().indexOfValue(previousGroupField.getKey());
-            previousGroupRow[columnIndex] = previousGroupField.getValue();
-        }
-
-        for (final Map.Entry<String, Model> previousGroupModel : previousGroupModels.entrySet()) {
-            final int columnIndex = data.getPreviousGroupOutputRowMeta().indexOfValue(previousGroupModel.getKey());
-            previousGroupRow[columnIndex] = previousGroupModel.getValue();
-        }
-
-        // add the other fields back
-        if (meta.getOtherFieldAction() == OtherFieldAction.USE_FIRST) {
-            for (final Map.Entry<String, Object> field : allFields.entrySet()) {
-                final int columnIndex = data.getPreviousGroupOutputRowMeta().indexOfValue(field.getKey());
-                if (previousGroupRow[columnIndex] == null) {
-                    previousGroupRow[columnIndex] = field.getValue();
+                    //TODO(AR) END changed part compared to processFirstRowForGroup
                 }
             }
         }
 
-        putRow(data.getPreviousGroupOutputRowMeta(), previousGroupRow);
+//        data.setGroupMergedRow(outputRowData);  // TODO(AR) different from processFirstRowForGroup
+    }
 
+    /**
+     * Send a merged group to the step output.
+     *
+     * @param data this steps data.
+     */
+    private void outputGroup(final JenaGroupMergeStepData data) throws KettleStepException {
+        putRow(data.getOutputRowMeta(), data.getGroupMergedRow());
         data.clear();
     }
 
-    private boolean isContinuation(@Nullable final LinkedHashMap<String, Object> previousGroupFields, final LinkedHashMap<String, Object> currentGroupFields) {
-        if (previousGroupFields == null || previousGroupFields.size() != currentGroupFields.size()) {
+    /**
+     * Determine if the input row is a continuation of a current group merge.
+     *
+     * @param groupMergedRowGroupFields the fields in the current group merge.
+     * @param inputRowGroupFields the fields in the input row.
+     *
+     * @return true if this is a continuation, false otherwise.
+     */
+    private boolean isContinuation(@Nullable final LinkedHashMap<String, Object> groupMergedRowGroupFields, final LinkedHashMap<String, Object> inputRowGroupFields) {
+        if (groupMergedRowGroupFields == null || groupMergedRowGroupFields.size() != inputRowGroupFields.size()) {
             return false;
         }
 
-        for (final Map.Entry<String, Object> currentGroupField : currentGroupFields.entrySet()) {
+        for (final Map.Entry<String, Object> currentGroupField : inputRowGroupFields.entrySet()) {
             final String currentFieldName = currentGroupField.getKey();
             final Object currentFieldValue = currentGroupField.getValue();
 
-            if (!previousGroupFields.containsKey(currentFieldName)) {
+            if (!groupMergedRowGroupFields.containsKey(currentFieldName)) {
                 return false;
             }
 
-            final Object previousFieldValue = previousGroupFields.get(currentFieldName);
+            final Object previousFieldValue = groupMergedRowGroupFields.get(currentFieldName);
             if (currentFieldValue == null ^ previousFieldValue == null) {
                 return false;
             }
@@ -284,7 +421,21 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         return true;
     }
 
-    private LinkedHashMap<String, Object> getGroupFields(final JenaGroupMergeStepMeta meta, final Object[] row, final RowMetaInterface inputRowMeta) throws KettleException {
+    /**
+     * Get the user-specified fields that are used for grouping from the row.
+     *
+     * @param meta this steps meta.
+     * @param rowData the row data.
+     * @param rowMeta the row meta.
+     * @param logFunction a function that can be called to log a warning message.
+     *
+     * @return the group fields, the Map key is the field name and the Map value is the field value.
+     *
+     * @throws KettleException if a required user-specified group field is missing.
+     */
+    static LinkedHashMap<String, Object> getGroupFields(final JenaGroupMergeStepMeta meta, final Object[] rowData,
+            final RowMetaInterface rowMeta, final BiConsumer<String, String[]> logFunction) throws KettleException {
+
         // NOTE: order is important, so we use a LinkedHashMap
         final LinkedHashMap<String, Object> groupFields = new LinkedHashMap<>(meta.getGroupFields().size());
 
@@ -294,41 +445,14 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                 throw new KettleException("Group field: " + i + " is missing its field name");
             }
 
-            final String groupFieldName = environmentSubstitute(groupField.fieldName);
-            final int idxGroupField = inputRowMeta.indexOfValue(groupFieldName);
+            final int idxGroupField = rowMeta.indexOfValue(groupField.fieldName);
             if (idxGroupField == -1) {
-                switch (groupField.actionIfNoSuchField) {
-                    case IGNORE:
-                        // no-op - just ignore it!
-                        break;
-
-                    case WARN:
-                        // log a warning
-                        logBasic("Group field: {0}, column is absent in row!", groupFieldName);
-                        break;
-
-                    case ERROR:
-                        // throw an exception
-                        throw new KettleException("Group field: " + groupFieldName + ", column is absent in row!");
-                }
+                handleNoSuchField("Group", groupField, logFunction);
             } else {
-                final Object groupFieldValue = row[idxGroupField];
-                groupFields.put(groupFieldName, groupFieldValue);
+                final Object groupFieldValue = rowData[idxGroupField];
+                groupFields.put(groupField.fieldName, groupFieldValue);
                 if (groupFieldValue == null) {
-                    switch (groupField.actionIfNull) {
-                        case IGNORE:
-                            // no-op - just ignore it!
-                            break;
-
-                        case WARN:
-                            // log a warning
-                            logBasic("Group field: {0}, column has a null value in row!", groupFieldName);
-                            break;
-
-                        case ERROR:
-                            // throw an exception
-                            throw new KettleException("Group field: " + groupFieldName + ", column has a null value in row!");
-                    }
+                    handleNullField("Group", groupField, logFunction);
                 }
             }
         }
@@ -336,84 +460,72 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         return groupFields;
     }
 
-    private LinkedHashMap<String, Object> getAllFields(final Object[] row, final RowMetaInterface inputRowMeta) {
-        final LinkedHashMap<String, Object> allFields = new LinkedHashMap<>();
-        for (final ValueMetaInterface metaInterface : inputRowMeta.getValueMetaList()) {
-            final String name = metaInterface.getName();
-            final int pos = inputRowMeta.indexOfValue(name);
-            allFields.put(name, row[pos]);
-        }
-        return allFields;
-    }
+    /**
+     * Check that the row contains all of the user-specified merge fields.
+     *
+     * @param meta this steps meta.
+     * @param rowData the row data.
+     * @param rowMeta the row meta.
+     * @param logFunction a function that can be called to log a warning message.
+     *
+     * @throws KettleException if a required user-specified merge field is missing.
+     */
+    static void checkForMergeFields(final JenaGroupMergeStepMeta meta, final Object[] rowData,
+            final RowMetaInterface rowMeta, final BiConsumer<String, String[]> logFunction) throws KettleException {
 
-    private List<FieldModel> getModels(final JenaGroupMergeStepMeta meta, final Object[] row, final RowMetaInterface inputRowMeta)
-            throws KettleException {
-        if (meta.getJenaModelMergeFields().isEmpty()) {
-            throw new KettleException("No fields configured");
-        }
-
-        final List<FieldModel> models = new ArrayList<>(meta.getJenaModelMergeFields().size());
-
-        for (int i = 0; i < meta.getJenaModelMergeFields().size(); i++) {
-            final ModelMergeConstrainedField jenaModelField = meta.getJenaModelMergeFields().get(i);
-            if (isNullOrEmpty(jenaModelField.fieldName)) {
-                throw new KettleException("Jena Model field: " + i + " is missing its field name");
+        for (int i = 0; i < meta.getMergeFields().size(); i++) {
+            final ConstrainedField mergeField = meta.getMergeFields().get(i);
+            if (isNullOrEmpty(mergeField.fieldName)) {
+                throw new KettleException("Merge field: " + i + " is missing its field name");
             }
 
-            final String jenaModelFieldName = environmentSubstitute(jenaModelField.fieldName);
-            final int idxJenaModelField = inputRowMeta.indexOfValue(jenaModelFieldName);
-            if (idxJenaModelField == -1) {
-                switch (jenaModelField.actionIfNoSuchField) {
-                    case IGNORE:
-                        // no-op - just ignore it!
-                        break;
-
-                    case WARN:
-                        // log a warning
-                        logBasic("Could not group and merge model for row field: {0}, column is absent!", jenaModelField.fieldName);
-                        break;
-
-                    case ERROR:
-                        // throw an exception
-                        throw new KettleException("Could not group and merge model for row field: " + jenaModelField.fieldName + ", column is absent!");
-                }
+            final int idxMergeField = rowMeta.indexOfValue(mergeField.fieldName);
+            if (idxMergeField == -1) {
+                handleNoSuchField("Merge", mergeField, logFunction);
             } else {
-                final Object jenaModelFieldValue = row[idxJenaModelField];
-                if (jenaModelFieldValue == null) {
-                    switch (jenaModelField.actionIfNull) {
-                        case IGNORE:
-                            // no-op - just ignore it!
-                            break;
-
-                        case WARN:
-                            // log a warning
-                            logBasic("Could not group and merge model for row field: {0}, value is null!", jenaModelField.fieldName);
-                            break;
-
-                        case ERROR:
-                            // throw an exception
-                            throw new KettleException("Could not group and merge model for row field: " + jenaModelField.fieldName + ", value is null!");
-                    }
-                } else {
-                    if (jenaModelFieldValue instanceof Model) {
-                        models.add(new FieldModel(jenaModelFieldName, (Model) jenaModelFieldValue));
-                    } else {
-                        throw new KettleException("Expected field '" + jenaModelFieldName + "' to contain a Jena Model, but found "
-                                + jenaModelFieldValue.getClass());
-                    }
+                final Object mergeFieldValue = rowData[idxMergeField];
+                if (mergeFieldValue == null) {
+                    handleNullField("Merge", mergeField, logFunction);
                 }
             }
         }
-
-        return models;
     }
 
-    private boolean isMutateFirstModel(final JenaGroupMergeStepMeta meta, final String fieldName) {
-        for (final ModelMergeConstrainedField jenaModelMergeField : meta.getJenaModelMergeFields()) {
-            if (jenaModelMergeField.fieldName.equals(fieldName)) {
-                return jenaModelMergeField.mutateFirstModel == MutateFirstModel.YES;
-            }
+    private static void handleNoSuchField(final String fieldType, final ConstrainedField field,
+            final BiConsumer<String, String[]> logFunction) throws KettleException {
+
+        switch (field.actionIfNoSuchField) {
+            case IGNORE:
+                // no-op - just ignore it!
+                break;
+
+            case WARN:
+                // log a warning
+                logFunction.accept("{0} field: {1}, column is absent in row!", new String[] { fieldType, field.fieldName });
+                break;
+
+            case ERROR:
+                // throw an exception
+                throw new KettleException(fieldType + " field: " + field.fieldName + ", column is absent in row!");
         }
-        return false;
+    }
+
+    private static void handleNullField(final String fieldType, final ConstrainedField field,
+            final BiConsumer<String, String[]> logFunction) throws KettleException {
+
+        switch (field.actionIfNull) {
+            case IGNORE:
+                // no-op - just ignore it!
+                break;
+
+            case WARN:
+                // log a warning
+                logFunction.accept("{0} field: {1}, column has a null value in row!", new String[] { fieldType, field.fieldName });
+                break;
+
+            case ERROR:
+                // throw an exception
+                throw new KettleException(fieldType + " field: " + field.fieldName + ", column has a null value in row!");
+        }
     }
 }

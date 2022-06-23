@@ -36,9 +36,14 @@ public enum OtherFieldAction {
     DROP("Drop"),
 
     /**
-     * Uses the value from the first for of the group for the `other field`.
+     * Uses the value from the first row of the group for the `other field`.
      */
     USE_FIRST("First row of group"),
+
+    /**
+     * Uses the value from the last row of the group for the `other field`.
+     */
+    USE_LAST("Last row of group"),
 
     /**
      * Always sets the value of the `other field` to null.

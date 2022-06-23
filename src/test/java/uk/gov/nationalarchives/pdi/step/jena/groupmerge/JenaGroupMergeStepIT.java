@@ -101,7 +101,7 @@ public class JenaGroupMergeStepIT {
 
         final List<ModelMergeConstrainedField> jenaModelFields = new ArrayList<>(1);
         jenaModelFields.add(new ModelMergeConstrainedField("jena_model", ActionIfNoSuchField.ERROR, ActionIfNull.ERROR, MutateFirstModel.YES, null));
-        meta.setJenaModelFields(jenaModelFields);
+        meta.setMergeFields(jenaModelFields);
         return meta;
     }
 
