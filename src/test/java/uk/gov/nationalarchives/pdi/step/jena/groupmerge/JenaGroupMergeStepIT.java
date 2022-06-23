@@ -99,10 +99,8 @@ public class JenaGroupMergeStepIT {
 //        otherFields.add("another_column");
 //        meta.setOtherFields(otherFields);
 
-
-        meta.setMutateFirstModel(true);
-        final List<ConstrainedField> jenaModelFields = new ArrayList<>(1);
-        jenaModelFields.add(new ConstrainedField("jena_model",ActionIfNoSuchField.ERROR,ActionIfNull.ERROR));
+        final List<ModelMergeConstrainedField> jenaModelFields = new ArrayList<>(1);
+        jenaModelFields.add(new ModelMergeConstrainedField("jena_model", ActionIfNoSuchField.ERROR, ActionIfNull.ERROR, MutateFirstModel.YES, null));
         meta.setJenaModelFields(jenaModelFields);
         return meta;
     }

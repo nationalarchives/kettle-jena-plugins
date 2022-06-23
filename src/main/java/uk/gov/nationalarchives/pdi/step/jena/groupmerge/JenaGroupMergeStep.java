@@ -77,7 +77,6 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
             final RowMetaInterface outputRowMeta = inputRowMeta.clone();
             smi.getFields(outputRowMeta, getStepname(), null, null, this, repository, metaStore);
 
-            if (meta.isMutateFirstModel() || isNotEmpty(meta.getTargetFieldName())) {
 
                 // get all group fields
                 final LinkedHashMap<String, Object> currentGroupFields = getGroupFields(meta, row, inputRowMeta);
@@ -107,11 +106,11 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
 
                     // persist the values of the 1st row of this group, so on the next call to processRow we can compare it
                     //TODO(AR) do we need to make a copy?
-//                    final LinkedHashMap<String, Object> copyOfCurrentGroupFields = new LinkedHashMap<>(currentGroupFields.size());
-//                    for (final Map.Entry<String, Object> currentGroupField : currentGroupFields.entrySet()) {
-//                        final Object valueCopy = currentGroupField.getValue().clone();
-//                        copyOfCurrentGroupFields.put(currentGroupField.getKey(), valueCopy);
-//                    }
+    //                    final LinkedHashMap<String, Object> copyOfCurrentGroupFields = new LinkedHashMap<>(currentGroupFields.size());
+    //                    for (final Map.Entry<String, Object> currentGroupField : currentGroupFields.entrySet()) {
+    //                        final Object valueCopy = currentGroupField.getValue().clone();
+    //                        copyOfCurrentGroupFields.put(currentGroupField.getKey(), valueCopy);
+    //                    }
                     data.setPreviousGroupFields(currentGroupFields);
                     data.setAllFields(getAllFields(row,inputRowMeta));
 
@@ -125,7 +124,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                             // may be created later in mergeModels
                             model = null;
 
-                        } else if (meta.isMutateFirstModel()) {
+                        } else if (isMutateFirstModel(meta, currentRowModel.fieldName)) {
                             // mutate the first model
                             model = currentRowModel.model;
 
@@ -162,11 +161,6 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                 }
 
                 return true;
-
-            } else {
-                // error mutate is not set and the target field is empty
-                throw new KettleException("Mutate First Model is not selected, and the Target Field Name is empty. One or the other must be selected");
-            }
         }
     }
 
@@ -180,7 +174,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                 final Model model;
                 if (previousGroupModel.getValue() == null) {
                     // no previous model, store this model as the previous model
-                    if (meta.isMutateFirstModel()) {
+                    if (isMutateFirstModel(meta, previousGroupModel.getKey())) {
                         // mutate this model
                         model = currentRowFieldModel;
                     } else {
@@ -361,7 +355,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         final List<FieldModel> models = new ArrayList<>(meta.getJenaModelMergeFields().size());
 
         for (int i = 0; i < meta.getJenaModelMergeFields().size(); i++) {
-            final ConstrainedField jenaModelField = meta.getJenaModelMergeFields().get(i);
+            final ModelMergeConstrainedField jenaModelField = meta.getJenaModelMergeFields().get(i);
             if (isNullOrEmpty(jenaModelField.fieldName)) {
                 throw new KettleException("Jena Model field: " + i + " is missing its field name");
             }
@@ -412,5 +406,14 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
         }
 
         return models;
+    }
+
+    private boolean isMutateFirstModel(final JenaGroupMergeStepMeta meta, final String fieldName) {
+        for (final ModelMergeConstrainedField jenaModelMergeField : meta.getJenaModelMergeFields()) {
+            if (jenaModelMergeField.fieldName.equals(fieldName)) {
+                return jenaModelMergeField.mutateFirstModel == MutateFirstModel.YES;
+            }
+        }
+        return false;
     }
 }

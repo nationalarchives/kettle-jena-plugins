@@ -86,11 +86,9 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     // </editor-fold>
 
     // <editor-fold desc="settings">
-    private boolean mutateFirstModel;
-    private String targetFieldName;
     private boolean closeMergedModels;
     private List<ConstrainedField> groupFields;
-    private List<ConstrainedField> jenaModelFields;
+    private List<ModelMergeConstrainedField> jenaModelFields;
     private OtherFieldAction otherFieldAction;
     // </editor-fold>
 
@@ -100,8 +98,6 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
 
     @Override
     public void setDefault() {
-        mutateFirstModel = true;
-        targetFieldName = "";
         closeMergedModels = false;
         groupFields = new ArrayList<>();
         jenaModelFields = new ArrayList<>();
@@ -111,12 +107,10 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     @Override
     public Object clone() {
         final JenaGroupMergeStepMeta retval = (JenaGroupMergeStepMeta) super.clone();
-        retval.mutateFirstModel = mutateFirstModel;
-        retval.targetFieldName = targetFieldName;
         retval.closeMergedModels = closeMergedModels;
         retval.groupFields = new ArrayList<>(groupFields);
         retval.jenaModelFields = new ArrayList<>();
-        for (final ConstrainedField jenaModelField : jenaModelFields) {
+        for (final ModelMergeConstrainedField jenaModelField : jenaModelFields) {
             retval.jenaModelFields.add(jenaModelField.copy());
         }
         retval.otherFieldAction = otherFieldAction;
@@ -126,10 +120,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     @Override
     public String getXML() throws KettleException {
         final StringBuilder builder = new StringBuilder();
-        builder
-            .append(XMLHandler.addTagValue(ELEM_NAME_MUTATE_FIRST_MODEL, mutateFirstModel))
-            .append(XMLHandler.addTagValue(ELEM_NAME_TARGET_FIELD_NAME, targetFieldName))
-            .append(XMLHandler.addTagValue(ELEM_NAME_CLOSE_MERGED_MODELS, closeMergedModels));
+        builder.append(XMLHandler.addTagValue(ELEM_NAME_CLOSE_MERGED_MODELS, closeMergedModels));
 
         builder.append(XMLHandler.openTag(ELEM_NAME_GROUP_FIELDS));
         for (final ConstrainedField groupField : groupFields) {
@@ -143,12 +134,14 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         builder.append(XMLHandler.closeTag(ELEM_NAME_GROUP_FIELDS));
 
         builder.append(XMLHandler.openTag(ELEM_NAME_JENA_MODEL_FIELDS));
-        for (final ConstrainedField jenaModelField : jenaModelFields) {
+        for (final ModelMergeConstrainedField jenaModelField : jenaModelFields) {
             builder
                     .append(XMLHandler.openTag(ELEM_NAME_JENA_MODEL_FIELD))
                     .append(XMLHandler.addTagValue(ELEM_NAME_FIELD_NAME, jenaModelField.fieldName))
                     .append(XMLHandler.addTagValue(ELEM_NAME_ACTION_IF_NO_SUCH_FIELD, jenaModelField.actionIfNoSuchField.name()))
                     .append(XMLHandler.addTagValue(ELEM_NAME_ACTION_IF_NULL, jenaModelField.actionIfNull.name()))
+                    .append(XMLHandler.addTagValue(ELEM_NAME_MUTATE_FIRST_MODEL, jenaModelField.mutateFirstModel.name()))
+                    .append(XMLHandler.addTagValue(ELEM_NAME_TARGET_FIELD_NAME, jenaModelField.targetFieldName))
                     .append(XMLHandler.closeTag(ELEM_NAME_JENA_MODEL_FIELD));
         }
         builder.append(XMLHandler.closeTag(ELEM_NAME_JENA_MODEL_FIELDS));
@@ -159,82 +152,79 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
 
     @Override
     public void loadXML(final Node stepnode, final List<DatabaseMeta> databases, final IMetaStore metaStore) throws KettleXMLException {
-        final String xMutateFirstModel = XMLHandler.getTagValue(stepnode, ELEM_NAME_MUTATE_FIRST_MODEL);
-        if (xMutateFirstModel != null) {
-            this.mutateFirstModel = xMutateFirstModel.isEmpty() ? true : xMutateFirstModel.equals("Y");
+        final String xCloseMergedModels = XMLHandler.getTagValue(stepnode, ELEM_NAME_CLOSE_MERGED_MODELS);
+        if (isNotEmpty(xCloseMergedModels)) {
+            this.closeMergedModels = isNotEmpty(xCloseMergedModels) ? xCloseMergedModels.equals("Y") : false;
+        } else {
+            // load legacy value (if present)
+            final String xRemoveSelectedField = XMLHandler.getTagValue(stepnode, ELEM_NAME_REMOVE_SELECTED_FIELDS);
+            this.closeMergedModels = isNotEmpty(xRemoveSelectedField) ? xRemoveSelectedField.equals("Y") : false;
+        }
 
-            final String xTargetFieldName = XMLHandler.getTagValue(stepnode, ELEM_NAME_TARGET_FIELD_NAME);
-            this.targetFieldName = xTargetFieldName != null ? xTargetFieldName : "";
-
-            final String xCloseMergedModels = XMLHandler.getTagValue(stepnode, ELEM_NAME_CLOSE_MERGED_MODELS);
-            if (isNotEmpty(xCloseMergedModels)) {
-                this.closeMergedModels = isNotEmpty(xCloseMergedModels) ? xCloseMergedModels.equals("Y") : false;
-            } else {
-                // load legacy value (if present)
-                final String xRemoveSelectedField = XMLHandler.getTagValue(stepnode, ELEM_NAME_REMOVE_SELECTED_FIELDS);
-                this.closeMergedModels = isNotEmpty(xRemoveSelectedField) ? xRemoveSelectedField.equals("Y") : false;
-            }
-
-            final Node groupFieldsNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_GROUP_FIELDS);
-            if (groupFieldsNode == null) {
+        final Node groupFieldsNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_GROUP_FIELDS);
+        if (groupFieldsNode == null) {
+            this.groupFields = new ArrayList<>();
+        } else {
+            final List<Node> groupFieldsNodes = XMLHandler.getNodes(groupFieldsNode, ELEM_NAME_GROUP_FIELD);
+            if (isNullOrEmpty(groupFieldsNodes)) {
                 this.groupFields = new ArrayList<>();
             } else {
-                final List<Node> groupFieldsNodes = XMLHandler.getNodes(groupFieldsNode, ELEM_NAME_GROUP_FIELD);
-                if (isNullOrEmpty(groupFieldsNodes)) {
-                    this.groupFields = new ArrayList<>();
-                } else {
-                    this.groupFields = new ArrayList<>();
+                this.groupFields = new ArrayList<>();
 
-                    final int len = groupFieldsNodes.size();
-                    for (int i = 0; i < len; i++) {
-                        final Node groupFieldNode = groupFieldsNodes.get(i);
+                final int len = groupFieldsNodes.size();
+                for (int i = 0; i < len; i++) {
+                    final Node groupFieldNode = groupFieldsNodes.get(i);
 
-                        final String xFieldName = XMLHandler.getTagValue(groupFieldNode, ELEM_NAME_FIELD_NAME);
-                        if (isNullOrEmpty(xFieldName)) {
-                            continue;
-                        }
-
-                        final String xActionIfNoSuchField = XMLHandler.getTagValue(groupFieldNode, ELEM_NAME_ACTION_IF_NO_SUCH_FIELD);
-                        final ActionIfNoSuchField actionIfNoSuchField = isNotEmpty(xActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(xActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
-                        final String xActionIfNull = XMLHandler.getTagValue(groupFieldNode, ELEM_NAME_ACTION_IF_NULL);
-                        final ActionIfNull actionIfNull = isNotEmpty(xActionIfNull) ? ActionIfNull.valueOf(xActionIfNull) : ActionIfNull.ERROR;
-                        this.groupFields.add(new ConstrainedField(xFieldName, actionIfNoSuchField, actionIfNull));
+                    final String xFieldName = XMLHandler.getTagValue(groupFieldNode, ELEM_NAME_FIELD_NAME);
+                    if (isNullOrEmpty(xFieldName)) {
+                        continue;
                     }
+
+                    final String xActionIfNoSuchField = XMLHandler.getTagValue(groupFieldNode, ELEM_NAME_ACTION_IF_NO_SUCH_FIELD);
+                    final ActionIfNoSuchField actionIfNoSuchField = isNotEmpty(xActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(xActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
+                    final String xActionIfNull = XMLHandler.getTagValue(groupFieldNode, ELEM_NAME_ACTION_IF_NULL);
+                    final ActionIfNull actionIfNull = isNotEmpty(xActionIfNull) ? ActionIfNull.valueOf(xActionIfNull) : ActionIfNull.ERROR;
+                    this.groupFields.add(new ConstrainedField(xFieldName, actionIfNoSuchField, actionIfNull));
                 }
             }
+        }
 
-            final Node jenaModelFieldsNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_JENA_MODEL_FIELDS);
-            if (jenaModelFieldsNode == null) {
+        final Node jenaModelFieldsNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_JENA_MODEL_FIELDS);
+        if (jenaModelFieldsNode == null) {
+            this.jenaModelFields = new ArrayList<>();
+        } else {
+            final List<Node> jenaModelFieldNodes = XMLHandler.getNodes(jenaModelFieldsNode, ELEM_NAME_JENA_MODEL_FIELD);
+            if (isNullOrEmpty(jenaModelFieldNodes)) {
                 this.jenaModelFields = new ArrayList<>();
             } else {
-                final List<Node> jenaModelFieldNodes = XMLHandler.getNodes(jenaModelFieldsNode, ELEM_NAME_JENA_MODEL_FIELD);
-                if (isNullOrEmpty(jenaModelFieldNodes)) {
-                    this.jenaModelFields = new ArrayList<>();
-                } else {
-                    this.jenaModelFields = new ArrayList<>();
+                this.jenaModelFields = new ArrayList<>();
 
-                    final int len = jenaModelFieldNodes.size();
-                    for (int i = 0; i < len; i++) {
-                        final Node jenaModelFieldNode = jenaModelFieldNodes.get(i);
+                final int len = jenaModelFieldNodes.size();
+                for (int i = 0; i < len; i++) {
+                    final Node jenaModelFieldNode = jenaModelFieldNodes.get(i);
 
-                        final String xFieldName = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_FIELD_NAME);
-                        if (isNullOrEmpty(xFieldName)) {
-                            continue;
-                        }
-
-                        final String xActionIfNoSuchField = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_ACTION_IF_NO_SUCH_FIELD);
-                        final ActionIfNoSuchField actionIfNoSuchField = isNotEmpty(xActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(xActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
-                        final String xActionIfNull = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_ACTION_IF_NULL);
-                        final ActionIfNull actionIfNull = isNotEmpty(xActionIfNull) ? ActionIfNull.valueOf(xActionIfNull) : ActionIfNull.ERROR;
-                        this.jenaModelFields.add(new ConstrainedField(xFieldName, actionIfNoSuchField, actionIfNull));
+                    final String xFieldName = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_FIELD_NAME);
+                    if (isNullOrEmpty(xFieldName)) {
+                        continue;
                     }
+
+                    final String xActionIfNoSuchField = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_ACTION_IF_NO_SUCH_FIELD);
+                    final ActionIfNoSuchField actionIfNoSuchField = isNotEmpty(xActionIfNoSuchField) ? ActionIfNoSuchField.valueOf(xActionIfNoSuchField) : ActionIfNoSuchField.ERROR;
+                    final String xActionIfNull = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_ACTION_IF_NULL);
+                    final ActionIfNull actionIfNull = isNotEmpty(xActionIfNull) ? ActionIfNull.valueOf(xActionIfNull) : ActionIfNull.ERROR;
+                    final String xMutateFirstModel = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_MUTATE_FIRST_MODEL);
+                    final MutateFirstModel mutateFirstModel = isNotEmpty(xMutateFirstModel) ? MutateFirstModel.valueOf(xMutateFirstModel) : MutateFirstModel.YES;
+                    final String xTargetFieldName = XMLHandler.getTagValue(jenaModelFieldNode, ELEM_NAME_TARGET_FIELD_NAME);
+                    final String targetFieldName = isNotEmpty(xTargetFieldName) ? xTargetFieldName : null;
+
+                    this.jenaModelFields.add(new ModelMergeConstrainedField(xFieldName, actionIfNoSuchField, actionIfNull, mutateFirstModel, targetFieldName));
                 }
             }
+        }
 
-            final String xOtherFieldAction = XMLHandler.getTagValue(stepnode, ELEM_NAME_OTHER_FIELD_ACTION);
-            if (isNotEmpty(xOtherFieldAction)) {
-                this.otherFieldAction = OtherFieldAction.valueOf(xOtherFieldAction);
-            }
+        final String xOtherFieldAction = XMLHandler.getTagValue(stepnode, ELEM_NAME_OTHER_FIELD_ACTION);
+        if (isNotEmpty(xOtherFieldAction)) {
+            this.otherFieldAction = OtherFieldAction.valueOf(xOtherFieldAction);
         }
     }
 
@@ -264,11 +254,13 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         //TODO(AR) we also need the database fields here?
 
         try {
-            // add the target field to the output row
-            if (isNotEmpty(targetFieldName)) {
-                final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(space.environmentSubstitute(targetFieldName), ValueMeta.TYPE_SERIALIZABLE);
-                targetFieldValueMeta.setOrigin(origin);
-                rowMeta.addValueMeta(targetFieldValueMeta);
+            // add any target fields to the output row
+            for (final ModelMergeConstrainedField jenaModelField : jenaModelFields) {
+                if (jenaModelField.mutateFirstModel == MutateFirstModel.NO && isNotEmpty(jenaModelField.targetFieldName)) {
+                    final ValueMetaInterface targetFieldValueMeta = ValueMetaFactory.createValueMeta(space.environmentSubstitute(jenaModelField.targetFieldName), ValueMeta.TYPE_SERIALIZABLE);
+                    targetFieldValueMeta.setOrigin(origin);
+                    rowMeta.addValueMeta(targetFieldValueMeta);
+                }
             }
 
         } catch (final KettlePluginException e) {
@@ -278,9 +270,13 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         if (closeMergedModels) {
 
             // if we are mutating the first model, we must not remove it from the output row
-            boolean skipFirst = mutateFirstModel;
+            Boolean skipFirst = null;
 
-            for (final ConstrainedField jenaModelField : jenaModelFields) {
+            for (final ModelMergeConstrainedField jenaModelField : jenaModelFields) {
+                if (skipFirst == null) {
+                    skipFirst = jenaModelField.mutateFirstModel == MutateFirstModel.YES;
+                }
+
                 if (!skipFirst) {
                     try {
                         rowMeta.removeValueMeta(jenaModelField.fieldName);
@@ -337,22 +333,6 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
 
 
     // <editor-fold desc="settings getters and setters">
-    public boolean isMutateFirstModel() {
-        return mutateFirstModel;
-    }
-
-    public void setMutateFirstModel(final boolean mutateFirstModel) {
-        this.mutateFirstModel = mutateFirstModel;
-    }
-
-    public String getTargetFieldName() {
-        return targetFieldName;
-    }
-
-    public void setTargetFieldName(final String targetFieldName) {
-        this.targetFieldName = targetFieldName;
-    }
-
     public boolean isCloseMergedModels() {
         return closeMergedModels;
     }
@@ -369,11 +349,11 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         this.groupFields = groupFields;
     }
 
-    public List<ConstrainedField> getJenaModelMergeFields() {
+    public List<ModelMergeConstrainedField> getJenaModelMergeFields() {
         return jenaModelFields;
     }
 
-    public void setJenaModelFields(final List<ConstrainedField> jenaModelFields) {
+    public void setJenaModelFields(final List<ModelMergeConstrainedField> jenaModelFields) {
         this.jenaModelFields = jenaModelFields;
     }
 
