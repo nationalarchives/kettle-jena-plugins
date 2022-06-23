@@ -175,7 +175,7 @@ public class JenaCombineStep extends BaseStep implements StepInterface {
             // re-map fields from input to output when removeSelectedFields is checked and mutateFirstModel is not checked
 
             // reserve room for the target field
-            outputRowData = new Object[data.getOutputRowMeta().size() + RowDataUtil.OVER_ALLOCATE_SIZE];
+            outputRowData = RowDataUtil.allocateRowData(data.getOutputRowMeta().size());
 
             // re-map the fields from input to output
             final int[] remainingInputFieldIndexes = data.getRemainingInputFieldIndexes();
