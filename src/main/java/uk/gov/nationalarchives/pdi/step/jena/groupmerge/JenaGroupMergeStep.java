@@ -22,6 +22,8 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena.groupmerge;
 
+import com.evolvedbinary.j8fu.function.QuadFunction;
+import com.evolvedbinary.j8fu.function.QuintFunction;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.pentaho.di.core.exception.KettleException;
@@ -158,7 +160,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
      * Stores the indexes of any fields from the input row
      * that need to be copied into the output row in the data object.
      *
-     * The remapping itself is performed in {@link #prepareOutputRow(JenaGroupMergeStepMeta, JenaGroupMergeStepData, Object[])}.
+     * The remapping itself is performed in {@link #processRow(JenaGroupMergeStepMeta, JenaGroupMergeStepData, Object[], Object[], BiFunction, QuadFunction, QuintFunction)}.
      *
      * @param inputRowMeta the input row meta
      * @param data this steps data.
@@ -183,8 +185,104 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
      * @param inputRowData the input row.
      */
     static void processFirstRowForGroup(final JenaGroupMergeStepMeta meta, final JenaGroupMergeStepData data, final Object[] inputRowData) {
+        // allocate a new array to hold the new Group Merged Row
         final RowMetaInterface outputRowMeta = data.getOutputRowMeta();
-        final Object[] outputRowData = RowDataUtil.allocateRowData(outputRowMeta.size());
+        Object[] outputRowData = RowDataUtil.allocateRowData(outputRowMeta.size());
+
+        // function - always create a new model for the target field as this is the first row
+        final BiFunction<Object[], Integer, Model> fnGetOutputRowTargetFieldModel = (outputRowData1, outputRowTargetFieldIndex) -> ModelFactory.createDefaultModel();
+
+        // function - get the value of a normal field from the input row for the output row
+        final QuadFunction<OtherFieldAction, Object, Object[], Integer, Object> fnGetNormalFieldOutputValue = (otherFieldAction, inputRowFieldValue, outputRowData1, outputRowFieldIndex) -> {
+            if (otherFieldAction == OtherFieldAction.SET_NULL) {
+                return null;
+            } else {
+                return inputRowFieldValue;
+            }
+        };
+
+        // function - get the value of a group or merge (non-target) field from the input row for the output row
+        final QuintFunction<ModelMergeConstrainedField, OtherFieldAction, Object, Object[], Integer, Object> fnGetGroupOrMergeFieldOutputValue = (mergeField, otherFieldAction, inputRowFieldValue, outputRowData1, outputRowFieldIndex) -> inputRowFieldValue;
+
+        // process the first row of a new group
+        outputRowData = processRow(meta, data, inputRowData, outputRowData, fnGetOutputRowTargetFieldModel, fnGetNormalFieldOutputValue, fnGetGroupOrMergeFieldOutputValue);
+        data.setGroupMergedRow(outputRowData);
+    }
+
+    /**
+     * Process an input row as 1+n row in a group.
+     *
+     * @param meta this steps meta.
+     * @param data this steps data.
+     * @param inputRowData the input row.
+     */
+    static void mergeRowIntoGroup(final JenaGroupMergeStepMeta meta, final JenaGroupMergeStepData data, final Object[] inputRowData) {
+        // get the array holding the current Group Merged Row
+        final Object[] outputRowData = data.getGroupMergedRow();
+
+        // function - get the model of the current targetField in the Group Merged Row
+        final BiFunction<Object[], Integer, Model> fnGetOutputRowTargetFieldModel = (outputRowData1, outputRowTargetFieldIndex) -> (Model) outputRowData1[outputRowTargetFieldIndex];
+
+        // function - get the value of a normal field from the input row for the output row
+        final QuadFunction<OtherFieldAction, Object, Object[], Integer, Object> fnGetNormalFieldOutputValue = (otherFieldAction, inputRowFieldValue, outputRowData1, outputRowFieldIndex) -> {
+            if (otherFieldAction == OtherFieldAction.USE_LAST) {
+                return inputRowFieldValue;
+            } else if (otherFieldAction == OtherFieldAction.SET_NULL) {
+                return null;
+            } else if (otherFieldAction == OtherFieldAction.NULL_IF_DIFFERENT &&
+                    !outputRowData1[outputRowFieldIndex].equals(inputRowFieldValue)) {
+                return null;
+            } else {
+                // OtherFieldAction.USE_FIRST
+                return outputRowData1[outputRowFieldIndex];
+            }
+        };
+
+        // function - get the value of a group or merge (non-target) field from the input row for the output row
+        final QuintFunction<ModelMergeConstrainedField, OtherFieldAction, Object, Object[], Integer, Object> fnGetGroupOrMergeFieldOutputValue = (mergeField, otherFieldAction, inputRowFieldValue, outputRowData1, outputRowFieldIndex) -> {
+            if (mergeField != null && mergeField.mutateFirstModel == MutateFirstModel.YES) {
+                final Model inputRowFieldModel = (Model) inputRowFieldValue;
+                final Model outputRowFieldModel = (Model) outputRowData1[outputRowFieldIndex];
+
+                // merged the input row model into the model in the output row
+                outputRowFieldModel.add(inputRowFieldModel);
+
+                // close the original input row model if the user set that option in the dialog
+                if (meta.isCloseMergedModels()) {
+                    inputRowFieldModel.close();
+                }
+
+                return outputRowFieldModel;
+
+            } else {
+                return inputRowFieldValue;
+            }
+        };
+
+        processRow(meta, data, inputRowData, outputRowData, fnGetOutputRowTargetFieldModel, fnGetNormalFieldOutputValue, fnGetGroupOrMergeFieldOutputValue);
+    }
+
+    /**
+     * Process an input row.
+     *
+     * @param meta this steps meta.
+     * @param data this steps data.
+     * @param inputRowData the input row.
+     * @param outputRowData the output row. This may be either a new row if this is the first row in a group,
+     *                      or the grouped merged row if this is row 1+n in a group)
+     * @param fnGetOutputRowTargetFieldModel get the model for a targetField in the output row.
+     * @param fnGetNormalFieldOutputValue get the value of a normal field (i.e. not group or merge field from the input row).
+     * @param fnGetGroupOrMergeFieldOutputValue get the value of a group or merge (non-target) field.
+     *
+     * @return the updated outputRowData.
+     */
+    private static Object[] processRow(final JenaGroupMergeStepMeta meta, final JenaGroupMergeStepData data,
+            final Object[] inputRowData, final Object[] outputRowData,
+            final BiFunction<Object[], Integer, Model> fnGetOutputRowTargetFieldModel,
+            final QuadFunction<OtherFieldAction, Object, Object[], Integer, Object> fnGetNormalFieldOutputValue,
+            final QuintFunction<ModelMergeConstrainedField, OtherFieldAction, Object, Object[], Integer, Object> fnGetGroupOrMergeFieldOutputValue) {
+
+        final RowMetaInterface outputRowMeta = data.getOutputRowMeta();
 
         // this accumulates any targetFields that we have already set, so we don't override them if they already exist after the merge field in the input row
         Set<String> skipTargetFields = null;
@@ -216,12 +314,11 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                 // get the index in the output row for the targetField
                 final int outputRowTargetFieldIndex = outputRowMeta.indexOfValue(mergeField.targetFieldName);
 
-                // create a new model, add the input row model, and place it in the targetField
-                final Model outputRowTargetFieldModel = ModelFactory.createDefaultModel();
-
                 // find the input model in the input row
                 final Model inputRowFieldModel = (Model) inputRowData[inputRowFieldIndex];
 
+                // merge the input row model into the targetField model in the output row
+                final Model outputRowTargetFieldModel = fnGetOutputRowTargetFieldModel.apply(outputRowData, outputRowTargetFieldIndex);
                 outputRowTargetFieldModel.add(inputRowFieldModel);
 
                 // close the original input row model if the user set that option in the dialog
@@ -252,127 +349,14 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
                 // copy the input row field to the output row
                 final int outputRowFieldIndex = outputRowMeta.indexOfValue(outputRowFieldName);
                 if (mergeField == null && groupField == null) {
-                    if (meta.getOtherFieldAction() == OtherFieldAction.SET_NULL) {
-                        outputRowData[outputRowFieldIndex] = null;
-                    } else {
-                        outputRowData[outputRowFieldIndex] = inputRowFieldValue;
-                    }
+                    outputRowData[outputRowFieldIndex] = fnGetNormalFieldOutputValue.apply(meta.getOtherFieldAction(), inputRowFieldValue, outputRowData, outputRowFieldIndex);
                 } else {
-                    outputRowData[outputRowFieldIndex] = inputRowFieldValue;
+                    outputRowData[outputRowFieldIndex] = fnGetGroupOrMergeFieldOutputValue.apply(mergeField, meta.getOtherFieldAction(), inputRowFieldValue, outputRowData, outputRowFieldIndex);
                 }
             }
         }
 
-        data.setGroupMergedRow(outputRowData);
-    }
-
-    static void mergeRowIntoGroup(final JenaGroupMergeStepMeta meta, final JenaGroupMergeStepData data, final Object[] inputRowData) {
-        final RowMetaInterface outputRowMeta = data.getOutputRowMeta();
-        final Object[] outputRowData = data.getGroupMergedRow(); // TODO(AR) different from processFirstRowForGroup
-
-        // this accumulates any targetFields that we have already set, so we don't override them if they already exist after the merge field in the input row
-        Set<String> skipTargetFields = null;
-
-        // iterate over the required output row fields (NOTE: the OutputRowMeta contains all columns, i.e. input columns to preserve and new targetField columns to create)
-        for (final ValueMetaInterface outputRowMetaValue : outputRowMeta.getValueMetaList()) {
-            final String outputRowFieldName = outputRowMetaValue.getName();
-
-            // is there a corresponding field from the output row in the input row?
-            @Nullable final Integer inputRowFieldIndex = data.getRemainingInputFieldIndexes().get(outputRowFieldName);
-
-            // if there is no corresponding field in the input row, or we have already created the targetField, we can skip setting the output field
-            boolean skipSetOutputField = inputRowFieldIndex == null || (skipTargetFields != null && skipTargetFields.contains(outputRowFieldName));
-
-            // is the output field a "merge field" which sets a targetField?
-            @Nullable final ModelMergeConstrainedField mergeField = meta.getMergeField(outputRowFieldName);
-            if (mergeField != null && mergeField.mutateFirstModel == MutateFirstModel.NO) {
-
-                // does the targetField already exist in the input row
-                @Nullable final Integer inputRowTargetFieldIndex = data.getRemainingInputFieldIndexes().get(mergeField.targetFieldName);
-                if (inputRowTargetFieldIndex != null) {
-                    final Object existingInputRowValue = inputRowData[inputRowTargetFieldIndex];
-                    if (existingInputRowValue != null && existingInputRowValue instanceof Model && meta.isCloseMergedModels()) {
-                        // targetField exists in the input row, and already contains a Jena Model... this is strange.. but let's close the existing Jena Model to avoid a memory leak
-                        ((Model) existingInputRowValue).close();
-                    }
-                }
-
-                // get the index in the output row for the targetField
-                final int outputRowTargetFieldIndex = outputRowMeta.indexOfValue(mergeField.targetFieldName);
-
-//TODO(AR) START changed part compared to processFirstRowForGroup
-
-                // find the input model in the input row
-                final Model inputRowFieldModel = (Model) inputRowData[inputRowFieldIndex];
-
-                // merged the input row model into the targetField model in the output row
-                final Model outputRowTargetFieldModel = (Model) outputRowData[outputRowTargetFieldIndex];
-                outputRowTargetFieldModel.add(inputRowFieldModel);
-
-                // close the original input row model if the user set that option in the dialog
-                if (meta.isCloseMergedModels()) {
-                    inputRowFieldModel.close();
-                }
-
-//TODO(AR) END changed part compared to processFirstRowForGroup
-
-                // remember that we have set the targetField
-                if (skipTargetFields == null) {
-                    skipTargetFields = new HashSet<>();
-                }
-                skipTargetFields.add(mergeField.targetFieldName);
-            }
-
-
-            // if we should not skip setting the output field
-            if (!skipSetOutputField) {
-
-                // find the corresponding field in the input row
-                final Object inputRowFieldValue = inputRowData[inputRowFieldIndex];
-
-                // is the output field a "group field"
-                @Nullable final ConstrainedField groupField = meta.getGroupField(outputRowFieldName);
-
-                // copy the input row field to the output row
-                final int outputRowFieldIndex = outputRowMeta.indexOfValue(outputRowFieldName);
-                if (mergeField == null && groupField == null) {
-                    //TODO(AR) START changed part compared to processFirstRowForGroup
-                    if (meta.getOtherFieldAction() == OtherFieldAction.USE_FIRST) {
-                        // no-op - it is already the first value of the group
-                    } else if (meta.getOtherFieldAction() == OtherFieldAction.USE_LAST) {
-                        outputRowData[outputRowFieldIndex] = inputRowFieldValue;
-                    } else if (meta.getOtherFieldAction() == OtherFieldAction.SET_NULL) {
-                        outputRowData[outputRowFieldIndex] = null;
-                    } else {
-                        // OtherFieldAction.NULL_IF_DIFFERENT
-                        if (!outputRowData[outputRowFieldIndex].equals(inputRowFieldValue)) {
-                            outputRowData[outputRowFieldIndex] = null;
-                        }
-                    }
-                    //TODO(AR) END changed part compared to processFirstRowForGroup
-                } else {
-                    //TODO(AR) START changed part compared to processFirstRowForGroup
-                    if (mergeField != null && mergeField.mutateFirstModel == MutateFirstModel.YES) {
-                        final Model inputRowFieldModel = (Model) inputRowFieldValue;
-                        final Model outputRowFieldModel = (Model) outputRowData[outputRowFieldIndex];
-
-                        // merged the input row model into the model in the output row
-                        outputRowFieldModel.add(inputRowFieldModel);
-
-                        // close the original input row model if the user set that option in the dialog
-                        if (meta.isCloseMergedModels()) {
-                            inputRowFieldModel.close();
-                        }
-
-                    } else {
-                        outputRowData[outputRowFieldIndex] = inputRowFieldValue;  // copy merge or group field
-                    }
-                    //TODO(AR) END changed part compared to processFirstRowForGroup
-                }
-            }
-        }
-
-//        data.setGroupMergedRow(outputRowData);  // TODO(AR) different from processFirstRowForGroup
+        return outputRowData;
     }
 
     /**
