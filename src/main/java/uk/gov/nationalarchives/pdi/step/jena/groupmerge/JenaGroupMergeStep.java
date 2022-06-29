@@ -230,6 +230,7 @@ public class JenaGroupMergeStep extends BaseStep implements StepInterface {
             } else if (otherFieldAction == OtherFieldAction.SET_NULL) {
                 return null;
             } else if (otherFieldAction == OtherFieldAction.NULL_IF_DIFFERENT &&
+                    outputRowData1[outputRowFieldIndex] != null &&
                     !outputRowData1[outputRowFieldIndex].equals(inputRowFieldValue)) {
                 return null;
             } else {
