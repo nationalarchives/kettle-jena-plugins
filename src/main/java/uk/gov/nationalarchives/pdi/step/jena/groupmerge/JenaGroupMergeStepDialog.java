@@ -492,7 +492,7 @@ public class JenaGroupMergeStepDialog extends BaseStepDialog implements StepDial
         // set selected
         OtherFieldAction otherFieldAction = meta.getOtherFieldAction();
         if (otherFieldAction == null) {
-            otherFieldAction = OtherFieldAction.DROP;
+            otherFieldAction = JenaGroupMergeStepMeta.DEFAULT_OTHER_FIELD_ACTION;
         }
         wOtherFieldsCombo.setText(otherFieldAction.getLabel());
     }

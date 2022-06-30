@@ -87,6 +87,8 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
     private static final String ELEM_NAME_OTHER_FIELD_ACTION = "otherFieldAction";
     // </editor-fold>
 
+    static final OtherFieldAction DEFAULT_OTHER_FIELD_ACTION = OtherFieldAction.DROP;
+
     // <editor-fold desc="settings">
     private boolean closeMergedModels;
     private List<ConstrainedField> groupFields;         // TODO(AR) if we only iterate - can we change this to a ConstrainedField[] for efficiency
@@ -103,7 +105,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         closeMergedModels = false;
         groupFields = new ArrayList<>();
         mergeFields = new ArrayList<>();
-        otherFieldAction = OtherFieldAction.DROP;
+        otherFieldAction = DEFAULT_OTHER_FIELD_ACTION;
     }
 
     @Override
@@ -147,7 +149,7 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
                     .append(XMLHandler.closeTag(ELEM_NAME_JENA_MODEL_FIELD));
         }
         builder.append(XMLHandler.closeTag(ELEM_NAME_JENA_MODEL_FIELDS));
-        builder.append(XMLHandler.addTagValue(ELEM_NAME_OTHER_FIELD_ACTION, otherFieldAction.name()));
+        builder.append(XMLHandler.addTagValue(ELEM_NAME_OTHER_FIELD_ACTION, otherFieldAction != null ? otherFieldAction.name() : DEFAULT_OTHER_FIELD_ACTION.name()));
 
         return builder.toString();
     }
@@ -221,6 +223,8 @@ public class JenaGroupMergeStepMeta extends BaseStepMeta implements StepMetaInte
         final String xOtherFieldAction = XMLHandler.getTagValue(stepnode, ELEM_NAME_OTHER_FIELD_ACTION);
         if (isNotEmpty(xOtherFieldAction)) {
             this.otherFieldAction = OtherFieldAction.valueOf(xOtherFieldAction);
+        } else {
+            this.otherFieldAction = DEFAULT_OTHER_FIELD_ACTION;
         }
     }
 
