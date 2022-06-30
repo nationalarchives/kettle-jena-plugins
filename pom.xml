@@ -66,6 +66,16 @@
 
   <contributors>
     <contributor>
+      <name>Jaishree Davey</name>
+      <email>jjd@jdcode.com</email>
+    </contributor>
+    <contributor>
+      <name>Enrique Del Pino</name>
+      <organization>Data Lens</organization>
+      <email>enrique@data-lens.co.uk</email>
+      <organizationUrl>https://www.data-lens.co.uk</organizationUrl>
+    </contributor>
+    <contributor>
       <name>Samu Lang</name>
     </contributor>
   </contributors>
