@@ -22,7 +22,6 @@
  */
 package uk.gov.nationalarchives.pdi.step.jena.groupmerge;
 
-import org.apache.jena.rdf.model.Model;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
@@ -34,58 +33,50 @@ import java.util.Objects;
 
 public class JenaGroupMergeStepData extends BaseStepData implements StepDataInterface {
 
-    @Nullable private LinkedHashMap<String, Object> previousGroupFields;
+    private RowMetaInterface outputRowMeta;
 
-    @Nullable private LinkedHashMap<String, Object> allFields;
-    @Nullable private LinkedHashMap<String, Model> previousGroupModels;
-    @Nullable private RowMetaInterface previousGroupOutputRowMeta;
+    /**
+     * Indexes of fields in the input row
+     * that need to be mapped into the output
+     * row.
+     *
+     * Basically the input fields, less any fields
+     * that are removed by this step.
+     */
+    private LinkedHashMap<String, Integer> remainingInputFieldIndexes;
+
+    @Nullable private Object[] groupMergedRow;
 
     public JenaGroupMergeStepData() {
         super();
     }
 
-    public @Nullable LinkedHashMap<String, Object> getPreviousGroupFields() {
-        return previousGroupFields;
+    public @Nullable Object[] getGroupMergedRow() {
+        return groupMergedRow;
     }
 
-    public @Nullable LinkedHashMap<String, Object> getAllFields() {
-        return allFields;
+    public void setGroupMergedRow(final Object[] groupMergedRow) {
+        Objects.requireNonNull(groupMergedRow);
+        this.groupMergedRow = groupMergedRow;
     }
 
-    public void setPreviousGroupFields(final LinkedHashMap<String, Object> previousGroupFields) {
-        Objects.requireNonNull(previousGroupFields);
-        this.previousGroupFields = previousGroupFields;
+    public RowMetaInterface getOutputRowMeta() {
+        return outputRowMeta;
     }
 
-    public void setAllFields(final LinkedHashMap<String, Object> allFields) {
-        Objects.requireNonNull(allFields);
-        this.allFields = allFields;
+    public void setOutputRowMeta(final RowMetaInterface outputRowMeta) {
+        this.outputRowMeta = outputRowMeta;
     }
 
-
-    public @Nullable LinkedHashMap<String, Model> getPreviousGroupModels() {
-        return previousGroupModels;
+    public LinkedHashMap<String, Integer> getRemainingInputFieldIndexes() {
+        return remainingInputFieldIndexes;
     }
 
-    public void setPreviousGroupModels(final LinkedHashMap<String, Model> previousGroupModels) {
-        Objects.requireNonNull(previousGroupModels);
-        this.previousGroupModels = previousGroupModels;
-    }
-
-    public @Nullable RowMetaInterface getPreviousGroupOutputRowMeta() {
-        return previousGroupOutputRowMeta;
-    }
-
-    public void setPreviousGroupOutputRowMeta(final RowMetaInterface previousGroupOutputRowMeta) {
-        Objects.requireNonNull(previousGroupOutputRowMeta);
-        this.previousGroupOutputRowMeta = previousGroupOutputRowMeta;
+    public void setRemainingInputFieldIndexes(final LinkedHashMap<String, Integer> remainingInputFieldIndexes) {
+        this.remainingInputFieldIndexes = remainingInputFieldIndexes;
     }
 
     public void clear() {
-        previousGroupFields.clear();
-        previousGroupFields = null;
-        previousGroupModels.clear();
-        previousGroupModels = null;
-        previousGroupOutputRowMeta = null;
+        groupMergedRow = null;
     }
 }

@@ -213,6 +213,12 @@
     </dependency>
 
     <dependency>
+      <groupId>com.evolvedbinary.j8fu</groupId>
+      <artifactId>j8fu</artifactId>
+      <version>1.23.0</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>5.6.2</version>
@@ -221,6 +227,12 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.6.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
       <version>5.6.2</version>
       <scope>test</scope>
     </dependency>

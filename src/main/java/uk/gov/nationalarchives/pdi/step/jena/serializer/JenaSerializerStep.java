@@ -211,7 +211,7 @@ public class JenaSerializerStep extends BaseStep implements StepInterface {
         if (meta.isCloseModelAndRemoveField()) {
             // re-map fields from input to output when closeModelAndRemoveField is checked
 
-            outputRowData = new Object[data.getOutputRowMeta().size() + RowDataUtil.OVER_ALLOCATE_SIZE];
+            outputRowData = RowDataUtil.allocateRowData(data.getOutputRowMeta().size());
 
             // re-map the fields from input to output
             final int[] remainingInputFieldIndexes = data.getRemainingInputFieldIndexes();

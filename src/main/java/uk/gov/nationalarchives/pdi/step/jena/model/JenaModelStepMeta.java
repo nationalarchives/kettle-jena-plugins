@@ -632,7 +632,7 @@ public class JenaModelStepMeta extends BaseStepMeta implements StepMetaInterface
         final String expandedTargetFieldName = space.environmentSubstitute(targetFieldName);
         final ValueMetaInterface targetFieldValueMeta;
         try {
-            targetFieldValueMeta = ValueMetaFactory.createValueMeta(expandedTargetFieldName, ValueMeta.TYPE_SERIALIZABLE);
+            targetFieldValueMeta = ValueMetaFactory.createValueMeta(expandedTargetFieldName, ValueMetaInterface.TYPE_SERIALIZABLE);
         } catch (final KettlePluginException e) {
             throw new KettleStepException("Unable to create Value Meta for target field: " + expandedTargetFieldName + (targetFieldName.equals(expandedTargetFieldName) ? "" : "(" + targetFieldName + ")") + ", : " + e.getMessage(), e);
         }

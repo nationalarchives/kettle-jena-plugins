@@ -60,7 +60,7 @@ public class JenaGroupMergeStepIT {
 
     @Test
     public void hasNoErrorsMergingTwoRows() throws KettleException {
-        final TransMeta tm = TransTestFactory.generateTestTransformationError(new Variables(), getTestMeta(false), STEP_NAME);
+        final TransMeta tm = TransTestFactory.generateTestTransformationError(new Variables(), getTestMeta(OtherFieldAction.DROP), STEP_NAME);
         final Map<String, RowStepCollector> result = TransTestFactory.executeTestTransformationError(tm, TransTestFactory.INJECTOR_STEPNAME,
                 STEP_NAME, TransTestFactory.DUMMY_STEPNAME, TransTestFactory.ERROR_STEPNAME, generateInputData("FO_371_190180_1-policy.ttl"));
         assertEquals(0, result.get(STEP_NAME).getRowsError().size());
@@ -68,7 +68,7 @@ public class JenaGroupMergeStepIT {
 
     @Test
     public void hasNoErrorsMergingTwoRowsWithNullValueColumn() throws KettleException {
-        final TransMeta tm = TransTestFactory.generateTestTransformationError(new Variables(), getTestMeta(false), STEP_NAME);
+        final TransMeta tm = TransTestFactory.generateTestTransformationError(new Variables(), getTestMeta(OtherFieldAction.DROP), STEP_NAME);
         final Map<String, RowStepCollector> result = TransTestFactory.executeTestTransformationError(tm, TransTestFactory.INJECTOR_STEPNAME,
                 STEP_NAME, TransTestFactory.DUMMY_STEPNAME, TransTestFactory.ERROR_STEPNAME, generateInputData2("FO_371_190180_1-policy.ttl"));
         assertEquals(true, result.get(STEP_NAME).getRowsWritten().get(0).getData()[0] == null);
@@ -78,7 +78,7 @@ public class JenaGroupMergeStepIT {
 
     @Test
     public void preserveRowsNotPartOfGroup() throws KettleException {
-        final TransMeta tm = TransTestFactory.generateTestTransformationError(new Variables(), getTestMeta(true), STEP_NAME);
+        final TransMeta tm = TransTestFactory.generateTestTransformationError(new Variables(), getTestMeta(OtherFieldAction.USE_FIRST), STEP_NAME);
         final Map<String, RowStepCollector> result = TransTestFactory.executeTestTransformationError(tm, TransTestFactory.INJECTOR_STEPNAME,
                 STEP_NAME, TransTestFactory.DUMMY_STEPNAME, TransTestFactory.ERROR_STEPNAME, generateInputData3("FO_371_190180_1-policy.ttl"));
         assertEquals(true, result.get(STEP_NAME).getRowsWritten().get(0).getData()[0] == null);
@@ -87,23 +87,21 @@ public class JenaGroupMergeStepIT {
         assertEquals(true, result.get(STEP_NAME).getRowsWritten().get(0).getData()[3] == "test1");
     }
 
-    private JenaGroupMergeStepMeta getTestMeta(final boolean preserveAllFields) {
+    private JenaGroupMergeStepMeta getTestMeta(final OtherFieldAction otherFieldAction) {
         final JenaGroupMergeStepMeta meta = new JenaGroupMergeStepMeta();
         final List<ConstrainedField> groupFields = new ArrayList<>(1);
         groupFields.add(new ConstrainedField("id", ActionIfNoSuchField.ERROR, ActionIfNull.IGNORE));
         groupFields.add(new ConstrainedField("test", ActionIfNoSuchField.ERROR, ActionIfNull.IGNORE));
         meta.setGroupFields(groupFields);
-        meta.setPreserveAllFields(preserveAllFields);
+        meta.setOtherFieldAction(otherFieldAction);
 
 //        final List<ConstrainedField> otherFields = new ArrayList<>(1);
 //        otherFields.add("another_column");
 //        meta.setOtherFields(otherFields);
 
-
-        meta.setMutateFirstModel(true);
-        final List<ConstrainedField> jenaModelFields = new ArrayList<>(1);
-        jenaModelFields.add(new ConstrainedField("jena_model",ActionIfNoSuchField.ERROR,ActionIfNull.ERROR));
-        meta.setJenaModelFields(jenaModelFields);
+        final List<ModelMergeConstrainedField> jenaModelFields = new ArrayList<>(1);
+        jenaModelFields.add(new ModelMergeConstrainedField("jena_model", ActionIfNoSuchField.ERROR, ActionIfNull.ERROR, MutateFirstModel.YES, null));
+        meta.setMergeFields(jenaModelFields);
         return meta;
     }
 
