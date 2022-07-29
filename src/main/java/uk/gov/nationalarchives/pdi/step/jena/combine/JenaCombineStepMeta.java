@@ -138,7 +138,7 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
             final String xTargetFieldName = XMLHandler.getTagValue(stepnode, ELEM_NAME_TARGET_FIELD_NAME);
             this.targetFieldName = xTargetFieldName != null ? xTargetFieldName : "";
 
-            final String xRemoveSelectedField = XMLHandler.getTagValue(stepnode, ELEM_NAME_MUTATE_FIRST_MODEL);
+            final String xRemoveSelectedField = XMLHandler.getTagValue(stepnode, ELEM_NAME_REMOVE_SELECTED_FIELDS);
             this.removeSelectedFields = isNotEmpty(xRemoveSelectedField) ? xRemoveSelectedField.equals("Y") : false;
 
             final Node jenaModelFieldsNode = XMLHandler.getSubNode(stepnode, ELEM_NAME_JENA_MODEL_FIELDS);
