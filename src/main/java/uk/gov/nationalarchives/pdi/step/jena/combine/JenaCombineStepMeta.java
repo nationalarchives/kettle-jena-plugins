@@ -31,6 +31,7 @@ import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaFactory;
+import org.pentaho.di.core.row.value.ValueMetaSerializable;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
@@ -210,7 +211,7 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
 
             for (int i = startRemovalIdx; i < jenaModelFields.size(); i++) {
                 final ConstrainedField jenaModelField = jenaModelFields.get(i);
-                if (isNotEmpty(jenaModelField.fieldName)) {
+                if (isNotEmpty(jenaModelField.fieldName) && rowMeta.exists(new ValueMetaSerializable(jenaModelField.fieldName))) {
                     try {
                         rowMeta.removeValueMeta(jenaModelField.fieldName);
                     } catch (final KettleValueException e) {
@@ -233,8 +234,10 @@ public class JenaCombineStepMeta extends BaseStepMeta implements StepMetaInterfa
             } catch (final KettlePluginException e) {
                 throw new KettleStepException("Unable to create Value Meta for target field: " + expandedTargetFieldName + (targetFieldName.equals(expandedTargetFieldName) ? "" : "(" + targetFieldName + ")") + ", : " + e.getMessage(), e);
             }
-            targetFieldValueMeta.setOrigin(origin);
-            rowMeta.addValueMeta(targetFieldValueMeta);
+            if(!rowMeta.getValueMetaList().contains(targetFieldValueMeta)) {
+                targetFieldValueMeta.setOrigin(origin);
+                rowMeta.addValueMeta(targetFieldValueMeta);
+            }
         }
     }
 
