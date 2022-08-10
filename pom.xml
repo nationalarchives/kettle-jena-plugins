@@ -27,7 +27,7 @@
 
   <groupId>uk.gov.nationalarchives.pdi</groupId>
   <artifactId>kettle-jena-plugins</artifactId>
-  <version>2.3.1-SNAPSHOT</version>
+  <version>2.3.1</version>
   <packaging>jar</packaging>
 
   <name>Kettle Jena Plugins</name>
@@ -84,7 +84,7 @@
     <connection>scm:git:https://github.com/nationalarchives/kettle-jena-plugins.git</connection>
     <developerConnection>scm:git:https://github.com/nationalarchives/kettle-jena-plugins.git</developerConnection>
     <url>scm:git:https://github.com/nationalarchives/kettle-jena-plugins.git</url>
-    <tag>HEAD</tag>
+    <tag>kettle-jena-plugins-2.3.1</tag>
   </scm>
 
   <repositories>
