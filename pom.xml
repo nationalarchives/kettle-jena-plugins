@@ -91,7 +91,17 @@
     <repository>
       <id>pentaho-nexus</id>
       <name>PentahoNexus</name>
-      <url>https://nexus.pentaho.org/content/groups/omni</url>
+      <url>https://repo.orl.eng.hitachivantara.com/artifactory/pnt-mvn/</url>
+    </repository>
+    <repository>
+      <id>EvolvedBinary-PentahoMaven-Proxy</id>
+      <name>EvolvedBinary-PentahoMaven-Proxy</name>
+      <url>https://repo.evolvedbinary.com/repository/pentaho-maven-proxy/</url>
+    </repository>
+    <repository>
+      <id>Clojars</id>
+      <name>Clojars</name>
+      <url>https://clojars.org/repo/</url>
     </repository>
   </repositories>
 

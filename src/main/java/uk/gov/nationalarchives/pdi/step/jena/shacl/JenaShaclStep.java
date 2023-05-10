@@ -75,6 +75,7 @@ public class JenaShaclStep extends BaseStep implements StepInterface {
             if (!result.hasErrors()) {
                 putRow(data.getOutputRowMeta(), row);
             } else {
+                putRow(data.getOutputRowMeta(), row);
                 putError(data.getOutputRowMeta(), row, result.getErrorCount(), result.getAllErrors(), "data", "ERROR_01");
             }
             return true;
