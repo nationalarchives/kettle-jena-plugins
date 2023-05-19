@@ -99,7 +99,7 @@ public class JenaShaclStep extends BaseStep implements StepInterface {
         if (!validator.conforms(shapesGraph, dataGraph)) {
             ValidationReport report = validator.validate(shapesGraph, dataGraph);
             for (final ReportEntry reportEntry : report.getEntries()) {
-                result.appendError(reportEntry.message());
+                result.appendError(reportEntry.toString());
                 result.setHasErrors(true);
                 result.incrementErrorCount();
             }
